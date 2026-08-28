@@ -237,6 +237,18 @@ class CompanyIn(BaseModel):
 def audit(db: Session, user: Optional[User], action: str, detail: str = ""):
     db.add(AuditLog(user_id=user.id if user else None, action=action, detail=detail[:1000], created_at=now_vn()))
 
+def format_license_plate(plate: str) -> str:
+    import re
+    raw = str(plate or "").upper()
+    p = re.sub(r"[^A-Z0-9]", "", raw)
+    m = re.fullmatch(r"(\d{2})([A-Z](?:\d|[A-Z]))(\d{5})", p)
+    if m:
+        return f"{m.group(1)}{m.group(2)}-{m.group(3)[:3]}.{m.group(3)[3:]}"
+    m = re.fullmatch(r"(\d{2})([A-Z])(\d{5})", p)
+    if m:
+        return f"{m.group(1)}{m.group(2)}-{m.group(3)[:3]}.{m.group(3)[3:]}"
+    return raw.strip()
+
 def infer_vehicle_type(plate: str) -> Optional[str]:
     import re
     p = re.sub(r"[^A-Z0-9]", "", str(plate or "").upper())
@@ -481,7 +493,7 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(current_user)):
 
 @app.post("/api/checkin")
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    plate = data.license_plate.strip().upper()
+    plate = format_license_plate(data.license_plate)
     if not plate: raise HTTPException(400, "Biển số không được trống")
     detected_type = infer_vehicle_type(plate)
     # Nếu biển số khớp quy tắc thì luôn ưu tiên loại xe được nhận diện,
@@ -516,6 +528,17 @@ def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     if not price: raise HTTPException(400, "Chưa có bảng giá cho loại xe")
     hours = max(1, math.ceil((time_out - record.time_in).total_seconds() / 3600))
     return hours, hours * price.price_per_hour
+
+@app.get("/api/checkout-preview/{record_id}")
+def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    record = db.get(ParkingRecord, record_id)
+    if not record or record.time_out is not None:
+        raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
+    time_now = now_vn()
+    hours, fee = calculate_fee(db, record, time_now)
+    vehicle = db.get(Vehicle, record.vehicle_id)
+    slot = db.get(ParkingSlot, record.slot_id)
+    return {"record_id": record.id, "license_plate": vehicle.license_plate if vehicle else "", "vehicle_type": vehicle.vehicle_type if vehicle else "", "slot": slot.name if slot else "", "hours": hours, "fee": fee, "time_now": time_now.isoformat()}
 
 @app.post("/api/checkout")
 def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -612,7 +635,7 @@ def monthly(db: Session = Depends(get_db), user: User = Depends(current_user)):
 
 @app.post("/api/monthly")
 def create_monthly(data: MonthlyPassIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    months=max(1,min(12,data.months)); plate=data.license_plate.strip().upper()
+    months=max(1,min(12,data.months)); plate=format_license_plate(data.license_plate)
     v=db.query(Vehicle).filter(Vehicle.license_plate==plate).first()
     if not v: v=Vehicle(license_plate=plate,vehicle_type=data.vehicle_type); db.add(v); db.flush()
     else: v.vehicle_type=data.vehicle_type

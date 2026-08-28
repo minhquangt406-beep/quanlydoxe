@@ -11,3 +11,10 @@ Hệ thống quản lý bãi đỗ xe với FastAPI + PostgreSQL + giao diện r
 - Nhật ký hoạt động.
 - PostgreSQL persistent trên Render.
 - Mobile responsive.
+
+## Chạy local
+1. Sao chép `.env.example` thành `.env` và điền `DATABASE_URL`.
+2. Cài requirements.
+3. Chạy `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+
+Không commit `.env` vào GitHub.
