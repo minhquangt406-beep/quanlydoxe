@@ -551,6 +551,24 @@ def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     hours = max(1, math.ceil((time_out - record.time_in).total_seconds() / 3600))
     return hours, hours * price.price_per_hour
 
+@app.get("/api/checkout-preview/{record_id}")
+def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    record = db.get(ParkingRecord, record_id)
+    if not record or record.time_out is not None:
+        raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
+    vehicle = db.get(Vehicle, record.vehicle_id)
+    slot = db.get(ParkingSlot, record.slot_id)
+    time_out = now_vn()
+    hours, fee = calculate_fee(db, record, time_out)
+    return {
+        "record_id": record.id,
+        "license_plate": vehicle.license_plate if vehicle else "",
+        "vehicle_type": vehicle.vehicle_type if vehicle else "",
+        "slot": slot.name if slot else "",
+        "hours": hours,
+        "fee": fee,
+    }
+
 @app.post("/api/checkout")
 def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(current_user)):
     record = db.get(ParkingRecord, data.record_id)

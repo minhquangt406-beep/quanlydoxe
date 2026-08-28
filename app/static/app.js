@@ -163,11 +163,9 @@ function openSlotModal(slot){
       try{
         const active=await api("/api/active");
         const row=active.find(x=>x.slot===slot.name);
-        if(!row)throw new Error("Không tìm thấy lượt gửi đang hoạt động");
-        const d=await api("/api/checkout",{method:"POST",body:{record_id:row.id}});
+        if(!row) throw new Error("Không tìm thấy lượt gửi đang hoạt động");
         close();
-        toast(`Đã cho ${slot.license_plate} ra bãi · ${money(d.fee)}`);
-        await navigate("dashboard");
+        await openPaymentModal(row.id);
       }catch(e){toast(e.message,"error")}
     };
   }else{
