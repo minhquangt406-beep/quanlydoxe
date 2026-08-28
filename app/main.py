@@ -285,6 +285,25 @@ def seed():
 
 seed()
 
+
+def normalize_license_plate(value: str) -> str:
+    import re
+    s = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
+    if re.fullmatch(r"\d{2}[A-Z]{2}\d{5}", s):
+        return f"{s[:4]}-{s[4:7]}.{s[7:]}"
+    if re.fullmatch(r"\d{2}[A-Z]\d{6}", s):
+        return f"{s[:3]}-{s[3:6]}.{s[6:]}"
+    if re.fullmatch(r"\d{2}[A-Z]\d{5}", s):
+        return f"{s[:3]}-{s[3:6]}.{s[6:]}"
+    return s
+
+def detect_vehicle_type_from_plate(value: str) -> str:
+    import re
+    s = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
+    if re.fullmatch(r"\d{2}[A-Z]{2}\d{5}", s):
+        return "Xe máy"
+    return "Ô tô"
+
 @app.get("/")
 def home():
     return FileResponse(BASE_DIR / "app" / "static" / "index.html")

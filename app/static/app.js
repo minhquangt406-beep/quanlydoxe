@@ -1,3 +1,21 @@
+(function(){
+  try{
+    const u=new URL(window.location.href);
+    if(u.searchParams.has("login_username")||u.searchParams.has("login_password")){
+      history.replaceState({},document.title,u.pathname+u.hash);
+    }
+  }catch(_){}
+})();
+
+(function(){
+  try{
+    const u = new URL(window.location.href);
+    if(u.searchParams.has("login_username") || u.searchParams.has("login_password")){
+      history.replaceState({}, document.title, u.pathname + u.hash);
+    }
+  }catch(_){}
+})();
+
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const AWAY_TIMEOUT_MS=30*60*1000;
 let token=localStorage.getItem("parking_token"), me=null;
@@ -221,6 +239,16 @@ async function openPaymentModal(recordId){
   }catch(e){toast(e.message,"error");}
 }
 
+
+function normalizePlate(value){
+  let x=String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!x) return "";
+  if(/^\d{2}[A-Z]{2}\d{5}$/.test(x)) return x.slice(0,4)+"-"+x.slice(4,7)+"."+x.slice(7);
+  if(/^\d{2}[A-Z]\d{6}$/.test(x)) return x.slice(0,3)+"-"+x.slice(3,6)+"."+x.slice(6);
+  if(/^\d{2}[A-Z]\d{5}$/.test(x)) return x.slice(0,3)+"-"+x.slice(3,6)+"."+x.slice(6);
+  return x;
+}
+
 async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#userName").textContent=me.full_name;$("#userRole").textContent=me.role==="manager"?"Quản lý":"Nhân viên";$("#avatar").textContent=me.full_name[0];$$(".manager-only").forEach(x=>x.style.display=me.role==="manager"?"flex":"none");$("#mobileBottomNav")?.classList.toggle("manager",me.role==="manager");await navigate("dashboard")}catch(e){clearAuth()}}
 $("#loginForm").onsubmit=async e=>{e.preventDefault();$("#loginError").textContent="";try{let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value,password:$("#password").value}});token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot()}catch(e){$("#loginError").textContent=e.message}};
 $("#logout").onclick=()=>{clearAuth();location.reload()};
@@ -362,3 +390,25 @@ boot();
 
 // QR ticket helper
 document.addEventListener('click', async (e)=>{ const b=e.target.closest('.qr-ticket'); if(!b) return; try{ const d=await api('/api/ticket/qr/'+b.dataset.id); const w=window.open('','_blank'); w.document.write(`<html><head><title>Vé QR #${d.record_id}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>Vé gửi xe #${d.record_id}</h2><h3>${d.license_plate}</h3><p>${d.area} · ${d.slot}</p>${d.qr_data?`<img src="${d.qr_data}" width="260">`:`<pre>${d.qr_text||''}</pre>`}<p>${dt(d.time_in)}</p><button onclick="window.print()">In vé</button></body></html>`); w.document.close(); }catch(err){toast(err.message,'error')} });
+
+// Global plate formatter: works for both main "add vehicle" and slot quick-add inputs.
+document.addEventListener("input", function(e){
+  const el=e.target;
+  if(!el || el.tagName!=="INPUT") return;
+  const name=(el.name||el.id||"").toLowerCase();
+  const isPlate=name.includes("plate") || name.includes("license") || name.includes("bien");
+  if(!isPlate) return;
+  const formatted=normalizePlate(el.value);
+  if(el.value!==formatted){
+    const start=el.selectionStart;
+    el.value=formatted;
+    try{ el.setSelectionRange(el.value.length,el.value.length); }catch(_){}
+  }
+  const form=el.closest("form") || document;
+  const typeSelect=form.querySelector('select[name*="vehicle"],select[name*="type"],#vehicleType,#addVehicleType');
+  if(typeSelect){
+    const t=detectVehicleType(el.value);
+    typeSelect.value=t;
+    typeSelect.dispatchEvent(new Event("change",{bubbles:true}));
+  }
+});
