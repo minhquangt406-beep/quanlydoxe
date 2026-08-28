@@ -1159,3 +1159,88 @@ button { touch-action: manipulation; }
     font-size:13px!important;
   }
 }
+
+/* ===== PARKING MAP: PREVIOUS SMALL SIZE ===== */
+.parking-map{
+  padding:5px!important;
+  border-radius:14px!important;
+}
+.map-zone{
+  padding:6px!important;
+  margin-bottom:5px!important;
+  border-radius:12px!important;
+}
+.zone-title{
+  padding:0 2px 5px 3px!important;
+  gap:7px!important;
+}
+.zone-title h3{
+  font-size:12px!important;
+  margin:3px 0 1px!important;
+}
+.zone-title .muted{
+  font-size:7px!important;
+}
+.zone-chip{
+  font-size:6px!important;
+  padding:3px 6px!important;
+}
+.real-slot-grid{
+  gap:4px!important;
+}
+.real-slot{
+  min-height:58px!important;
+  padding:4px!important;
+  border-radius:9px!important;
+}
+.real-slot .slot-top{
+  font-size:6px!important;
+}
+.real-slot .slot-top span:last-child{
+  font-size:5px!important;
+}
+.real-slot .slot-icon{
+  height:18px!important;
+  margin:0!important;
+  font-size:13px!important;
+}
+.real-slot .plate{
+  font-size:6.5px!important;
+  padding:1px 4px!important;
+  border-width:1px!important;
+  border-radius:5px!important;
+  margin-bottom:1px!important;
+}
+.real-slot .slot-status{
+  font-size:4px!important;
+  letter-spacing:.05em!important;
+}
+.map-legend{
+  padding:3px 0 0!important;
+  margin:1px 0 0!important;
+  font-size:6px!important;
+  gap:8px!important;
+}
+@media(max-width:700px){
+  .parking-map{padding:4px!important;border-radius:12px!important}
+  .map-zone{padding:5px!important;margin-bottom:4px!important;border-radius:10px!important}
+  .zone-title{padding-bottom:4px!important}
+  .zone-title h3{font-size:11px!important}
+  .zone-title .muted{font-size:6px!important}
+  .zone-chip{font-size:5.5px!important;padding:2px 5px!important}
+  .real-slot-grid{gap:3px!important}
+  .real-slot{min-height:51px!important;padding:3px!important;border-radius:8px!important}
+  .real-slot .slot-top{font-size:5px!important}
+  .real-slot .slot-top span:last-child{font-size:4.5px!important}
+  .real-slot .slot-icon{height:15px!important;font-size:11px!important}
+  .real-slot .plate{font-size:5.5px!important;padding:1px 3px!important}
+  .real-slot .slot-status{font-size:3.5px!important}
+  .map-legend{font-size:5.5px!important;gap:7px!important}
+}
+@media(max-width:380px){
+  .parking-map{padding:3px!important}
+  .map-zone{padding:4px!important}
+  .real-slot{min-height:46px!important;padding:3px!important}
+  .real-slot .slot-icon{height:13px!important;font-size:10px!important}
+  .zone-title h3{font-size:10px!important}
+}
