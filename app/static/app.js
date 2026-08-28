@@ -164,10 +164,35 @@ boot();
     document.querySelector('.main')?.classList.toggle('focus-mode');
     toast(document.querySelector('.main')?.classList.contains('focus-mode')?'Đã bật chế độ tập trung':'Đã tắt chế độ tập trung');
   });
-  mobileMenu?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('mobile-open'));
+  const sidebar=document.querySelector('.sidebar');
+  const syncMobileNav=()=>{
+    const open=sidebar?.classList.contains('mobile-open');
+    document.body.classList.toggle('mobile-nav-open',!!open);
+    if(mobileMenu) mobileMenu.setAttribute('aria-expanded',open?'true':'false');
+  };
+  mobileMenu?.setAttribute('aria-expanded','false');
+  mobileMenu?.addEventListener('click',()=>{
+    sidebar?.classList.toggle('mobile-open');
+    syncMobileNav();
+  });
   document.addEventListener('click',e=>{
     const navBtn=e.target.closest('.sidebar nav button');
-    if(navBtn && window.innerWidth<=760) document.querySelector('.sidebar')?.classList.remove('mobile-open');
+    if(navBtn && window.innerWidth<=760){
+      sidebar?.classList.remove('mobile-open');
+      syncMobileNav();
+      return;
+    }
+    if(window.innerWidth<=760 && sidebar?.classList.contains('mobile-open') &&
+       !e.target.closest('.sidebar') && !e.target.closest('#mobileMenu')){
+      sidebar.classList.remove('mobile-open');
+      syncMobileNav();
+    }
+  });
+  window.addEventListener('resize',()=>{
+    if(window.innerWidth>760){
+      sidebar?.classList.remove('mobile-open');
+      syncMobileNav();
+    }
   });
   document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){

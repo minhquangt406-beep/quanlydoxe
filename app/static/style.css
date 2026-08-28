@@ -71,3 +71,287 @@ body.dark-mode{--bg:#080d18;--panel:#101827;--ink:#edf2ff;--muted:#8c9ab2;--line
 .report-bars{display:flex;flex-direction:column;gap:12px;margin-top:12px}.report-bar-row{display:grid;grid-template-columns:55px 1fr 120px;align-items:center;gap:12px;font-size:13px}.report-bar{height:10px;background:var(--line);border-radius:999px;overflow:hidden}.report-bar i{display:block;height:100%;background:linear-gradient(90deg,#4f46e5,#06b6d4);border-radius:999px;min-width:3px}.report-bar-row b{text-align:right}.btn.danger{color:#b91c1c}.btn{position:relative;overflow:hidden}.panel hr{border:0;border-top:1px solid var(--line);margin:22px 0}.business-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:700}.business-badge i{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 5px rgba(34,197,94,.12)}
 
 .quick-checkin{margin-top:14px;padding:15px;border:1px solid rgba(99,102,241,.16);border-radius:16px;background:linear-gradient(135deg,rgba(99,102,241,.055),rgba(139,92,246,.08));animation:quickIn .22s ease}.quick-title{font-weight:950;font-size:12px;letter-spacing:.06em;color:#5146c9;margin-bottom:3px}.quick-sub{font-size:10px;color:var(--muted);margin-bottom:12px}.quick-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.quick-form-grid label{font-size:10px;font-weight:800;color:#697586}.quick-form-grid input,.quick-form-grid select{margin-top:6px}.modal-actions .btn{min-width:100px}.modal-actions button:disabled{opacity:.65;cursor:wait;transform:none!important}@keyframes quickIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@media(max-width:600px){.quick-form-grid{grid-template-columns:1fr}.modal-card{padding:22px 18px}.modal-actions{flex-direction:column}.modal-actions .btn{width:100%}}.dark-mode .quick-checkin{background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(139,92,246,.10));border-color:#303c70}.dark-mode .quick-title{color:#a5b4fc}
+
+
+/* =========================================================
+   MOBILE RESPONSIVE PATCH — Parking AI Pro
+   Designed for 320px–768px phones/tablets
+   ========================================================= */
+html, body { max-width:100%; overflow-x:hidden; }
+button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+
+@media (max-width: 760px) {
+  body { min-width:0; }
+  .app { min-height:100dvh; width:100%; }
+
+  /* Mobile drawer */
+  .sidebar {
+    width:min(86vw, 300px);
+    padding:18px 12px;
+    transform:translateX(-105%);
+    z-index:100;
+    box-shadow:24px 0 70px rgba(0,0,0,.28);
+  }
+  .sidebar.mobile-open { transform:translateX(0); }
+  .logo { padding:4px 8px 24px; }
+  .logo div, .sidebar nav span, .sidebar-bottom span { display:block; }
+  .sidebar nav button { min-height:48px; padding:13px 14px; font-size:14px; }
+  .sidebar-bottom { margin-top:auto; }
+  .sidebar .logout { min-height:46px; }
+
+  /* Drawer backdrop */
+  body.mobile-nav-open:before {
+    content:"";
+    position:fixed;
+    inset:0;
+    background:rgba(3,8,20,.52);
+    backdrop-filter:blur(2px);
+    z-index:90;
+  }
+
+  .main {
+    margin-left:0 !important;
+    width:100% !important;
+    max-width:100%;
+    padding:0 12px 82px !important;
+  }
+  .main:before { left:0 !important; }
+
+  /* Compact top bar */
+  .topbar {
+    height:auto;
+    min-height:70px;
+    padding:10px 0;
+    gap:8px;
+  }
+  .topbar > div:first-child { min-width:0; flex:1; }
+  .topbar h2 {
+    font-size:20px;
+    line-height:1.15;
+    margin:3px 0 0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .topbar-title .eyebrow { font-size:7px; }
+  .topbar-actions { flex:0 0 auto; gap:5px; }
+  .topbar-actions .live-line,
+  #focusBtn { display:none !important; }
+  .icon-btn {
+    width:38px;
+    height:38px;
+    min-width:38px;
+    border-radius:11px;
+  }
+  .userbox {
+    padding:4px;
+    width:38px;
+    min-width:38px;
+    height:38px;
+    border-radius:11px;
+    justify-content:center;
+  }
+  .userbox > div:not(.avatar) { display:none !important; }
+  .avatar { width:30px; height:30px; border-radius:9px; }
+
+  /* Fixed hamburger */
+  .mobile-menu {
+    display:grid !important;
+    place-items:center;
+    position:fixed;
+    right:14px;
+    bottom:16px;
+    top:auto;
+    z-index:120;
+    width:50px;
+    height:50px;
+    border-radius:15px;
+    box-shadow:0 12px 30px rgba(79,70,229,.35);
+  }
+
+  /* Content spacing */
+  #content { width:100%; min-width:0; }
+  .cards { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px; }
+  .card { min-width:0; padding:14px; border-radius:16px; }
+  .metric { font-size:23px; }
+  .card .label { font-size:8px; }
+  .trend { font-size:9px; }
+
+  .grid2,
+  .area-columns,
+  .area-admin-grid { grid-template-columns:1fr !important; gap:12px; }
+  .panel { min-width:0; padding:15px; border-radius:16px; }
+  .panel-head {
+    align-items:flex-start;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .panel-head > * { min-width:0; }
+  .panel h3 { font-size:15px; }
+  .muted { line-height:1.45; }
+
+  /* Forms */
+  .form-grid,
+  .quick-form-grid { grid-template-columns:1fr !important; gap:8px; }
+  label { font-size:11px; margin:10px 0; }
+  input, select, textarea {
+    min-height:44px;
+    font-size:16px; /* prevents iOS zoom */
+    border-radius:11px;
+    padding:10px 12px;
+  }
+  .btn, .primary {
+    min-height:44px;
+    padding:10px 13px;
+    border-radius:11px;
+  }
+  .actions { width:100%; }
+  .actions .btn, .actions .primary { flex:1 1 auto; }
+
+  /* Parking map */
+  .parking-map {
+    padding:10px !important;
+    border-radius:18px;
+    overflow-x:hidden;
+  }
+  .map-road {
+    height:42px;
+    font-size:8px;
+    border-radius:10px;
+    padding:0 8px;
+    text-align:center;
+  }
+  .map-zone {
+    padding:11px !important;
+    border-radius:15px;
+  }
+  .zone-title {
+    margin-bottom:9px;
+    gap:6px;
+  }
+  .zone-title h3 { font-size:14px; }
+  .zone-title .zone-chip { padding:5px 7px; font-size:7px; }
+  .real-slot-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:7px;
+  }
+  .real-slot {
+    min-width:0;
+    min-height:88px;
+    padding:8px;
+    border-radius:11px;
+  }
+  .slot-icon { font-size:19px; }
+  .plate { font-size:10px; padding:3px 4px; }
+  .slot-top, .slot-status { font-size:8px; }
+
+  .slot-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:7px;
+  }
+  .slot { padding:10px 5px; font-size:9px; }
+
+  /* Tables: keep all columns accessible without breaking page width */
+  .table-wrap {
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    border-radius:10px;
+  }
+  .table {
+    min-width:650px;
+    font-size:11px;
+  }
+  .table th { padding:9px 8px; font-size:8px; }
+  .table td { padding:10px 8px; }
+
+  /* Charts / report rows */
+  .report-bar-row {
+    grid-template-columns:42px minmax(70px,1fr) 88px;
+    gap:7px;
+    font-size:10px;
+  }
+
+  /* AI output and long text */
+  .ai-box {
+    min-height:150px;
+    padding:14px;
+    font-size:11px;
+    overflow:auto;
+    word-break:break-word;
+  }
+  .notice { font-size:10px; line-height:1.5; }
+
+  /* Modal */
+  .modal { padding:10px; }
+  .modal-card {
+    width:min(100%,520px) !important;
+    max-height:calc(100dvh - 20px);
+    overflow-y:auto;
+    padding:22px 16px !important;
+    border-radius:20px;
+  }
+  .modal-title { font-size:20px; }
+  .detail-grid { grid-template-columns:1fr !important; gap:8px; }
+  .detail-item { padding:10px; }
+  .modal-actions {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    position:sticky;
+    bottom:0;
+    padding-top:8px;
+    background:inherit;
+  }
+  .modal-actions button { width:100%; }
+
+  /* Login */
+  .login-page {
+    min-height:100dvh;
+    padding:16px;
+  }
+  .login-card {
+    width:100%;
+    max-width:430px;
+    padding:28px 20px;
+    border-radius:22px;
+  }
+  .login-card h1 { font-size:31px; }
+  .brand-mark { width:54px; height:54px; margin-bottom:17px; }
+
+  /* Avoid hover-only movement on touch */
+  .real-slot:hover, .card:hover, .btn:hover, .primary:hover {
+    transform:none;
+  }
+}
+
+@media (max-width: 420px) {
+  .main { padding-left:9px !important; padding-right:9px !important; }
+  .topbar { min-height:64px; }
+  .topbar h2 { font-size:18px; }
+  .topbar-actions { gap:3px; }
+  .icon-btn { width:35px; min-width:35px; height:35px; }
+  .userbox { width:35px; min-width:35px; height:35px; }
+  .avatar { width:28px; height:28px; }
+  .cards { gap:8px; }
+  .card { padding:12px 10px; }
+  .metric { font-size:20px; }
+  .panel { padding:12px; }
+  .real-slot-grid { gap:6px; }
+  .real-slot { min-height:82px; padding:7px; }
+  .slot-icon { font-size:17px; }
+  .parking-map { padding:7px !important; }
+  .map-zone { padding:8px !important; }
+  .quick-checkin { padding:11px; }
+  .modal-card { padding:20px 13px !important; }
+}
+
+@media (max-width: 340px) {
+  .cards { grid-template-columns:1fr !important; }
+  .real-slot-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .topbar h2 { max-width:135px; }
+  .topbar-actions .theme-btn { display:none !important; }
+}

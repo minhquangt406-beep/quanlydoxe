@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Parking AI Pro · Business Edition</title>
+<title>Quản lý bãi đỗ xe · Parking AI Pro</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,9 +13,9 @@
     <div class="eyebrow">SMART PARKING PLATFORM</div>
     <h1>Parking AI Pro</h1>
     <p>Quản lý bãi đỗ xe thông minh · Dữ liệu lưu bền vững</p>
-    <form id="loginForm">
-      <label>Tài khoản<input id="username" value="admin" autocomplete="username"></label>
-      <label>Mật khẩu<input id="password" value="admin123" type="password" autocomplete="current-password"></label>
+    <form id="loginForm" autocomplete="off">
+      <label>Tài khoản<input id="username" name="login_username" autocomplete="off" placeholder="Nhập tài khoản"></label>
+      <label>Mật khẩu<input id="password" name="login_password" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"></label>
       <button class="primary wide">Đăng nhập hệ thống</button>
       <div id="loginError" class="error"></div>
     </form>
@@ -24,7 +24,7 @@
 
 <div id="appView" class="app hidden">
   <aside class="sidebar">
-    <div class="logo"><span>P</span><div><b>Parking AI</b><small>PRO CONTROL</small></div></div>
+    <div class="logo"><span>P</span><div><b>Quản lý bãi đỗ xe</b><small>PRO CONTROL</small></div></div>
     <nav id="nav">
       <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
       <button data-page="parking">▣ <span>Xe vào / Xe ra</span></button>
@@ -39,7 +39,7 @@
       <button data-page="settings" class="manager-only">⚙ <span>Cài đặt doanh nghiệp</span></button>
     </nav>
     <div class="sidebar-bottom">
-      <div class="storage"><i></i><span>Database online<br><small>SQLite persistent</small></span></div>
+      <div class="storage"><i></i><span>Dữ liệu hệ thống<br><small>Online</small></span></div>
       <button id="logout" class="logout">↪ Đăng xuất</button>
     </div>
   </aside>
