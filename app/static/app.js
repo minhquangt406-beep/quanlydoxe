@@ -98,8 +98,9 @@ function openSlotModal(slot){
         : `<button class="btn" id="modalCancelCheckin">Hủy</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}
     </div>`;
   m.classList.remove("hidden");
+  document.body.classList.add("modal-open");
   bindVehicleTypeDetection("#quickPlate","#quickVtype");
-  const close=()=>m.classList.add("hidden");
+  const close=()=>{m.classList.add("hidden");document.body.classList.remove("modal-open");};
   $("#modalClose").onclick=close;
   $(".modal-backdrop").onclick=close;
   if(occupied){
