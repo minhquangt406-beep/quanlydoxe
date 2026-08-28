@@ -32,11 +32,30 @@ const titles={dashboard:"Tổng quan",parking:"Xe vào / Xe ra",slots:"Vị trí
 async function api(path,opt={}){opt.headers={...(opt.headers||{}),...(token?{Authorization:"Bearer "+token}:{})};if(opt.body&&typeof opt.body!=="string"){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(opt.body)}const r=await fetch(path,opt);const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.detail||"Có lỗi xảy ra");return data}
 function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"}
 function toast(msg,type="success"){const el=$("#toast");if(!el)return;el.textContent=msg;el.className="toast show "+type;clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.className="toast",2600)}
+const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
+// Tự nhận diện loại xe theo cấu trúc biển số.
+const detectVehicleType = (rawPlate) => {
+  const plate=String(rawPlate||"").toUpperCase().trim().replace(/\s+/g,"");
+  if(!plate) return null;
+  // Xe máy theo quy ước của hệ thống: 29B1-123.45, 29AD-123.45 và dạng tương tự.
+  if(/^\d{2}[A-Z]{1,2}\d-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
+  if(/^\d{2}[A-Z]{1,2}\d\d{5}$/.test(plate)) return "Xe máy";
+  // Ô tô: dạng 29A-123.45 / 29A12345.
+  if(/^\d{2}[A-Z]-?\d{4,5}(?:\.\d{2})?$/.test(plate)) return "Ô tô";
+  return null;
+};
+const bindVehicleTypeDetection=(plateSelector,typeSelector)=>{
+  const plateInput=$(plateSelector), typeSelect=$(typeSelector);
+  if(!plateInput||!typeSelect||plateInput.dataset.typeDetectionBound) return;
+  plateInput.dataset.typeDetectionBound="1";
+  const update=()=>{const detected=detectVehicleType(plateInput.value);if(detected)typeSelect.value=detected;};
+  ["input","change","blur"].forEach(ev=>plateInput.addEventListener(ev,update));
+};
+
 function openSlotModal(slot){
   const m=$("#slotModal"),b=$("#modalBody");
   if(!m||!b)return;
   const occupied=slot.status==="occupied";
-  const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
   b.innerHTML=`
     <div class="eyebrow">PARKING SLOT DETAILS</div>
     <h3 class="modal-title">${slot.name}</h3>
@@ -66,6 +85,7 @@ function openSlotModal(slot){
         : `<button class="btn" id="modalCancelCheckin">Hủy</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}
     </div>`;
   m.classList.remove("hidden");
+  bindVehicleTypeDetection("#quickPlate","#quickVtype");
   const close=()=>m.classList.add("hidden");
   $("#modalClose").onclick=close;
   $(".modal-backdrop").onclick=close;
@@ -126,7 +146,7 @@ $("#content").innerHTML=`<div class="cards"><div class="card"><div class="label"
 parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");$("#content").innerHTML=`
 <div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option><option>Xe đạp</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
 <div class="panel"><div class="panel-head"><h3>Xe đang gửi</h3><span class="muted">${active.length} xe</span></div><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Biển số</th><th>Vị trí</th><th>Thời gian</th><th></th></tr></thead><tbody>${active.map(x=>`<tr><td>#${x.id}</td><td><b>${x.license_plate}</b></td><td>${x.slot}</td><td>${dt(x.time_in)}</td><td><button class="btn checkout" data-id="${x.id}">Tính phí & xe ra</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty-state">Không có xe</td></tr>`}</tbody></table></div></div></div>`;
-$("#checkin").onclick=async()=>{try{let d=await api("/api/checkin",{method:"POST",body:{license_plate:$("#plate").value,vehicle_type:$("#vtype").value,slot_id:+$("#slot").value}});$("#parkingMsg").innerHTML=`<div class="notice">✓ ${d.message} · Mã lượt <b>#${d.record_id}</b> · ${d.slot}</div>`;await pages.parking()}catch(e){$("#parkingMsg").innerHTML=`<div class="error">${e.message}</div>`}};
+bindVehicleTypeDetection("#plate","#vtype");$("#checkin").onclick=async()=>{try{let d=await api("/api/checkin",{method:"POST",body:{license_plate:$("#plate").value,vehicle_type:$("#vtype").value,slot_id:+$("#slot").value}});$("#parkingMsg").innerHTML=`<div class="notice">✓ ${d.message} · Mã lượt <b>#${d.record_id}</b> · ${d.slot}</div>`;await pages.parking()}catch(e){$("#parkingMsg").innerHTML=`<div class="error">${e.message}</div>`}};
 $("#areaFilter").onchange=()=>{const area=$("#areaFilter").value; $$("#slot option").forEach(o=>o.hidden=area!=="all" && o.dataset.area!==area); const first=$$("#slot option").find(o=>!o.hidden); if(first) $("#slot").value=first.value;};
 $$(".checkout").forEach(b=>b.onclick=async()=>{if(!confirm("Xác nhận cho xe ra?"))return;try{let d=await api("/api/checkout",{method:"POST",body:{record_id:+b.dataset.id}});alert(`Phí: ${money(d.fee)}\\nThời gian: ${d.hours} giờ`);await pages.parking()}catch(e){alert(e.message)}})},
 slots:async()=>{let s=await api("/api/slots");window.__latestSlots=s; const areas=[...new Map(s.map(x=>[x.area_id,{id:x.area_id,name:x.area_name,slots:[]}])).values()]; s.forEach(x=>areas.find(ar=>ar.id===x.area_id)?.slots.push(x)); const zone=(ar)=>{const occupied=ar.slots.filter(x=>x.status==="occupied").length,empty=ar.slots.length-occupied;const cls=ar.name.toLowerCase().includes("b")?"zone-b":"zone-a";return `<div class="panel area-panel-large"><div class="parking-map"><div class="map-zone ${cls}" data-area-id="${ar.id}"><div class="zone-title"><div><span class="zone-chip">${ar.name.toUpperCase()}</span><h3>${ar.name} · Sơ đồ vị trí</h3><span class="muted">${ar.slots.length} vị trí · ${empty} trống · ${occupied} đang dùng</span></div><span class="pill ${empty?"green":"red"}">${empty?"CÒN CHỖ":"ĐẦY"}</span></div><div class="real-slot-grid">${ar.slots.map(x=>`<div class="real-slot ${x.status}" data-slot-id="${x.id}" data-area-id="${ar.id}"><div class="slot-top"><span>${x.name}</span><span>${x.vehicle_type||"—"}</span></div><div class="slot-icon">${x.status==="occupied"?"🚗":"▱"}</div>${x.status==="occupied"?`<span class="plate">${x.license_plate||"NO PLATE"}</span>`:`<span class="slot-status">CHỖ TRỐNG</span>`}<span class="slot-status">${x.status==="occupied"?"ĐANG SỬ DỤNG":"SẴN SÀNG"}</span></div>`).join("")}</div></div></div></div>`}; $("#content").innerHTML=`<div class="notice">Bản đồ được chia riêng theo từng khu. <b>Biển số</b> nằm ngay trên ô đang sử dụng.</div><div class="area-list">${areas.map(zone).join("")}</div>`},
