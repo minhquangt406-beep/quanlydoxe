@@ -454,3 +454,29 @@ document.addEventListener("submit", function(e){
     if(formatted) el.value=formatted;
   });
 }, true);
+
+
+/* ===== Mobile sidebar touch controller ===== */
+(function(){
+  const getSidebar=()=>document.querySelector(".sidebar,#sidebar,.app-sidebar");
+  const getBackdrop=()=>document.querySelector(".sidebar-backdrop,.mobile-sidebar-backdrop");
+  const open=()=>{
+    const sb=getSidebar(), bd=getBackdrop();
+    if(sb) sb.classList.add("open","active");
+    if(bd) bd.classList.add("show","active");
+    document.body.classList.add("sidebar-open");
+  };
+  const close=()=>{
+    const sb=getSidebar(), bd=getBackdrop();
+    if(sb) sb.classList.remove("open","active");
+    if(bd) bd.classList.remove("show","active");
+    document.body.classList.remove("sidebar-open");
+  };
+  document.addEventListener("click",e=>{
+    const t=e.target.closest?.(".sidebar-toggle,.menu-toggle,#sidebarToggle,[data-sidebar-toggle]");
+    if(t){ e.preventDefault(); e.stopPropagation(); const sb=getSidebar(); if(sb?.classList.contains("open")||sb?.classList.contains("active")||document.body.classList.contains("sidebar-open")) close(); else open(); return; }
+    if(e.target.closest?.(".sidebar-backdrop,.mobile-sidebar-backdrop")) close();
+    if(e.target.closest?.(".sidebar a,.sidebar button,.sidebar .nav-item,.sidebar .nav-link")) close();
+  },true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape") close();});
+})();

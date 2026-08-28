@@ -613,3 +613,127 @@ button { touch-action: manipulation; }
   .quick-form-grid{grid-template-columns:1fr !important;gap:5px !important;}
   .modal-actions{grid-template-columns:1fr 1.25fr !important;}
 }
+
+
+/* ===== MOBILE SIDEBAR COMPACT / TOUCH FIX ===== */
+@media (max-width: 768px){
+  .sidebar{
+    position:fixed !important;
+    left:0 !important;
+    top:0 !important;
+    bottom:0 !important;
+    width:min(78vw,300px) !important;
+    max-width:300px !important;
+    height:100dvh !important;
+    z-index:10050 !important;
+    overflow:hidden !important;
+    transform:translateX(-105%) !important;
+    transition:transform .22s ease !important;
+    padding:calc(14px + env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom)) !important;
+    box-sizing:border-box !important;
+  }
+  .sidebar.open,
+  .sidebar.active,
+  body.sidebar-open .sidebar{
+    transform:translateX(0) !important;
+  }
+  .sidebar .logo,
+  .sidebar-header{
+    min-height:52px !important;
+    margin-bottom:10px !important;
+    padding:8px 10px !important;
+  }
+  .sidebar nav,
+  .sidebar-nav,
+  .nav-menu{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:5px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    max-height:calc(100dvh - 120px) !important;
+    -webkit-overflow-scrolling:touch !important;
+    padding:4px 0 !important;
+  }
+  .sidebar a,
+  .sidebar button,
+  .nav-item,
+  .nav-link{
+    width:100% !important;
+    min-height:46px !important;
+    height:auto !important;
+    flex:0 0 auto !important;
+    box-sizing:border-box !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    padding:9px 11px !important;
+    margin:0 !important;
+    border-radius:12px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    font-size:14px !important;
+    line-height:1.15 !important;
+  }
+  .sidebar a span,
+  .sidebar button span,
+  .nav-item span,
+  .nav-link span{
+    min-width:0 !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .sidebar .nav-icon,
+  .sidebar .icon{
+    width:22px !important;
+    min-width:22px !important;
+    height:22px !important;
+    flex:0 0 22px !important;
+  }
+
+  /* backdrop sits below sidebar but above app content */
+  .sidebar-backdrop,
+  .mobile-sidebar-backdrop{
+    position:fixed !important;
+    inset:0 !important;
+    z-index:10040 !important;
+    background:rgba(15,23,42,.42) !important;
+    backdrop-filter:blur(2px) !important;
+    -webkit-backdrop-filter:blur(2px) !important;
+    display:none !important;
+  }
+  .sidebar-backdrop.show,
+  .sidebar-backdrop.active,
+  body.sidebar-open .sidebar-backdrop,
+  body.sidebar-open .mobile-sidebar-backdrop{
+    display:block !important;
+  }
+
+  /* never let the bottom nav overlap the sidebar */
+  .bottom-nav,
+  .mobile-bottom-nav{
+    z-index:10020 !important;
+  }
+
+  .sidebar-toggle,
+  .menu-toggle,
+  #sidebarToggle{
+    position:fixed !important;
+    left:12px !important;
+    top:calc(10px + env(safe-area-inset-top)) !important;
+    width:48px !important;
+    height:48px !important;
+    min-width:48px !important;
+    z-index:10060 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:14px !important;
+  }
+}
+
+@media (max-width:380px){
+  .sidebar{width:min(82vw,285px) !important;padding-left:10px !important;padding-right:10px !important;}
+  .sidebar a,.sidebar button,.nav-item,.nav-link{min-height:43px !important;padding:8px 9px !important;font-size:13px !important;gap:8px !important;}
+}
