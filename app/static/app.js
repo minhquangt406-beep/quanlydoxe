@@ -1,5 +1,33 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const AWAY_TIMEOUT_MS=30*60*1000;
 let token=localStorage.getItem("parking_token"), me=null;
+function clearAuth(){localStorage.removeItem("parking_token");localStorage.removeItem("parking_last_seen");token=null;}
+function refreshLastSeen(){if(token) localStorage.setItem("parking_last_seen",String(Date.now()));}
+function isAwayExpired(){const last=Number(localStorage.getItem("parking_last_seen")||0);return !!token && (!last || Date.now()-last>=AWAY_TIMEOUT_MS);}
+if(isAwayExpired()) clearAuth();
+refreshLastSeen();
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"){
+    if(isAwayExpired()){
+      clearAuth();
+      location.reload();
+      return;
+    }
+    refreshLastSeen();
+  }
+});
+window.addEventListener("pageshow",()=>{
+  if(isAwayExpired()){
+    clearAuth();
+    location.reload();
+    return;
+  }
+  refreshLastSeen();
+});
+setInterval(()=>{
+  if(document.visibilityState==="visible") refreshLastSeen();
+},60000);
+
 const titles={dashboard:"Tổng quan",parking:"Xe vào / Xe ra",slots:"Vị trí đỗ",history:"Lịch sử",vehicles:"Phương tiện",pricing:"Bảng giá",areas:"Khu vực",ai:"AI phân tích",reports:"Báo cáo doanh thu",users:"Tài khoản",settings:"Cài đặt doanh nghiệp"};
 async function api(path,opt={}){opt.headers={...(opt.headers||{}),...(token?{Authorization:"Bearer "+token}:{})};if(opt.body&&typeof opt.body!=="string"){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(opt.body)}const r=await fetch(path,opt);const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.detail||"Có lỗi xảy ra");return data}
 function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"}
@@ -78,9 +106,9 @@ function openSlotModal(slot){
   }
 }
 function wireMapInteractions(){const s=window.__latestSlots||[];$$('.real-slot').forEach(el=>el.onclick=()=>{const x=s.find(v=>String(v.id)===el.dataset.slotId);if(x)openSlotModal(x)});$$('.map-zone').forEach(z=>z.onclick=e=>{if(e.target.closest('.real-slot'))return;$$('.map-zone').forEach(v=>v.classList.remove('zone-focus'));z.classList.add('zone-focus');setTimeout(()=>z.classList.remove('zone-focus'),900);toast(`Đã chọn ${z.querySelector('.zone-chip')?.textContent||"khu vực"}`)});}
-async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#userName").textContent=me.full_name;$("#userRole").textContent=me.role==="manager"?"Quản lý":"Nhân viên";$("#avatar").textContent=me.full_name[0];$$(".manager-only").forEach(x=>x.style.display=me.role==="manager"?"flex":"none");await navigate("dashboard")}catch(e){localStorage.removeItem("parking_token");token=null}}
-$("#loginForm").onsubmit=async e=>{e.preventDefault();$("#loginError").textContent="";try{let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value,password:$("#password").value}});token=d.access_token;localStorage.setItem("parking_token",token);await boot()}catch(e){$("#loginError").textContent=e.message}};
-$("#logout").onclick=()=>{localStorage.removeItem("parking_token");location.reload()};
+async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#userName").textContent=me.full_name;$("#userRole").textContent=me.role==="manager"?"Quản lý":"Nhân viên";$("#avatar").textContent=me.full_name[0];$$(".manager-only").forEach(x=>x.style.display=me.role==="manager"?"flex":"none");await navigate("dashboard")}catch(e){clearAuth()}}
+$("#loginForm").onsubmit=async e=>{e.preventDefault();$("#loginError").textContent="";try{let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value,password:$("#password").value}});token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot()}catch(e){$("#loginError").textContent=e.message}};
+$("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
 async function navigate(page){$$("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel"><b>Lỗi:</b> ${e.message}</div>`}}
 async function renderSlots(){let s=await api("/api/slots");return s.map(x=>`<div class="slot ${x.status}">${x.name}<br><small>${x.status==="empty"?"TRỐNG":"ĐANG DÙNG"}</small></div>`).join("")}
