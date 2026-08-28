@@ -1,27 +1,20 @@
-# Parking AI Pro Ultra Premium V5 – Business Edition
+# Parking AI Pro
 
-Bản quản lý bãi xe hướng kinh doanh, gồm Khu A/B, dashboard premium, DeepSeek AI, quản lý tài khoản/phân quyền, báo cáo doanh thu, biên lai in, thông tin doanh nghiệp và backup SQLite.
+Hệ thống quản lý bãi đỗ xe với FastAPI + PostgreSQL + giao diện responsive.
 
-## Chạy
-```bash
-docker compose build --no-cache
-docker compose up -d
-```
-Mở `http://localhost:8000`.
+## Điểm chính
+- Quản lý xe vào/ra, khu A/B và vị trí đỗ.
+- Tính phí theo loại xe.
+- Tự nhận diện loại xe từ cấu trúc biển số.
+- Dashboard và báo cáo doanh thu.
+- Phân quyền quản lý/nhân viên.
+- Nhật ký hoạt động.
+- PostgreSQL persistent trên Render.
+- Mobile responsive.
 
-## DeepSeek
-Điền `DEEPSEEK_API_KEY` trong `.env`. Không đưa API key vào frontend hoặc GitHub.
+## Chạy local
+1. Sao chép `.env.example` thành `.env` và điền `DATABASE_URL`.
+2. Cài requirements.
+3. Chạy `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
 
-## Tài khoản mặc định
-- Quản lý: `admin / admin123`
-- Nhân viên: `staff / staff123`
-
-## Tính năng Business
-- Dashboard vận hành và sơ đồ Khu A/B
-- Thêm/xóa khu (không cho xóa khu có xe/lịch sử)
-- Quản lý tài khoản, vai trò
-- Đổi mật khẩu
-- Báo cáo doanh thu theo ngày/khu
-- Biên lai sau khi checkout, có nút in
-- Thông tin doanh nghiệp hiển thị trên biên lai
-- Tải backup database SQLite
+Không commit `.env` vào GitHub.

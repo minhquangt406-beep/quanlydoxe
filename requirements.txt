@@ -6,3 +6,4 @@ pydantic==2.11.7
 python-dotenv==1.1.1
 openai==1.101.0
 psycopg2-binary==2.9.10
+qrcode[pil]==8.2

@@ -7,11 +7,11 @@ import jwt
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, func, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 load_dotenv()
@@ -108,6 +108,34 @@ class ParkingRecord(Base):
     time_out = Column(DateTime, nullable=True)
     fee = Column(Float, nullable=True)
 
+class MonthlyPass(Base):
+    __tablename__ = "monthly_passes"
+    id = Column(Integer, primary_key=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=False)
+    customer_name = Column(String(120), nullable=False, default="")
+    phone = Column(String(40), nullable=False, default="")
+    vehicle_type = Column(String(30), nullable=False)
+    started_at = Column(DateTime, nullable=False, default=now_vn)
+    expires_at = Column(DateTime, nullable=False)
+    price = Column(Float, nullable=False, default=0)
+    active = Column(Boolean, nullable=False, default=True)
+
+class Payment(Base):
+    __tablename__ = "payments"
+    id = Column(Integer, primary_key=True)
+    record_id = Column(Integer, ForeignKey("parking_records.id"), nullable=False, unique=True)
+    method = Column(String(30), nullable=False, default="Tiền mặt")
+    paid_at = Column(DateTime, nullable=False, default=now_vn)
+    amount = Column(Float, nullable=False, default=0)
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action = Column(String(80), nullable=False)
+    detail = Column(Text, nullable=False, default="")
+    created_at = Column(DateTime, nullable=False, default=now_vn)
+
 Base.metadata.create_all(bind=engine)
 
 def hash_password(password: str, salt: Optional[str] = None):
@@ -174,10 +202,11 @@ class PriceIn(BaseModel):
 class CheckIn(BaseModel):
     license_plate: str
     vehicle_type: str
-    slot_id: int
+    slot_id: Optional[int] = None
 
 class CheckOut(BaseModel):
     record_id: int
+    payment_method: str = "Tiền mặt"
 
 class AIQuestion(BaseModel):
     question: str
@@ -192,10 +221,33 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
 
+class MonthlyPassIn(BaseModel):
+    license_plate: str
+    vehicle_type: str
+    customer_name: str
+    phone: str = ""
+    months: int = 1
+    price: float = 0
+
 class CompanyIn(BaseModel):
     company_name: str
     phone: str = ""
     address: str = ""
+
+def audit(db: Session, user: Optional[User], action: str, detail: str = ""):
+    db.add(AuditLog(user_id=user.id if user else None, action=action, detail=detail[:1000], created_at=now_vn()))
+
+def infer_vehicle_type(plate: str) -> str:
+    import re
+    p = re.sub(r"[^A-Z0-9]", "", plate.upper())
+    # Vietnamese motorcycle formats requested by the operator: 29B1..., 29AD..., etc.
+    if re.match(r"^\d{2}[A-Z]{1,2}\d", p) and not re.match(r"^\d{2}A\d", p):
+        return "Xe máy"
+    if re.match(r"^\d{2}[A-Z]\d", p):
+        return "Ô tô"
+    if re.match(r"^\d{2}[A-Z]{2}", p):
+        return "Xe máy"
+    return "Xe máy" if len(p) >= 5 and not p.startswith("0") else "Ô tô"
 
 def seed():
     db = SessionLocal()
@@ -235,6 +287,8 @@ def login(data: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Sai tài khoản hoặc mật khẩu")
+    audit(db, user, "LOGIN", "Đăng nhập hệ thống")
+    db.commit()
     return {"access_token": token_for(user), "token_type": "bearer",
             "user": {"id": user.id, "username": user.username, "role": user.role, "full_name": user.full_name}}
 
@@ -267,7 +321,7 @@ def create_user(data: UserCreate, db: Session = Depends(get_db), user: User = De
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(409, "Tài khoản đã tồn tại")
     u = User(username=username, password_hash=hash_password(data.password), role=data.role, full_name=data.full_name.strip() or "Nhân viên")
-    db.add(u); db.commit(); db.refresh(u)
+    db.add(u); db.flush(); audit(db, user, "CREATE_USER", f"Tạo tài khoản {u.username} ({u.role})"); db.commit(); db.refresh(u)
     return {"message": "Đã tạo tài khoản", "id": u.id}
 
 @app.delete("/api/users/{user_id}")
@@ -277,6 +331,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depend
     target = db.get(User, user_id)
     if not target:
         raise HTTPException(404, "Tài khoản không tồn tại")
+    audit(db, user, "DELETE_USER", f"Xóa tài khoản {target.username}")
     db.delete(target); db.commit()
     return {"message": "Đã xóa tài khoản"}
 
@@ -294,6 +349,7 @@ def update_company(data: CompanyIn, db: Session = Depends(get_db), user: User = 
         c = CompanySetting(); db.add(c)
     c.company_name = data.company_name.strip() or "Parking AI Pro"
     c.phone = data.phone.strip(); c.address = data.address.strip()
+    audit(db, user, "UPDATE_COMPANY", "Cập nhật thông tin doanh nghiệp")
     db.commit()
     return {"message": "Đã lưu thông tin doanh nghiệp"}
 
@@ -354,6 +410,7 @@ def areas(db: Session = Depends(get_db), user: User = Depends(current_user)):
 def add_area(data: AreaIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
     a = Area(name=data.name.strip(), capacity=data.capacity)
     db.add(a); db.flush()
+    audit(db, user, "CREATE_AREA", f"Tạo {a.name} ({a.capacity} vị trí)")
     for i in range(1, data.capacity + 1):
         db.add(ParkingSlot(area_id=a.id, name=f"{data.name}-{i:02d}", status="empty"))
     db.commit()
@@ -381,6 +438,7 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
 
     for slot in slots_in_area:
         db.delete(slot)
+    audit(db, user, "DELETE_AREA", f"Xóa {area.name}")
     db.delete(area)
     db.commit()
     return {"message": f"Đã xóa {area.name}"}
@@ -413,6 +471,7 @@ def add_price(data: PriceIn, db: Session = Depends(get_db), user: User = Depends
     p = db.query(Pricing).filter(Pricing.vehicle_type == data.vehicle_type).first()
     if p: p.price_per_hour = data.price_per_hour
     else: db.add(Pricing(vehicle_type=data.vehicle_type, price_per_hour=data.price_per_hour))
+    audit(db, user, "UPDATE_PRICING", f"{data.vehicle_type}: {data.price_per_hour:,.0f} VNĐ/giờ")
     db.commit()
     return {"message": "Đã lưu bảng giá"}
 
@@ -425,22 +484,30 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(current_user)):
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
     plate = data.license_plate.strip().upper()
     if not plate: raise HTTPException(400, "Biển số không được trống")
+    detected_type = infer_vehicle_type(plate)
+    vehicle_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else detected_type
     active_vehicle_ids = [x[0] for x in db.query(ParkingRecord.vehicle_id).filter(ParkingRecord.time_out.is_(None)).all()]
     existing = db.query(Vehicle).filter(Vehicle.license_plate == plate).first()
     if existing and existing.id in active_vehicle_ids:
         raise HTTPException(409, "Xe đang tồn tại trong bãi")
-    slot = db.get(ParkingSlot, data.slot_id)
-    if not slot or slot.status != "empty":
+    slot = db.get(ParkingSlot, data.slot_id) if data.slot_id else None
+    if data.slot_id and (not slot or slot.status != "empty"):
         raise HTTPException(409, "Vị trí không còn trống")
+    if slot is None:
+        slot = db.query(ParkingSlot).filter(ParkingSlot.status == "empty").order_by(ParkingSlot.area_id, ParkingSlot.id).first()
+        if not slot:
+            raise HTTPException(409, "Bãi đã đầy, không còn vị trí trống")
     if not existing:
-        existing = Vehicle(license_plate=plate, vehicle_type=data.vehicle_type)
+        existing = Vehicle(license_plate=plate, vehicle_type=vehicle_type)
         db.add(existing); db.flush()
     else:
-        existing.vehicle_type = data.vehicle_type
+        existing.vehicle_type = vehicle_type
     record = ParkingRecord(vehicle_id=existing.id, slot_id=slot.id, time_in=now_vn())
     slot.status = "occupied"
-    db.add(record); db.commit(); db.refresh(record)
-    return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name}
+    db.add(record)
+    audit(db, user, "CHECKIN", f"{plate} → {slot.name} ({vehicle_type})")
+    db.commit(); db.refresh(record)
+    return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name, "vehicle_type": vehicle_type}
 
 def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     vehicle = db.get(Vehicle, record.vehicle_id)
@@ -459,8 +526,12 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)
     if slot: slot.status = "empty"
+    vehicle = db.get(Vehicle, record.vehicle_id)
+    method = data.payment_method if data.payment_method in ("Tiền mặt","Chuyển khoản","QR ngân hàng","Miễn phí") else "Tiền mặt"
+    db.add(Payment(record_id=record.id, method=method, paid_at=now_vn(), amount=fee))
+    audit(db, user, "CHECKOUT", f"{vehicle.license_plate if vehicle else record.vehicle_id} → {fee:,.0f} VNĐ · {method}")
     db.commit()
-    return {"message": "Cho xe ra thành công", "record_id": record.id, "hours": hours, "fee": fee, "time_out": time_out.isoformat()}
+    return {"message": "Cho xe ra thành công", "record_id": record.id, "hours": hours, "fee": fee, "time_out": time_out.isoformat(), "payment_method": method}
 
 @app.get("/api/receipt/{record_id}")
 def receipt(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -488,6 +559,7 @@ def delete_history(record_id: int, db: Session = Depends(get_db), user: User = D
         slot = db.get(ParkingSlot, record.slot_id)
         if slot:
             slot.status = "empty"
+    audit(db, user, "DELETE_HISTORY", f"Xóa lượt #{record_id}")
     db.delete(record)
     db.commit()
     return {"message": f"Đã xóa lượt #{record_id} khỏi lịch sử"}
@@ -500,13 +572,15 @@ def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db), user: User = 
     active = db.query(ParkingRecord).filter(ParkingRecord.vehicle_id == vehicle_id, ParkingRecord.time_out.is_(None)).first()
     if active:
         raise HTTPException(409, "Không thể xóa xe đang ở trong bãi. Hãy cho xe ra trước.")
-    # Xóa các dữ liệu phụ thuộc để không vi phạm khóa ngoại.
+    has_history = db.query(ParkingRecord).filter(ParkingRecord.vehicle_id == vehicle_id).first()
+    if has_history:
+        raise HTTPException(409, "Xe đã có lịch sử gửi xe. Không xóa để bảo toàn dữ liệu; chỉ có thể xóa xe chưa phát sinh lịch sử.")
     db.query(Ticket).filter(Ticket.vehicle_id == vehicle_id).delete(synchronize_session=False)
-    db.query(ParkingRecord).filter(ParkingRecord.vehicle_id == vehicle_id).delete(synchronize_session=False)
     plate = vehicle.license_plate
     db.delete(vehicle)
+    audit(db, user, "DELETE_VEHICLE", f"Xóa phương tiện {plate}")
     db.commit()
-    return {"message": f"Đã xóa xe {plate} và lịch sử liên quan"}
+    return {"message": f"Đã xóa xe {plate}"}
 
 @app.get("/api/history")
 def history(db: Session = Depends(get_db), user: User = Depends(current_user), q: str = Query("", max_length=100)):
@@ -519,6 +593,79 @@ def history(db: Session = Depends(get_db), user: User = Depends(current_user), q
                        "slot": s.name, "time_in": r.time_in.isoformat(),
                        "time_out": r.time_out.isoformat() if r.time_out else None, "fee": r.fee})
     return result
+
+@app.get("/api/auto-slot")
+def auto_slot(vehicle_type: str = Query("Xe máy"), db: Session = Depends(get_db), user: User = Depends(current_user)):
+    slot = db.query(ParkingSlot).filter(ParkingSlot.status == "empty").order_by(ParkingSlot.area_id, ParkingSlot.id).first()
+    if not slot: raise HTTPException(409, "Bãi đã đầy")
+    area = db.get(Area, slot.area_id)
+    return {"slot_id": slot.id, "slot": slot.name, "area": area.name if area else "", "vehicle_type": vehicle_type}
+
+@app.get("/api/monthly")
+def monthly(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    rows=db.query(MonthlyPass).order_by(MonthlyPass.expires_at.asc()).all(); out=[]
+    for x in rows:
+        v=db.get(Vehicle,x.vehicle_id)
+        out.append({"id":x.id,"license_plate":v.license_plate if v else "","vehicle_type":x.vehicle_type,"customer_name":x.customer_name,"phone":x.phone,"started_at":x.started_at.isoformat(),"expires_at":x.expires_at.isoformat(),"price":x.price,"active":x.active,"expired":x.expires_at < now_vn()})
+    return out
+
+@app.post("/api/monthly")
+def create_monthly(data: MonthlyPassIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    months=max(1,min(12,data.months)); plate=data.license_plate.strip().upper()
+    v=db.query(Vehicle).filter(Vehicle.license_plate==plate).first()
+    if not v: v=Vehicle(license_plate=plate,vehicle_type=data.vehicle_type); db.add(v); db.flush()
+    else: v.vehicle_type=data.vehicle_type
+    start=now_vn(); expiry=start+timedelta(days=30*months)
+    row=MonthlyPass(vehicle_id=v.id,customer_name=data.customer_name.strip(),phone=data.phone.strip(),vehicle_type=data.vehicle_type,started_at=start,expires_at=expiry,price=data.price*months,active=True)
+    db.add(row); audit(db,user,"CREATE_MONTHLY_PASS",f"Tạo vé tháng {plate}, hết hạn {expiry:%d/%m/%Y}"); db.commit(); db.refresh(row)
+    return {"message":"Đã tạo vé tháng","id":row.id,"expires_at":expiry.isoformat()}
+
+@app.get("/api/ticket/qr/{record_id}")
+def ticket_qr(record_id:int, db:Session=Depends(get_db), user:User=Depends(current_user)):
+    r=db.get(ParkingRecord,record_id)
+    if not r: raise HTTPException(404,"Không tìm thấy lượt gửi")
+    v=db.get(Vehicle,r.vehicle_id); s=db.get(ParkingSlot,r.slot_id); a=db.get(Area,s.area_id) if s else None
+    import base64,io
+    try:
+        import qrcode
+        payload=f"PARKING|{r.id}|{v.license_plate}|{s.name if s else ''}|{r.time_in.isoformat()}"
+        img=qrcode.make(payload); buf=io.BytesIO(); img.save(buf,format="PNG")
+        return {"record_id":r.id,"license_plate":v.license_plate,"slot":s.name if s else "","area":a.name if a else "","time_in":r.time_in.isoformat(),"qr_data":"data:image/png;base64,"+base64.b64encode(buf.getvalue()).decode()}
+    except ImportError:
+        return {"record_id":r.id,"license_plate":v.license_plate,"slot":s.name if s else "","area":a.name if a else "","time_in":r.time_in.isoformat(),"qr_data":None,"qr_text":f"PARKING|{r.id}|{v.license_plate}"}
+
+@app.get("/api/export/history.csv")
+def export_history(db:Session=Depends(get_db), user:User=Depends(manager_only)):
+    import csv,io
+    rows=db.query(ParkingRecord,Vehicle,ParkingSlot).join(Vehicle,ParkingRecord.vehicle_id==Vehicle.id).join(ParkingSlot,ParkingRecord.slot_id==ParkingSlot.id).order_by(ParkingRecord.id.desc()).all()
+    buf=io.StringIO(); w=csv.writer(buf); w.writerow(["Ma","Bien so","Loai xe","Vi tri","Thoi gian vao","Thoi gian ra","Phi"])
+    for r,v,s in rows: w.writerow([r.id,v.license_plate,v.vehicle_type,s.name,r.time_in,r.time_out or "",r.fee or 0])
+    return StreamingResponse(iter([buf.getvalue().encode("utf-8-sig")]),media_type="text/csv; charset=utf-8",headers={"Content-Disposition":f'attachment; filename="parking-history-{now_vn():%Y%m%d-%H%M%S}.csv"'})
+
+@app.get("/api/ai/prediction")
+def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
+    total=db.query(ParkingSlot).count(); occupied=db.query(ParkingSlot).filter(ParkingSlot.status=="occupied").count(); rate=(occupied/total*100 if total else 0)
+    rows=db.query(ParkingRecord.time_in).filter(ParkingRecord.time_in >= now_vn()-timedelta(days=7)).all(); counts={}
+    for (dtv,) in rows: counts[dtv.hour]=counts.get(dtv.hour,0)+1
+    peak=max(counts,key=counts.get) if counts else None; projected=min(100,round(rate+(12 if peak is not None and abs(now_vn().hour-peak)<=2 else 4),1))
+    return {"occupancy_rate":round(rate,1),"peak_hour":f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "Chưa đủ dữ liệu","projected_peak_occupancy":projected,"risk":"Cao" if projected>=90 else "Trung bình" if projected>=70 else "Thấp","recommendation":"Chuẩn bị điều hướng sang khu còn nhiều chỗ và tăng nhân sự tại giờ cao điểm." if projected>=70 else "Bãi đang ổn định; duy trì phân bổ hiện tại."}
+
+@app.get("/api/activity")
+def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(current_user)):
+    rows = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.id.desc()).limit(limit).all()
+    return [{"id": a.id, "username": u.username if u else "system", "action": a.action, "detail": a.detail, "created_at": a.created_at.isoformat()} for a,u in rows]
+
+@app.get("/api/analytics")
+def analytics(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    today = now_vn().date()
+    start = datetime.combine(today, datetime.min.time())
+    end = start + timedelta(days=1)
+    ins = db.query(ParkingRecord).filter(ParkingRecord.time_in >= start, ParkingRecord.time_in < end).count()
+    outs = db.query(ParkingRecord).filter(ParkingRecord.time_out >= start, ParkingRecord.time_out < end).count()
+    revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(ParkingRecord.time_out >= start, ParkingRecord.time_out < end).scalar() or 0
+    types = {}
+    for (typ, count) in db.query(Vehicle.vehicle_type, func.count(ParkingRecord.id)).join(ParkingRecord, ParkingRecord.vehicle_id == Vehicle.id).group_by(Vehicle.vehicle_type).all(): types[typ] = count
+    return {"today_checkins": ins, "today_checkouts": outs, "today_revenue": float(revenue), "vehicle_types": types}
 
 def local_ai(db: Session, question: str):
     total = db.query(ParkingSlot).count()

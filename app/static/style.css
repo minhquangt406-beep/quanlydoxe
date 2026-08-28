@@ -416,3 +416,19 @@ button { touch-action: manipulation; }
     white-space: nowrap;
   }
 }
+
+
+/* PRO OPERATIONS / AUDIT */
+.activity-list{display:flex;flex-direction:column;gap:0}.activity-item{display:flex;justify-content:space-between;gap:18px;padding:13px 0;border-bottom:1px solid var(--line);align-items:center}.activity-item:last-child{border-bottom:0}.activity-item b{font-size:13px;letter-spacing:.02em}.activity-item .muted{font-size:12px;margin-top:3px}@media(max-width:760px){.activity-item{align-items:flex-start;flex-direction:column;gap:5px}.activity-item>span{white-space:normal}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:340px){.cards{grid-template-columns:1fr!important}}
+
+/* ===== COMPLETE PRO V2 mobile bottom navigation ===== */
+.mobile-bottom-nav{display:none}
+@media(max-width:760px){
+  .mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:10px;right:10px;bottom:10px;z-index:90;padding:7px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--panel) 94%,transparent);box-shadow:0 14px 40px rgba(0,0,0,.16);backdrop-filter:blur(14px)}
+  .mobile-bottom-nav button{border:0;background:transparent;color:var(--text);min-height:48px;border-radius:12px;font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .mobile-bottom-nav button small{font-size:9px;color:var(--muted);font-weight:700}
+  .mobile-bottom-nav button:active{background:var(--line)}
+  .main{padding-bottom:82px!important}
+  .report-bar-row{grid-template-columns:42px minmax(80px,1fr) auto!important}
+  .panel-head{gap:8px;align-items:flex-start;flex-wrap:wrap}
+}
