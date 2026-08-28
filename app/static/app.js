@@ -35,23 +35,34 @@ function toast(msg,type="success"){const el=$("#toast");if(!el)return;el.textCon
 const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
 // Tự nhận diện loại xe theo cấu trúc biển số.
 const detectVehicleType = (rawPlate) => {
-  const plate=String(rawPlate||"").toUpperCase().trim().replace(/\s+/g,"");
-  if(!plate) return null;
-  // Xe máy: 29B1-123.45, 29AD-123.45 và các dạng tương tự.
-  // Sau mã tỉnh (2 số), mã xe máy có thể là 1 chữ + 1 số (B1)
-  // hoặc 2 chữ (AD), trước phần số seri.
-  if(/^\d{2}[A-Z]\d-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
-  if(/^\d{2}[A-Z]{2}-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
-  // Ô tô: 29A-123.45 / 29A-12345 / 29A12345.
-  if(/^\d{2}[A-Z]-?\d{4,5}(?:\.\d{2})?$/.test(plate)) return "Ô tô";
+  // Chuẩn hóa biển số: bỏ khoảng trắng, dấu gạch và dấu chấm để nhận diện ổn định
+  // Ví dụ: 29B1-123.45 -> 29B112345, 29AD-123.45 -> 29AD12345, 29A-123.45 -> 29A12345
+  const plate = String(rawPlate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!plate) return null;
+
+  // Việt Nam: sau mã tỉnh (2 số), biển xe máy thường có mã 2 ký tự
+  // dạng B1 / C1 / D1... hoặc 2 chữ như AD, AE...
+  if (/^\d{2}(?:[A-Z]\d|[A-Z]{2})\d{5}$/.test(plate)) return "Xe máy";
+
+  // Ô tô: 2 số tỉnh + 1 chữ + 5 số seri
+  if (/^\d{2}[A-Z]\d{5}$/.test(plate)) return "Ô tô";
+
   return null;
 };
+
 const bindVehicleTypeDetection=(plateSelector,typeSelector)=>{
   const plateInput=$(plateSelector), typeSelect=$(typeSelector);
   if(!plateInput||!typeSelect||plateInput.dataset.typeDetectionBound) return;
   plateInput.dataset.typeDetectionBound="1";
-  const update=()=>{const detected=detectVehicleType(plateInput.value);if(detected)typeSelect.value=detected;};
-  ["input","change","blur"].forEach(ev=>plateInput.addEventListener(ev,update));
+  const update=()=>{
+    const detected=detectVehicleType(plateInput.value);
+    if(detected){
+      typeSelect.value=detected;
+      typeSelect.dataset.autoDetected="1";
+    }
+  };
+  ["input","change","blur","keyup","paste"].forEach(ev=>plateInput.addEventListener(ev,update));
+  update();
 };
 
 function openSlotModal(slot){

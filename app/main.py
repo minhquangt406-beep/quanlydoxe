@@ -237,18 +237,16 @@ class CompanyIn(BaseModel):
 def audit(db: Session, user: Optional[User], action: str, detail: str = ""):
     db.add(AuditLog(user_id=user.id if user else None, action=action, detail=detail[:1000], created_at=now_vn()))
 
-def infer_vehicle_type(plate: str) -> str:
+def infer_vehicle_type(plate: str) -> Optional[str]:
     import re
     p = re.sub(r"[^A-Z0-9]", "", str(plate or "").upper())
-    # Xe máy: 29B1-123.45 và 29AD-123.45 (cùng các tỉnh/mã tương tự).
-    if re.match(r"^\d{2}[A-Z]\d\d{5}$", p):
+    # Xe máy: 29B1-123.45 / 29AD-123.45 và các mã tương tự.
+    if re.fullmatch(r"\d{2}(?:[A-Z]\d|[A-Z]{2})\d{5}", p):
         return "Xe máy"
-    if re.match(r"^\d{2}[A-Z]{2}\d{5}$", p):
-        return "Xe máy"
-    # Ô tô: 29A-123.45 / 29A12345.
-    if re.match(r"^\d{2}[A-Z]\d{5,7}$", p):
+    # Ô tô: 29A-123.45 (sau chuẩn hóa thành 29A12345).
+    if re.fullmatch(r"\d{2}[A-Z]\d{5}", p):
         return "Ô tô"
-    return "Xe máy"
+    return None
 
 def seed():
     db = SessionLocal()
@@ -486,7 +484,9 @@ def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(c
     plate = data.license_plate.strip().upper()
     if not plate: raise HTTPException(400, "Biển số không được trống")
     detected_type = infer_vehicle_type(plate)
-    vehicle_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else detected_type
+    # Nếu biển số khớp quy tắc thì luôn ưu tiên loại xe được nhận diện,
+    # không để giá trị mặc định "Xe máy" từ form ghi đè kết quả.
+    vehicle_type = detected_type or (data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy")
     active_vehicle_ids = [x[0] for x in db.query(ParkingRecord.vehicle_id).filter(ParkingRecord.time_out.is_(None)).all()]
     existing = db.query(Vehicle).filter(Vehicle.license_plate == plate).first()
     if existing and existing.id in active_vehicle_ids:

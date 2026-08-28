@@ -526,3 +526,46 @@ button { touch-action: manipulation; }
 }
 .dark-mode .mobile-bottom-nav button{color:#94a3b8;}
 .dark-mode .mobile-bottom-nav button.active{color:#a5b4fc;background:linear-gradient(135deg,rgba(99,102,241,.20),rgba(139,92,246,.16));}
+
+/* ===== Mobile add-vehicle compact UI ===== */
+@media (max-width:760px){
+  .main #content .grid2 > .panel:first-child{
+    padding:13px !important;
+  }
+  .main #content .grid2 > .panel:first-child .panel-head{
+    margin-bottom:7px !important;
+  }
+  .main #content .grid2 > .panel:first-child .panel-head h3{
+    font-size:14px !important;
+    margin:0 0 2px !important;
+  }
+  .main #content .grid2 > .panel:first-child label{
+    margin:7px 0 !important;
+    font-size:10px !important;
+  }
+  .main #content .grid2 > .panel:first-child input,
+  .main #content .grid2 > .panel:first-child select{
+    min-height:40px !important;
+    height:40px !important;
+    padding:8px 10px !important;
+    margin-top:4px !important;
+    font-size:15px !important;
+    border-radius:10px !important;
+  }
+  .main #content .grid2 > .panel:first-child .form-grid{
+    gap:3px !important;
+  }
+  .main #content .grid2 > .panel:first-child #checkin{
+    width:100% !important;
+    min-height:42px !important;
+    height:42px !important;
+    margin-top:7px !important;
+    padding:8px 12px !important;
+    font-size:13px !important;
+  }
+}
+@media (max-width:380px){
+  .main #content .grid2 > .panel:first-child{padding:11px !important;}
+  .main #content .grid2 > .panel:first-child input,
+  .main #content .grid2 > .panel:first-child select{height:38px !important;min-height:38px !important;font-size:14px !important;}
+}
