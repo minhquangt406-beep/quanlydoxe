@@ -398,17 +398,46 @@ document.addEventListener("input", function(e){
   const name=(el.name||el.id||"").toLowerCase();
   const isPlate=name.includes("plate") || name.includes("license") || name.includes("bien");
   if(!isPlate) return;
-  const formatted=normalizePlate(el.value);
-  if(el.value!==formatted){
-    const start=el.selectionStart;
-    el.value=formatted;
+
+  // Do NOT insert punctuation while the user is still entering the plate.
+  // Keep only letters/numbers, uppercase them, and detect vehicle type.
+  // Formatting is applied on blur / submit so "30A" never becomes "330A".
+  const raw=String(el.value||"");
+  const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(raw!==clean){
+    el.value=clean;
     try{ el.setSelectionRange(el.value.length,el.value.length); }catch(_){}
   }
+
   const form=el.closest("form") || document;
   const typeSelect=form.querySelector('select[name*="vehicle"],select[name*="type"],#vehicleType,#addVehicleType');
   if(typeSelect){
-    const t=detectVehicleType(el.value);
-    typeSelect.value=t;
-    typeSelect.dispatchEvent(new Event("change",{bubbles:true}));
+    const t=detectVehicleType(clean);
+    if(clean.length>=5){
+      typeSelect.value=t;
+      typeSelect.dispatchEvent(new Event("change",{bubbles:true}));
+    }
   }
 });
+
+document.addEventListener("blur", function(e){
+  const el=e.target;
+  if(!el || el.tagName!=="INPUT") return;
+  const name=(el.name||el.id||"").toLowerCase();
+  const isPlate=name.includes("plate") || name.includes("license") || name.includes("bien");
+  if(!isPlate) return;
+  const formatted=normalizePlate(el.value);
+  if(formatted) el.value=formatted;
+}, true);
+
+
+
+document.addEventListener("submit", function(e){
+  const form=e.target;
+  if(!form) return;
+  const plates=form.querySelectorAll('input[name*="plate"],input[name*="license"],input[id*="plate"],input[id*="license"],input[id*="bien"]');
+  plates.forEach(el=>{
+    const formatted=normalizePlate(el.value);
+    if(formatted) el.value=formatted;
+  });
+}, true);
