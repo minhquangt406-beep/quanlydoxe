@@ -37,10 +37,12 @@ const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
 const detectVehicleType = (rawPlate) => {
   const plate=String(rawPlate||"").toUpperCase().trim().replace(/\s+/g,"");
   if(!plate) return null;
-  // Xe máy theo quy ước của hệ thống: 29B1-123.45, 29AD-123.45 và dạng tương tự.
-  if(/^\d{2}[A-Z]{1,2}\d-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
-  if(/^\d{2}[A-Z]{1,2}\d\d{5}$/.test(plate)) return "Xe máy";
-  // Ô tô: dạng 29A-123.45 / 29A12345.
+  // Xe máy: 29B1-123.45, 29AD-123.45 và các dạng tương tự.
+  // Sau mã tỉnh (2 số), mã xe máy có thể là 1 chữ + 1 số (B1)
+  // hoặc 2 chữ (AD), trước phần số seri.
+  if(/^\d{2}[A-Z]\d-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
+  if(/^\d{2}[A-Z]{2}-?\d{3}\.?\d{2}$/.test(plate)) return "Xe máy";
+  // Ô tô: 29A-123.45 / 29A-12345 / 29A12345.
   if(/^\d{2}[A-Z]-?\d{4,5}(?:\.\d{2})?$/.test(plate)) return "Ô tô";
   return null;
 };
@@ -126,7 +128,7 @@ function openSlotModal(slot){
   }
 }
 function wireMapInteractions(){const s=window.__latestSlots||[];$$('.real-slot').forEach(el=>el.onclick=()=>{const x=s.find(v=>String(v.id)===el.dataset.slotId);if(x)openSlotModal(x)});$$('.map-zone').forEach(z=>z.onclick=e=>{if(e.target.closest('.real-slot'))return;$$('.map-zone').forEach(v=>v.classList.remove('zone-focus'));z.classList.add('zone-focus');setTimeout(()=>z.classList.remove('zone-focus'),900);toast(`Đã chọn ${z.querySelector('.zone-chip')?.textContent||"khu vực"}`)});}
-async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#userName").textContent=me.full_name;$("#userRole").textContent=me.role==="manager"?"Quản lý":"Nhân viên";$("#avatar").textContent=me.full_name[0];$$(".manager-only").forEach(x=>x.style.display=me.role==="manager"?"flex":"none");await navigate("dashboard")}catch(e){clearAuth()}}
+async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");$("#userName").textContent=me.full_name;$("#userRole").textContent=me.role==="manager"?"Quản lý":"Nhân viên";$("#avatar").textContent=me.full_name[0];$$(".manager-only").forEach(x=>x.style.display=me.role==="manager"?"flex":"none");$("#mobileBottomNav")?.classList.toggle("manager",me.role==="manager");await navigate("dashboard")}catch(e){clearAuth()}}
 $("#loginForm").onsubmit=async e=>{e.preventDefault();$("#loginError").textContent="";try{let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value,password:$("#password").value}});token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot()}catch(e){$("#loginError").textContent=e.message}};
 $("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
@@ -226,9 +228,11 @@ boot();
     sidebar?.classList.toggle('mobile-open');
     syncMobileNav();
   });
-  document.addEventListener('click',e=>{
+  document.addEventListener('click',async e=>{
     const navBtn=e.target.closest('.sidebar nav button, .mobile-bottom-nav button');
     if(navBtn && window.innerWidth<=760){
+      const page=navBtn.dataset.page;
+      if(page && typeof navigate==='function') await navigate(page);
       sidebar?.classList.remove('mobile-open');
       syncMobileNav();
       return;

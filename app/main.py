@@ -239,15 +239,16 @@ def audit(db: Session, user: Optional[User], action: str, detail: str = ""):
 
 def infer_vehicle_type(plate: str) -> str:
     import re
-    p = re.sub(r"[^A-Z0-9]", "", plate.upper())
-    # Vietnamese motorcycle formats requested by the operator: 29B1..., 29AD..., etc.
-    if re.match(r"^\d{2}[A-Z]{1,2}\d", p) and not re.match(r"^\d{2}A\d", p):
+    p = re.sub(r"[^A-Z0-9]", "", str(plate or "").upper())
+    # Xe máy: 29B1-123.45 và 29AD-123.45 (cùng các tỉnh/mã tương tự).
+    if re.match(r"^\d{2}[A-Z]\d\d{5}$", p):
         return "Xe máy"
-    if re.match(r"^\d{2}[A-Z]\d", p):
+    if re.match(r"^\d{2}[A-Z]{2}\d{5}$", p):
+        return "Xe máy"
+    # Ô tô: 29A-123.45 / 29A12345.
+    if re.match(r"^\d{2}[A-Z]\d{5,7}$", p):
         return "Ô tô"
-    if re.match(r"^\d{2}[A-Z]{2}", p):
-        return "Xe máy"
-    return "Xe máy" if len(p) >= 5 and not p.startswith("0") else "Ô tô"
+    return "Xe máy"
 
 def seed():
     db = SessionLocal()
