@@ -1,0 +1,14 @@
+services:
+  parking:
+    build: .
+    container_name: parking-ai-pro
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - parking_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  parking_data:

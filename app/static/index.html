@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parking AI Pro · Business Edition</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="loginView" class="login-page">
+  <div class="login-card">
+    <div class="brand-mark">P</div>
+    <div class="eyebrow">SMART PARKING PLATFORM</div>
+    <h1>Parking AI Pro</h1>
+    <p>Quản lý bãi đỗ xe thông minh · Dữ liệu lưu bền vững</p>
+    <form id="loginForm">
+      <label>Tài khoản<input id="username" value="admin" autocomplete="username"></label>
+      <label>Mật khẩu<input id="password" value="admin123" type="password" autocomplete="current-password"></label>
+      <button class="primary wide">Đăng nhập hệ thống</button>
+      <div id="loginError" class="error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+  <aside class="sidebar">
+    <div class="logo"><span>P</span><div><b>Parking AI</b><small>PRO CONTROL</small></div></div>
+    <nav id="nav">
+      <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
+      <button data-page="parking">▣ <span>Xe vào / Xe ra</span></button>
+      <button data-page="slots">◈ <span>Vị trí đỗ</span></button>
+      <button data-page="history">◷ <span>Lịch sử</span></button>
+      <button data-page="vehicles">🚗 <span>Phương tiện</span></button>
+      <button data-page="pricing" class="manager-only">₫ <span>Bảng giá</span></button>
+      <button data-page="areas" class="manager-only">▦ <span>Khu vực</span></button>
+      <button data-page="ai" class="manager-only">✦ <span>AI phân tích</span></button>
+      <button data-page="reports" class="manager-only">▥ <span>Báo cáo doanh thu</span></button>
+      <button data-page="users" class="manager-only">♙ <span>Tài khoản</span></button>
+      <button data-page="settings" class="manager-only">⚙ <span>Cài đặt doanh nghiệp</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="storage"><i></i><span>Database online<br><small>SQLite persistent</small></span></div>
+      <button id="logout" class="logout">↪ Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><div class="eyebrow">PARKING OPERATIONS</div><h2 id="pageTitle">Tổng quan</h2></div>
+      <div class="topbar-actions"><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
+    </header>
+    <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><button class="modal-close" id="modalClose">×</button><div id="modalBody"></div></div></div>
+  <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button></main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
