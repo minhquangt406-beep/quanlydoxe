@@ -195,56 +195,121 @@ function openSlotModal(slot){
 function wireMapInteractions(){const s=window.__latestSlots||[];$$('.real-slot').forEach(el=>el.onclick=()=>{const x=s.find(v=>String(v.id)===el.dataset.slotId);if(x)openSlotModal(x)});$$('.map-zone').forEach(z=>z.onclick=e=>{if(e.target.closest('.real-slot'))return;$$('.map-zone').forEach(v=>v.classList.remove('zone-focus'));z.classList.add('zone-focus');setTimeout(()=>z.classList.remove('zone-focus'),900);toast(`Đã chọn ${z.querySelector('.zone-chip')?.textContent||"khu vực"}`)});}
 
 async function openPaymentModal(recordId){
-  const m=$("#slotModal"), b=$("#modalBody");
-  if(!m||!b)return;
+  const modal=document.querySelector("#slotModal");
+  const body=document.querySelector("#modalBody");
+  if(!modal||!body)return;
   try{
     const d=await api(`/api/checkout-preview/${recordId}`);
-    b.innerHTML=`
-      <div class="eyebrow">THANH TOÁN & XE RA</div>
-      <h3 class="modal-title">${formatPlate(d.license_plate)}</h3>
-      <div class="modal-sub">${d.vehicle_type||"—"} · ${d.slot||"—"} · ${d.hours} giờ</div>
-      <div class="payment-total"><span>Tổng thanh toán</span><b>${money(d.fee)}</b></div>
-      <div class="payment-label">Phương thức thanh toán</div>
-      <div class="payment-methods">
-        <button class="payment-method active" type="button" data-method="Tiền mặt"><span>💵</span><b>Tiền mặt</b><small>Thu trực tiếp</small></button>
-        <button class="payment-method" type="button" data-method="Chuyển khoản"><span>🏦</span><b>Chuyển khoản</b><small>Ngân hàng</small></button>
-        <button class="payment-method" type="button" data-method="QR ngân hàng"><span>📱</span><b>Quét QR</b><small>VietQR / NAPAS</small></button>
-        <button class="payment-method" type="button" data-method="Miễn phí"><span>🆓</span><b>Miễn phí</b><small>Không thu tiền</small></button>
-      </div>
-      <div id="paymentQR" class="payment-qr hidden">
-        <img src="/static/images/payment-qr.jpg" alt="QR thanh toán">
-        <div><b>Quét mã để chuyển khoản</b><small>Techcombank · NONG MINH QUANG<br>9988 8805 6789</small></div>
-      </div>
-      <div class="payment-note">Sau khi xác nhận, hệ thống lưu phương thức thanh toán vào lịch sử.</div>
-      <div class="modal-actions">
-        <button class="btn" id="paymentCancel" type="button">Hủy</button>
-        <button class="primary" id="paymentConfirm" type="button">Xác nhận ${money(d.fee)}</button>
+    const plate=formatPlate(d.license_plate);
+    const amount=money(d.fee);
+    body.innerHTML=`
+      <div class="pay-shell">
+        <div class="pay-head">
+          <div class="pay-head-icon">🚗</div>
+          <div>
+            <div class="pay-kicker">THANH TOÁN & XE RA</div>
+            <h2>Thanh toán</h2>
+            <p>Vui lòng chọn phương thức thanh toán</p>
+          </div>
+          <button type="button" class="pay-close" id="paymentClose" aria-label="Đóng">×</button>
+        </div>
+
+        <div class="pay-vehicle-card">
+          <div class="pay-car-icon">🚘</div>
+          <div class="pay-vehicle-info">
+            <div class="pay-plate">${plate}</div>
+            <div class="pay-meta">${d.vehicle_type||"—"} <span>•</span> ${d.slot||"—"} <span>•</span> ${d.hours} giờ</div>
+          </div>
+          <div class="pay-duration">${d.hours} giờ</div>
+        </div>
+
+        <div class="pay-total-card">
+          <span>TỔNG THANH TOÁN</span>
+          <strong>${amount}</strong>
+        </div>
+
+        <div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
+
+        <div class="pay-method-list">
+          <button type="button" class="pay-method active" data-method="Tiền mặt">
+            <span class="pay-radio"></span><span class="pay-method-icon cash">💵</span>
+            <span class="pay-method-text"><b>Tiền mặt</b><small>Thanh toán bằng tiền mặt</small></span>
+            <span class="pay-method-side">💵</span>
+          </button>
+          <button type="button" class="pay-method" data-method="Chuyển khoản">
+            <span class="pay-radio"></span><span class="pay-method-icon bank">🏦</span>
+            <span class="pay-method-text"><b>Chuyển khoản</b><small>Chuyển khoản ngân hàng</small></span>
+            <span class="pay-method-side">🏦</span>
+          </button>
+          <button type="button" class="pay-method" data-method="QR ngân hàng">
+            <span class="pay-radio"></span><span class="pay-method-icon qr">▦</span>
+            <span class="pay-method-text"><b>Quét mã QR</b><small>Quét QR để thanh toán</small></span>
+            <span class="pay-method-badge">VIETQR<br><em>napas 247</em></span>
+          </button>
+          <button type="button" class="pay-method" data-method="Miễn phí">
+            <span class="pay-radio"></span><span class="pay-method-icon free">🎁</span>
+            <span class="pay-method-text"><b>Miễn phí</b><small>Không thu phí</small></span>
+            <span class="pay-method-side">🎁</span>
+          </button>
+        </div>
+
+        <div id="paymentQR" class="pay-qr-panel hidden">
+          <div class="pay-qr-title">THÔNG TIN MÃ QR</div>
+          <div class="pay-qr-grid">
+            <div class="pay-qr-image-wrap">
+              <img src="/static/images/payment-qr.jpg?v=beautiful1" alt="Mã QR Techcombank">
+            </div>
+            <div class="pay-qr-info">
+              <div><span>🏦</span><label>Ngân hàng</label><b>TECHCOMBANK</b></div>
+              <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
+              <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
+              <div><span>●</span><label>Số tiền</label><strong>${amount}</strong></div>
+              <div><span>▤</span><label>Nội dung CK</label><b>VE-${String(plate).replace(/[^A-Z0-9]/g,"")}</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pay-tip">ⓘ <span>Sau khi thanh toán, vui lòng nhấn <b>"Đã thanh toán"</b> để xác nhận. Hệ thống sẽ cho xe ra khỏi bãi.</span></div>
+
+        <div class="pay-actions">
+          <button type="button" class="pay-cancel" id="paymentCancel">×&nbsp; Hủy bỏ</button>
+          <button type="button" class="pay-confirm" id="paymentConfirm">✓&nbsp; Đã thanh toán</button>
+        </div>
+        <div class="pay-security">🔒 Thông tin thanh toán được bảo mật tuyệt đối</div>
       </div>`;
-    m.classList.remove("hidden");
+
+    modal.classList.remove("hidden");
     document.body.classList.add("modal-open");
-    const close=()=>{m.classList.add("hidden");document.body.classList.remove("modal-open");};
-    $("#modalClose").onclick=close;
-    $(".modal-backdrop").onclick=close;
-    $("#paymentCancel").onclick=close;
+
+    const close=()=>{
+      modal.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+    };
+    document.querySelector("#paymentClose").onclick=close;
+    document.querySelector("#paymentCancel").onclick=close;
+
     let method="Tiền mặt";
-    $$(".payment-method").forEach(btn=>btn.onclick=()=>{
-      method=btn.dataset.method;
-      $$(".payment-method").forEach(x=>x.classList.toggle("active",x===btn));
-      $("#paymentQR").classList.toggle("hidden",method!=="QR ngân hàng");
+    document.querySelectorAll(".pay-method").forEach(btn=>{
+      btn.onclick=()=>{
+        method=btn.dataset.method;
+        document.querySelectorAll(".pay-method").forEach(x=>x.classList.toggle("active",x===btn));
+        document.querySelector("#paymentQR").classList.toggle("hidden",method!=="QR ngân hàng");
+      };
     });
-    $("#paymentConfirm").onclick=async()=>{
-      const btn=$("#paymentConfirm");
+
+    document.querySelector("#paymentConfirm").onclick=async()=>{
+      const btn=document.querySelector("#paymentConfirm");
       btn.disabled=true;
       btn.textContent="Đang xử lý...";
       try{
-        const out=await api("/api/checkout",{method:"POST",body:{record_id:recordId,payment_method:method}});
+        const result=await api("/api/checkout",{method:"POST",body:{record_id:recordId,payment_method:method}});
         close();
-        toast(`✓ Đã thanh toán ${money(out.fee)} · ${method}`);
+        toast(`✓ Đã thanh toán ${money(result.fee)} · ${method}`);
         await navigate("dashboard");
       }catch(e){
         toast(e.message,"error");
         btn.disabled=false;
-        btn.textContent=`Xác nhận ${money(d.fee)}`;
+        btn.textContent='✓  Đã thanh toán';
       }
     };
   }catch(e){toast(e.message,"error");}

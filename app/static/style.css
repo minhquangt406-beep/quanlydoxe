@@ -737,3 +737,76 @@ button { touch-action: manipulation; }
   .sidebar{width:min(82vw,285px) !important;padding-left:10px !important;padding-right:10px !important;}
   .sidebar a,.sidebar button,.nav-item,.nav-link{min-height:43px !important;padding:8px 9px !important;font-size:13px !important;gap:8px !important;}
 }
+
+/* ===== BEAUTIFUL PAYMENT MODAL ===== */
+#slotModal .modal-card{width:min(94vw,760px)!important;max-height:min(92dvh,900px)!important;overflow:auto!important;border-radius:24px!important;padding:0!important}
+#slotModal #modalBody{padding:0!important}
+.pay-shell{background:linear-gradient(180deg,#fff 0%,#fbfbff 100%);padding:28px 30px 22px;color:#17213b}
+.pay-head{display:flex;align-items:center;gap:15px;position:relative;padding-right:35px}
+.pay-head-icon{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;background:linear-gradient(135deg,#ece8ff,#e7e2ff);box-shadow:0 8px 20px rgba(91,75,220,.12)}
+.pay-kicker{font-size:12px;font-weight:900;letter-spacing:.08em;color:#7569a8;margin-bottom:2px}
+.pay-head h2{margin:0;font-size:25px;letter-spacing:-.02em}
+.pay-head p{margin:3px 0 0;color:#7b8499;font-size:14px}
+.pay-close{position:absolute;right:0;top:0;width:42px;height:42px;border:0;border-radius:13px;background:#f4f5f8;color:#677188;font-size:28px;cursor:pointer}
+.pay-vehicle-card{display:flex;align-items:center;gap:14px;margin-top:22px;padding:15px 17px;border:1px solid #e7e9f2;border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(30,41,80,.05)}
+.pay-car-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0efff;font-size:25px}
+.pay-vehicle-info{min-width:0;flex:1}
+.pay-plate{font-size:24px;font-weight:900;letter-spacing:.02em}
+.pay-meta{font-size:13px;color:#7b8499;margin-top:3px}
+.pay-meta span{margin:0 5px}
+.pay-duration{padding:9px 13px;border-radius:999px;background:#f0edff;color:#5d50cf;font-weight:800;font-size:13px}
+.pay-total-card{margin-top:12px;padding:18px;text-align:center;border:1px solid #e7e9f2;border-radius:18px;background:linear-gradient(135deg,#fafaff,#f8f8fc)}
+.pay-total-card span{display:block;font-size:12px;font-weight:900;letter-spacing:.06em;color:#677188}
+.pay-total-card strong{display:block;margin-top:3px;font-size:35px;color:#5d50cf;line-height:1.1}
+.pay-section-title{font-size:14px;font-weight:900;color:#4e5870;margin:22px 0 10px}
+.pay-method-list{display:grid;gap:9px}
+.pay-method{display:flex;align-items:center;width:100%;min-height:72px;padding:10px 14px;border:1.5px solid #e5e8f0;border-radius:16px;background:#fff;text-align:left;cursor:pointer;transition:.18s;box-sizing:border-box}
+.pay-method:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(30,41,80,.06)}
+.pay-method.active{border-color:#6957ee;background:linear-gradient(90deg,#faf9ff,#fff);box-shadow:0 0 0 2px rgba(105,87,238,.07)}
+.pay-radio{width:21px;height:21px;border:1.7px solid #aab1c0;border-radius:50%;margin-right:12px;box-sizing:border-box;flex:0 0 21px}
+.pay-method.active .pay-radio{border:6px solid #6755e9}
+.pay-method-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;flex:0 0 42px}
+.pay-method-icon.cash{background:#e6f8ec}.pay-method-icon.bank{background:#eef0ff}.pay-method-icon.qr{background:#eeeaff;color:#5f50d8;font-weight:900}.pay-method-icon.free{background:#fff0df}
+.pay-method-text{display:flex;flex-direction:column;gap:3px;margin-left:11px;min-width:0;flex:1}
+.pay-method-text b{font-size:15px}.pay-method-text small{font-size:12px;color:#7b8499}
+.pay-method-side{font-size:24px;margin-left:auto;opacity:.8}
+.pay-method-badge{margin-left:auto;text-align:right;font-size:11px;font-weight:900;line-height:1.05;color:#ef3d3d}.pay-method-badge em{font-style:normal;color:#2b5eae}
+.pay-qr-panel{margin-top:12px;padding:17px;border:1px solid #e1e2ee;border-radius:18px;background:linear-gradient(135deg,#fafaff,#f7f8ff)}
+.pay-qr-panel.hidden{display:none!important}
+.pay-qr-title{font-size:13px;font-weight:900;color:#5d50cf;margin-bottom:12px}
+.pay-qr-grid{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:center}
+.pay-qr-image-wrap{padding:10px;background:#fff;border-radius:14px;border:1px solid #e5e7ef;display:flex;justify-content:center}
+.pay-qr-image-wrap img{display:block;width:240px;height:auto;max-width:100%;border-radius:8px}
+.pay-qr-info{display:grid;gap:0}
+.pay-qr-info>div{display:grid;grid-template-columns:25px 115px 1fr;align-items:center;gap:5px;padding:9px 0;border-bottom:1px dashed #dfe2eb;font-size:13px}
+.pay-qr-info label{color:#727c91}.pay-qr-info b{font-size:13px}.pay-qr-info strong{font-size:18px;color:#5d50cf}
+.pay-tip{display:flex;gap:9px;align-items:flex-start;margin-top:14px;padding:12px 14px;border-radius:14px;background:#f2efff;color:#5f5b83;font-size:12px;line-height:1.45}
+.pay-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:12px;margin-top:16px}
+.pay-cancel,.pay-confirm{height:52px;border-radius:13px;font-size:15px;font-weight:900;cursor:pointer}
+.pay-cancel{border:1px solid #ccd1dc;background:#fff;color:#5f687a}.pay-confirm{border:0;background:linear-gradient(135deg,#6a58ea,#5745d7);color:#fff;box-shadow:0 10px 20px rgba(91,72,218,.2)}
+.pay-confirm:disabled{opacity:.65;cursor:wait}
+.pay-security{text-align:center;margin-top:12px;color:#7b8499;font-size:11px}
+@media(max-width:700px){
+  #slotModal .modal-card{width:calc(100vw - 20px)!important;max-height:88dvh!important;border-radius:20px!important}
+  .pay-shell{padding:18px 16px 16px}
+  .pay-head-icon{width:46px;height:46px;border-radius:14px;font-size:23px}
+  .pay-head h2{font-size:21px}.pay-head p{font-size:12px}
+  .pay-close{width:38px;height:38px;font-size:24px}
+  .pay-vehicle-card{margin-top:15px;padding:12px}
+  .pay-plate{font-size:20px}.pay-duration{font-size:11px;padding:7px 9px}
+  .pay-total-card{padding:14px}.pay-total-card strong{font-size:30px}
+  .pay-section-title{margin-top:17px;font-size:12px}
+  .pay-method{min-height:62px;padding:8px 10px}.pay-method-icon{width:38px;height:38px;flex-basis:38px}
+  .pay-method-side{display:none}.pay-method-badge{font-size:9px}
+  .pay-qr-grid{grid-template-columns:1fr;gap:12px}.pay-qr-image-wrap{width:min(100%,250px);margin:auto}
+  .pay-qr-image-wrap img{width:230px}.pay-qr-info>div{grid-template-columns:22px 90px 1fr;font-size:12px}
+  .pay-actions{grid-template-columns:1fr 1fr;gap:8px}.pay-cancel,.pay-confirm{height:48px;font-size:13px}
+}
+@media(max-width:380px){
+  #slotModal .modal-card{width:calc(100vw - 12px)!important;max-height:90dvh!important}
+  .pay-shell{padding:15px 12px}
+  .pay-head{gap:10px}.pay-head-icon{width:40px;height:40px;font-size:20px}.pay-head h2{font-size:18px}
+  .pay-head p{display:none}.pay-vehicle-card{gap:9px}.pay-car-icon{width:40px;height:40px;font-size:20px}
+  .pay-plate{font-size:18px}.pay-meta{font-size:11px}.pay-total-card strong{font-size:27px}
+  .pay-method-text b{font-size:13px}.pay-method-text small{font-size:10px}
+}
