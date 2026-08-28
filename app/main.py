@@ -241,6 +241,9 @@ def format_license_plate(plate: str) -> str:
     import re
     raw = str(plate or "").upper()
     p = re.sub(r"[^A-Z0-9]", "", raw)
+    # Recover accidental duplicated first digit from older frontend formatter.
+    if re.fullmatch(r"(\d)\1\d[A-Z]\d{5}", p):
+        p = p[0] + p[2:]
     m = re.fullmatch(r"(\d{2})([A-Z](?:\d|[A-Z]))(\d{5})", p)
     if m:
         return f"{m.group(1)}{m.group(2)}-{m.group(3)[:3]}.{m.group(3)[3:]}"

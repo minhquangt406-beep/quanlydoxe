@@ -54,8 +54,10 @@ const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
 // Chuẩn hóa biển số Việt Nam khi người dùng nhập: 29B112345 -> 29B1-123.45
 // Hỗ trợ cả 29AD12345 -> 29AD-123.45 và 29A12345 -> 29A-123.45.
 const formatPlate = (rawPlate) => {
-  const clean = String(rawPlate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let clean = String(rawPlate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!clean) return "";
+  // Recover the old formatter's accidental duplicated first digit: 330A09123 -> 30A09123.
+  if (/^(\d)\1\d[A-Z]\d{5}$/.test(clean)) clean = clean[0] + clean.slice(2);
   // Việt Nam: 2 số tỉnh + seri 1 hoặc 2 ký tự + tối đa 5 số.
   // Khi đủ dữ liệu, tự đặt dấu - và .; khi đang gõ cũng định dạng dần.
   let prefixLen = 3;
@@ -91,9 +93,19 @@ const bindVehicleTypeDetection=(plateSelector,typeSelector)=>{
   if(!plateInput||!typeSelect||plateInput.dataset.typeDetectionBound) return;
   plateInput.dataset.typeDetectionBound="1";
   const update=()=>{
+    // Only detect while typing. Never rewrite the input value here; doing so
+    // can duplicate characters when the user types quickly (e.g. 30A -> 330A).
+    const raw=plateInput.value;
+    const detected=detectVehicleType(raw);
+    if(detected){
+      typeSelect.value=detected;
+      typeSelect.dataset.autoDetected="1";
+    }
+  };
+  const finish=()=>{
     const before=plateInput.value;
     const formatted=formatPlate(before);
-    if (formatted && formatted !== before && /\d/.test(before)) {
+    if(formatted && formatted!==before){
       plateInput.value=formatted;
       try { plateInput.setSelectionRange(formatted.length, formatted.length); } catch (_) {}
     }
@@ -103,7 +115,8 @@ const bindVehicleTypeDetection=(plateSelector,typeSelector)=>{
       typeSelect.dataset.autoDetected="1";
     }
   };
-  ["input","change","blur","keyup","paste"].forEach(ev=>plateInput.addEventListener(ev,update));
+  ["input","change","keyup","paste"].forEach(ev=>plateInput.addEventListener(ev,update));
+  plateInput.addEventListener("blur",finish);
   update();
 };
 
