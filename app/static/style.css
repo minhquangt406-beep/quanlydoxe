@@ -810,3 +810,52 @@ button { touch-action: manipulation; }
   .pay-plate{font-size:18px}.pay-meta{font-size:11px}.pay-total-card strong{font-size:27px}
   .pay-method-text b{font-size:13px}.pay-method-text small{font-size:10px}
 }
+
+/* ===== BEAUTIFUL ADD VEHICLE SLOT MODAL ===== */
+#slotModal .modal-card{width:min(680px,94vw)!important;max-height:min(86dvh,760px)!important;padding:0!important;overflow:hidden!important;border-radius:26px!important}
+#slotModal #modalBody{padding:0!important}
+.slot-modal-shell{padding:28px 30px 22px;background:linear-gradient(180deg,#fff 0%,#fbfaff 100%);color:#17213b}
+.slot-modal-head{display:flex;align-items:center;gap:14px;position:relative;padding-right:42px}
+.slot-head-icon{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;font-size:26px;background:linear-gradient(135deg,#e9e5ff,#f0ecff);box-shadow:0 8px 22px rgba(91,72,218,.12)}
+.slot-kicker{font-size:10px;font-weight:950;letter-spacing:.13em;color:#7569a8;margin-bottom:3px}
+.slot-head-copy h3{margin:0;font-size:27px;letter-spacing:-.04em}
+.slot-head-copy p{margin:4px 0 0;color:#7b8499;font-size:12px}.slot-head-copy p span{margin:0 5px}
+.slot-close{position:absolute;right:0;top:0;width:40px;height:40px;border:0;border-radius:13px;background:#f3f4f7;color:#5f6879;font-size:26px;cursor:pointer}
+.slot-status{display:flex;align-items:center;gap:12px;margin-top:20px;padding:14px 16px;border-radius:16px}
+.slot-status.ready{background:linear-gradient(90deg,#ebfaf3,#f4fcf8);border:1px solid #c8efdc;color:#27825f}
+.slot-status.occupied{background:#fff3f4;border:1px solid #f5c8ce;color:#b53649}
+.status-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#fff;font-size:19px;box-shadow:0 3px 9px rgba(20,30,50,.05)}
+.slot-status div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.slot-status b{font-size:13px}.slot-status small{font-size:11px;opacity:.75}.status-dot{width:9px;height:9px;border-radius:50%;background:#31b87a;box-shadow:0 0 0 5px rgba(49,184,122,.12)}
+.occupied .status-dot{background:#ef6674;box-shadow:0 0 0 5px rgba(239,102,116,.12)}
+.slot-info-strip{display:grid;grid-template-columns:repeat(3,1fr);margin-top:11px;border:1px solid #e6e9f1;border-radius:15px;background:#fff;overflow:hidden}
+.slot-info-strip>div{display:flex;align-items:center;gap:9px;padding:12px 14px;border-right:1px solid #edf0f4}.slot-info-strip>div:last-child{border-right:0}
+.slot-info-strip>div>span{font-size:18px}.slot-info-strip small{display:block;color:#8b94a5;font-size:9px}.slot-info-strip b{display:block;font-size:13px;margin-top:2px}
+.slot-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}.slot-info-grid>div{padding:12px 14px;border:1px solid #e6e9f1;border-radius:14px;background:#fff}.slot-info-grid span{display:block;color:#8b94a5;font-size:9px;font-weight:900;letter-spacing:.08em}.slot-info-grid b{font-size:13px}
+.beautiful-add{margin-top:14px;padding:17px;border:1px solid #ddd7ff;border-radius:18px;background:linear-gradient(135deg,#f9f7ff,#f4f2ff);box-shadow:0 8px 24px rgba(92,75,220,.06)}
+.quick-title-row{display:flex;align-items:center;gap:11px;margin-bottom:14px}.add-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#fff;font-size:21px;box-shadow:0 4px 12px rgba(70,55,160,.08)}
+.quick-title{font-size:13px;font-weight:950;letter-spacing:.07em;color:#5548c9}.quick-sub{font-size:10px;color:#7c8497;margin-top:3px}
+.quick-form-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}.quick-form-grid label{font-size:9px;font-weight:900;color:#697386;letter-spacing:.04em}
+.quick-form-grid input,.quick-form-grid select{margin-top:6px;width:100%;height:46px;box-sizing:border-box;border:1px solid #e0e3eb;border-radius:12px;background:#fff;padding:10px 12px;font-size:14px;font-weight:800;outline:none}
+.quick-form-grid input:focus,.quick-form-grid select:focus{border-color:#7568ff;box-shadow:0 0 0 3px rgba(117,104,255,.12)}
+.plate-input-wrap{position:relative}.plate-input-wrap>span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:17px;color:#7568e8;z-index:1}.plate-input-wrap input{padding-left:35px}
+.field-hint{display:block;margin-top:4px;color:#8a93a4;font-size:8px;letter-spacing:0!important;font-weight:600!important}
+.auto-detect-note{display:flex;align-items:center;gap:6px;margin-top:11px;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.72);font-size:10px;color:#68738a}.auto-detect-note>span:nth-child(2){margin-left:auto}
+.detect-badge{padding:4px 8px;border-radius:999px;background:#eef0f5;color:#7d8696;font-size:9px;font-weight:900}.detect-badge.detected{background:#e2f7ec;color:#23835e}
+.slot-actions{margin-top:15px!important;padding-top:14px;border-top:1px solid #edf0f4}.slot-actions button{height:48px!important;border-radius:13px!important;font-size:13px!important}
+@media(max-width:700px){
+  #slotModal .modal-card{width:calc(100vw - 18px)!important;max-height:84dvh!important;border-radius:20px!important}
+  .slot-modal-shell{padding:18px 15px 14px}.slot-head-icon{width:44px;height:44px;border-radius:13px;font-size:22px}.slot-head-copy h3{font-size:22px}.slot-kicker{font-size:8px}.slot-head-copy p{font-size:10px}
+  .slot-close{width:36px;height:36px;font-size:23px}.slot-status{margin-top:14px;padding:11px 12px}.status-icon{width:32px;height:32px;font-size:17px}.slot-status b{font-size:11px}.slot-status small{font-size:9px}
+  .slot-info-strip{margin-top:8px}.slot-info-strip>div{padding:9px 8px;gap:6px}.slot-info-strip>div>span{font-size:15px}.slot-info-strip small{font-size:7px}.slot-info-strip b{font-size:11px}
+  .beautiful-add{margin-top:10px;padding:12px;border-radius:15px}.quick-title-row{margin-bottom:10px}.add-icon{width:34px;height:34px;font-size:18px}.quick-title{font-size:11px}.quick-sub{font-size:8px}
+  .quick-form-grid{grid-template-columns:1fr 1fr;gap:7px}.quick-form-grid input,.quick-form-grid select{height:40px;font-size:13px;padding:8px 9px}.plate-input-wrap input{padding-left:30px}.field-hint{font-size:7px}
+  .auto-detect-note{font-size:8px;margin-top:8px;padding:7px 8px}.detect-badge{font-size:8px}
+  .slot-actions{margin-top:10px!important;padding-top:10px}.slot-actions button{height:42px!important;font-size:11px!important}
+}
+@media(max-width:380px){
+  #slotModal .modal-card{width:calc(100vw - 10px)!important;max-height:88dvh!important}
+  .slot-modal-shell{padding:15px 11px 11px}.slot-head-copy h3{font-size:20px}.slot-head-copy p{font-size:9px}
+  .slot-info-strip>div{padding:8px 6px}.slot-info-strip b{font-size:10px}
+  .quick-form-grid{grid-template-columns:1fr}.quick-form-grid input,.quick-form-grid select{height:38px}
+  .slot-actions{grid-template-columns:1fr 1.35fr!important}
+}

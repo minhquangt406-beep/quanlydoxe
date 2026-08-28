@@ -125,40 +125,75 @@ function openSlotModal(slot){
   if(!m||!b)return;
   const occupied=slot.status==="occupied";
   b.innerHTML=`
-    <div class="eyebrow">PARKING SLOT DETAILS</div>
-    <h3 class="modal-title">${slot.name}</h3>
-    <div class="modal-sub">${slot.area_name} · Vị trí được chọn trên bản đồ bãi xe</div>
-    ${occupied
-      ? `<div class="modal-occupied">● ĐANG SỬ DỤNG · ${formatPlate(slot.license_plate)||"Chưa có biển số"}</div>`
-      : `<div class="modal-empty">✓ VỊ TRÍ ĐANG SẴN SÀNG · Có thể thêm xe trực tiếp tại đây</div>`}
-    <div class="detail-grid">
-      <div class="detail-item"><span>Biển số</span><b>${formatPlate(slot.license_plate)||"—"}</b></div>
-      <div class="detail-item"><span>Loại xe</span><b>${slot.vehicle_type||"—"}</b></div>
-      <div class="detail-item"><span>Khu vực</span><b>${slot.area_name}</b></div>
-      <div class="detail-item"><span>Trạng thái</span><b>${occupied?"Đang sử dụng":"Sẵn sàng"}</b></div>
-      ${occupied?`<div class="detail-item"><span>Thời gian vào</span><b>${dt(slot.time_in)}</b></div>`:""}
-    </div>
-    ${!occupied?`
-      <div class="quick-checkin">
-        <div class="quick-title">🚗 THÊM XE TRỰC TIẾP</div>
-        <div class="quick-sub">Không cần chuyển sang màn hình “Xe vào / Xe ra”</div>
-        <div class="quick-form-grid">
-          <label>Biển số xe<input id="quickPlate" autocomplete="off" placeholder="Ví dụ: 30A-123.45"></label>
-          <label>Loại xe<select id="quickVtype">${vehicleTypes.map(v=>`<option value="${v}">${v}</option>`).join("")}</select></label>
+    <div class="slot-modal-shell">
+      <div class="slot-modal-head">
+        <div class="slot-head-icon">${occupied?"🚘":"🅿️"}</div>
+        <div class="slot-head-copy">
+          <div class="slot-kicker">${occupied?"PARKING SLOT DETAILS":"THÊM XE VÀO VỊ TRÍ"}</div>
+          <h3>${slot.name}</h3>
+          <p>${slot.area_name} <span>•</span> Vị trí ${occupied?"đang có xe":"sẵn sàng để nhận xe"}</p>
         </div>
-      </div>`:""}
-    <div class="modal-actions">
-      ${occupied
-        ? `<button class="primary" id="modalCheckout">Tính phí & xe ra</button>`
-        : `<button class="btn" id="modalCancelCheckin">Hủy</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}
+        <button type="button" class="slot-close" id="slotModalClose" aria-label="Đóng">×</button>
+      </div>
+
+      ${occupied ? `
+        <div class="slot-status occupied">
+          <span class="status-icon">🚘</span>
+          <div><b>VỊ TRÍ ĐANG SỬ DỤNG</b><small>${formatPlate(slot.license_plate)||"Chưa có biển số"}</small></div>
+          <span class="status-dot"></span>
+        </div>
+        <div class="slot-info-grid">
+          <div><span>BIỂN SỐ</span><b>${formatPlate(slot.license_plate)||"—"}</b></div>
+          <div><span>LOẠI XE</span><b>${slot.vehicle_type||"—"}</b></div>
+          <div><span>KHU VỰC</span><b>${slot.area_name}</b></div>
+          <div><span>THỜI GIAN VÀO</span><b>${dt(slot.time_in)||"—"}</b></div>
+        </div>
+      ` : `
+        <div class="slot-status ready">
+          <span class="status-icon">✓</span>
+          <div><b>VỊ TRÍ SẴN SÀNG</b><small>Xe sẽ được gán trực tiếp vào ${slot.name}</small></div>
+          <span class="status-dot"></span>
+        </div>
+
+        <div class="slot-info-strip">
+          <div><span>📍</span><div><small>Vị trí</small><b>${slot.name}</b></div></div>
+          <div><span>▦</span><div><small>Khu vực</small><b>${slot.area_name}</b></div></div>
+          <div><span>✓</span><div><small>Trạng thái</small><b>Sẵn sàng</b></div></div>
+        </div>
+
+        <div class="quick-checkin beautiful-add">
+          <div class="quick-title-row">
+            <div class="add-icon">🚗</div>
+            <div><div class="quick-title">THÊM XE VÀO VỊ TRÍ</div><div class="quick-sub">Nhập biển số, hệ thống sẽ tự nhận diện loại xe.</div></div>
+          </div>
+          <div class="quick-form-grid">
+            <label class="plate-field">BIỂN SỐ XE
+              <div class="plate-input-wrap"><span>⌕</span><input id="quickPlate" autocomplete="off" inputmode="text" autocapitalize="characters" placeholder="30A12345"></div>
+              <small class="field-hint">Ví dụ: 30A12345 → 30A-123.45</small>
+            </label>
+            <label>LOẠI XE
+              <select id="quickVtype">${vehicleTypes.map(v=>`<option value="${v}">${v}</option>`).join("")}</select>
+              <small class="field-hint" id="quickDetectHint">Đang chờ biển số...</small>
+            </label>
+          </div>
+          <div class="auto-detect-note">✨ <span><b>Tự động nhận diện</b> loại xe từ biển số</span><span class="detect-badge" id="detectBadge">Chờ nhập</span></div>
+        </div>
+      `}
+
+      <div class="modal-actions slot-actions">
+        ${occupied
+          ? `<button class="btn" id="modalCancelCheckin">Đóng</button><button class="primary" id="modalCheckout">💳 Tính phí & xe ra</button>`
+          : `<button class="btn" id="modalCancelCheckin">Hủy bỏ</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}
+      </div>
     </div>`;
   m.classList.remove("hidden");
   document.body.classList.add("modal-open");
-  bindVehicleTypeDetection("#quickPlate","#quickVtype");
   const close=()=>{m.classList.add("hidden");document.body.classList.remove("modal-open");};
-  $("#modalClose").onclick=close;
+  $("#slotModalClose").onclick=close;
   $(".modal-backdrop").onclick=close;
+
   if(occupied){
+    $("#modalCancelCheckin").onclick=close;
     $("#modalCheckout").onclick=async()=>{
       try{
         const active=await api("/api/active");
@@ -170,26 +205,51 @@ function openSlotModal(slot){
     };
   }else{
     $("#modalCancelCheckin").onclick=close;
-    const plateInput=$("#quickPlate");
+    const plateInput=$("#quickPlate"), typeSelect=$("#quickVtype");
+    const update=()=>{
+      const raw=plateInput.value||"";
+      const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+      const detected=clean.length>=5 ? detectVehicleType(clean) : "";
+      if(detected){
+        typeSelect.value=detected;
+        typeSelect.dataset.autoDetected="1";
+        $("#quickDetectHint").textContent=`Đã nhận diện: ${detected}`;
+        $("#detectBadge").textContent=detected;
+        $("#detectBadge").className="detect-badge detected";
+      }else{
+        $("#quickDetectHint").textContent="Đang chờ biển số...";
+        $("#detectBadge").textContent="Chờ nhập";
+        $("#detectBadge").className="detect-badge";
+      }
+    };
+    ["input","keyup","change","paste"].forEach(ev=>plateInput.addEventListener(ev,update));
+    plateInput.addEventListener("blur",()=>{
+      const formatted=formatPlate(plateInput.value);
+      if(formatted)plateInput.value=formatted;
+      update();
+    });
+    update();
+
     const submit=async()=>{
-      const plate=plateInput?.value?.trim();
-      const vehicleType=$("#quickVtype")?.value||"Xe máy";
-      if(!plate){toast("Vui lòng nhập biển số xe","error");plateInput?.focus();return;}
+      const plate=plateInput.value.trim();
+      if(!plate){toast("Vui lòng nhập biển số xe","error");plateInput.focus();return;}
+      const formatted=formatPlate(plate);
+      const vehicleType=detectVehicleType(formatted)||typeSelect.value||"Xe máy";
       const btn=$("#modalCheckin");
-      if(btn){btn.disabled=true;btn.textContent="Đang thêm xe...";}
+      btn.disabled=true;btn.textContent="Đang thêm xe...";
       try{
-        const d=await api("/api/checkin",{method:"POST",body:{license_plate:formatPlate(plate),vehicle_type:vehicleType,slot_id:Number(slot.id)}});
+        await api("/api/checkin",{method:"POST",body:{license_plate:formatted,vehicle_type:vehicleType,slot_id:Number(slot.id)}});
         close();
-        toast(`✓ ${plate} đã vào ${slot.name}`);
+        toast(`✓ ${formatted} đã vào ${slot.name}`);
         await navigate("dashboard");
       }catch(e){
         toast(e.message,"error");
-        if(btn){btn.disabled=false;btn.textContent=`🚗 Thêm xe vào ${slot.name}`;}
+        btn.disabled=false;btn.textContent=`🚗 Thêm xe vào ${slot.name}`;
       }
     };
     $("#modalCheckin").onclick=submit;
-    plateInput?.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
-    setTimeout(()=>plateInput?.focus(),80);
+    plateInput.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+    setTimeout(()=>plateInput.focus(),100);
   }
 }
 function wireMapInteractions(){const s=window.__latestSlots||[];$$('.real-slot').forEach(el=>el.onclick=()=>{const x=s.find(v=>String(v.id)===el.dataset.slotId);if(x)openSlotModal(x)});$$('.map-zone').forEach(z=>z.onclick=e=>{if(e.target.closest('.real-slot'))return;$$('.map-zone').forEach(v=>v.classList.remove('zone-focus'));z.classList.add('zone-focus');setTimeout(()=>z.classList.remove('zone-focus'),900);toast(`Đã chọn ${z.querySelector('.zone-chip')?.textContent||"khu vực"}`)});}
