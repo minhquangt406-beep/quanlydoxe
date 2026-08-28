@@ -18,6 +18,12 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/parking.db")
+# Render/Postgres may provide postgres:// or postgresql://. SQLAlchemy with
+# psycopg2 needs the explicit postgresql+psycopg2 driver.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql+psycopg2://" + DATABASE_URL[len("postgres://"): ]
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = "postgresql+psycopg2://" + DATABASE_URL[len("postgresql://"): ]
 if DATABASE_URL.startswith("sqlite:///./") and not os.path.isabs(DATABASE_URL.replace("sqlite:///./", "")):
     db_path = BASE_DIR / DATABASE_URL.replace("sqlite:///./", "")
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -27,6 +33,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+
+# Parking timestamps are stored as naive local Vietnam time so the displayed
+# check-in/check-out time matches the operator's clock on Render/Linux too.
+def now_vn():
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
@@ -217,7 +228,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "database": "connected", "time": datetime.now().isoformat()}
+    return {"status": "ok", "database": "connected", "time": now_vn().isoformat()}
 
 @app.post("/api/auth/login")
 def login(data: LoginIn, db: Session = Depends(get_db)):
@@ -288,7 +299,7 @@ def update_company(data: CompanyIn, db: Session = Depends(get_db), user: User = 
 
 @app.get("/api/reports")
 def reports(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    since = datetime.now() - timedelta(days=days-1)
+    since = now_vn() - timedelta(days=days-1)
     rows = db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_not(None), ParkingRecord.time_out >= since).all()
     daily, by_area, total = {}, {}, 0.0
     for r,v,s in rows:
@@ -306,7 +317,7 @@ def backup(db: Session = Depends(get_db), user: User = Depends(manager_only)):
     path = Path(db_file)
     if not path.exists():
         raise HTTPException(404, "Chưa có file database để sao lưu")
-    return FileResponse(path, media_type="application/octet-stream", filename=f"parking-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db")
+    return FileResponse(path, media_type="application/octet-stream", filename=f"parking-backup-{now_vn().strftime('%Y%m%d-%H%M%S')}.db")
 
 @app.get("/api/dashboard")
 def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -426,7 +437,7 @@ def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(c
         db.add(existing); db.flush()
     else:
         existing.vehicle_type = data.vehicle_type
-    record = ParkingRecord(vehicle_id=existing.id, slot_id=slot.id, time_in=datetime.now())
+    record = ParkingRecord(vehicle_id=existing.id, slot_id=slot.id, time_in=now_vn())
     slot.status = "occupied"
     db.add(record); db.commit(); db.refresh(record)
     return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name}
@@ -443,7 +454,7 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
     record = db.get(ParkingRecord, data.record_id)
     if not record or record.time_out is not None:
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
-    time_out = datetime.now()
+    time_out = now_vn()
     hours, fee = calculate_fee(db, record, time_out)
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)
