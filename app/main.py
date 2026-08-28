@@ -191,7 +191,7 @@ def seed():
     try:
         if db.query(User).count() == 0:
             db.add_all([
-                User(username="admin", password_hash=hash_password("admin123"), role="manager", full_name="Quản lý hệ thống"),
+                User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"),
                 User(username="staff", password_hash=hash_password("staff123"), role="staff", full_name="Nhân viên bãi xe"),
             ])
         if db.query(Area).count() == 0:

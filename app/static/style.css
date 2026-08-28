@@ -355,3 +355,64 @@ button { touch-action: manipulation; }
   .topbar h2 { max-width:135px; }
   .topbar-actions .theme-btn { display:none !important; }
 }
+
+
+/* =========================================================
+   MOBILE HORIZONTAL SCROLL FIX — tables & wide content
+   ========================================================= */
+@media (max-width: 760px) {
+  /* Keep the page itself fixed, but allow each wide section to scroll horizontally. */
+  html, body { overflow-x: hidden !important; }
+  #content, .main, .panel, .grid2, .area-columns, .area-admin-grid { min-width: 0; }
+
+  /* Every table, including Tài khoản / Lịch sử / Phương tiện, gets its own
+     horizontal scroll area even when the HTML does not have .table-wrap. */
+  .panel:has(> .table),
+  .panel:has(> .table-wrap) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .panel > .table {
+    width: max-content !important;
+    min-width: 620px !important;
+    max-width: none !important;
+    white-space: nowrap;
+  }
+
+  .panel > .table-wrap {
+    width: 100%;
+    max-width: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrap .table {
+    width: max-content;
+    min-width: 620px;
+  }
+
+  /* Do not let long labels/buttons force the whole page wider. */
+  .panel-head, .panel-head > div, .actions, .form-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .panel-head h3, .panel-head .muted {
+    overflow-wrap: anywhere;
+  }
+
+  /* Wide button groups become horizontally scrollable instead of clipping. */
+  .actions {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  /* Account list: keep all columns readable and swipeable. */
+  .panel:has(> .table) .table th,
+  .panel:has(> .table) .table td {
+    white-space: nowrap;
+  }
+}
