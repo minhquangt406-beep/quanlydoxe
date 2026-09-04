@@ -576,11 +576,14 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
     time_out = now_vn()
     hours, fee = calculate_fee(db, record, time_out)
+    method = data.payment_method if data.payment_method in ("Tiền mặt","Chuyển khoản","QR ngân hàng","Miễn phí") else "Tiền mặt"
+    # Lượt miễn phí luôn có tổng tiền bằng 0, không thu phí.
+    if method == "Miễn phí":
+        fee = 0
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)
     if slot: slot.status = "empty"
     vehicle = db.get(Vehicle, record.vehicle_id)
-    method = data.payment_method if data.payment_method in ("Tiền mặt","Chuyển khoản","QR ngân hàng","Miễn phí") else "Tiền mặt"
     db.add(Payment(record_id=record.id, method=method, paid_at=now_vn(), amount=fee))
     audit(db, user, "CHECKOUT", f"{vehicle.license_plate if vehicle else record.vehicle_id} → {fee:,.0f} VNĐ · {method}")
     db.commit()

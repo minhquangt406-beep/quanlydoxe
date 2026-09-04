@@ -2202,3 +2202,15 @@ button { touch-action: manipulation; }
     font-size:7.5px !important;
   }
 }
+
+/* ===== BANK TRANSFER INFO ===== */
+.pay-bank-info{display:grid;gap:0}
+.pay-bank-info>div{display:grid;grid-template-columns:28px 125px 1fr;align-items:center;gap:7px;padding:10px 0;border-bottom:1px dashed #dfe2eb;font-size:13px}
+.pay-bank-info>div:last-child{border-bottom:0}
+.pay-bank-info label{color:#727c91}
+.pay-bank-info b{font-size:14px;color:#17213b;overflow-wrap:anywhere}
+.pay-bank-info strong{font-size:18px;color:#5d50cf}
+@media(max-width:700px){
+  .pay-bank-info>div{grid-template-columns:22px 95px 1fr;font-size:12px;padding:9px 0}
+  .pay-bank-info b{font-size:13px}
+}

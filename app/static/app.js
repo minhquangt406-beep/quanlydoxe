@@ -283,9 +283,9 @@ async function openPaymentModal(recordId){
           <div class="pay-duration">${d.hours} giờ</div>
         </div>
 
-        <div class="pay-total-card">
+        <div class="pay-total-card" id="paymentTotalCard">
           <span>TỔNG THANH TOÁN</span>
-          <strong>${amount}</strong>
+          <strong id="paymentTotalAmount">${amount}</strong>
         </div>
 
         <div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
@@ -311,6 +311,17 @@ async function openPaymentModal(recordId){
             <span class="pay-method-text"><b>Miễn phí</b><small>Không thu phí</small></span>
             <span class="pay-method-side">🎁</span>
           </button>
+        </div>
+
+        <div id="paymentBank" class="pay-qr-panel hidden">
+          <div class="pay-qr-title">THÔNG TIN CHUYỂN KHOẢN</div>
+          <div class="pay-bank-info">
+            <div><span>🏦</span><label>Ngân hàng</label><b>TECHCOMBANK</b></div>
+            <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
+            <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
+            <div><span>●</span><label>Số tiền</label><strong id="paymentBankAmount">${amount}</strong></div>
+            <div><span>▤</span><label>Nội dung CK</label><b>VE-${String(plate).replace(/[^A-Z0-9]/g,"")}</b></div>
+          </div>
         </div>
 
         <div id="paymentQR" class="pay-qr-panel hidden">
@@ -353,7 +364,14 @@ async function openPaymentModal(recordId){
       btn.onclick=()=>{
         method=btn.dataset.method;
         document.querySelectorAll(".pay-method").forEach(x=>x.classList.toggle("active",x===btn));
-        document.querySelector("#paymentQR").classList.toggle("hidden",method!=="QR ngân hàng");
+        const isBank = method === "Chuyển khoản";
+        const isQR = method === "QR ngân hàng";
+        const isFree = method === "Miễn phí";
+        document.querySelector("#paymentQR").classList.toggle("hidden",!isQR);
+        document.querySelector("#paymentBank").classList.toggle("hidden",!isBank);
+        const total = isFree ? "0 VNĐ" : amount;
+        document.querySelector("#paymentTotalAmount").textContent = total;
+        document.querySelector("#paymentBankAmount").textContent = total;
       };
     });
 
