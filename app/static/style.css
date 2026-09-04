@@ -1709,3 +1709,109 @@ button { touch-action: manipulation; }
   }
 }
 
+
+
+/* =========================================================
+   REFERENCE MATCH — PARKING MAP
+   Match supplied screenshot: wide A/B frames, balanced tiles,
+   readable existing typography, no global font-size changes.
+   ========================================================= */
+@media (min-width:901px){
+  .main{
+    padding-left:22px !important;
+    padding-right:22px !important;
+  }
+
+  .area-overview{
+    width:100% !important;
+  }
+
+  .area-overview .parking-map{
+    width:100% !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding:18px !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-list{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:18px !important;
+    width:100% !important;
+    max-width:none !important;
+    align-items:stretch !important;
+  }
+
+  .area-panel-large{
+    width:100% !important;
+    min-width:0 !important;
+    padding:0 !important;
+    margin:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-panel-large .parking-map{
+    width:100% !important;
+    min-height:0 !important;
+    height:auto !important;
+    padding:18px !important;
+    border-radius:20px !important;
+  }
+
+  .area-panel-large .map-zone{
+    width:100% !important;
+    min-height:0 !important;
+    padding:16px !important;
+    border-radius:18px !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-panel-large .real-slot-grid{
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:10px !important;
+    width:100% !important;
+  }
+
+  .area-panel-large .real-slot{
+    min-width:0 !important;
+    min-height:112px !important;
+    padding:9px !important;
+    border-radius:13px !important;
+    box-sizing:border-box !important;
+  }
+}
+
+/* Wide desktop reference proportions */
+@media (min-width:1400px){
+  .area-list{gap:20px !important;}
+
+  .area-panel-large .parking-map{
+    padding:20px !important;
+  }
+
+  .area-panel-large .map-zone{
+    padding:18px !important;
+  }
+
+  .area-panel-large .real-slot-grid{
+    gap:11px !important;
+  }
+
+  .area-panel-large .real-slot{
+    min-height:116px !important;
+    padding:10px !important;
+  }
+}
+
+/* Keep mobile behavior intact */
+@media (max-width:900px){
+  .area-list{
+    grid-template-columns:1fr !important;
+    width:100% !important;
+  }
+  .area-panel-large{
+    width:100% !important;
+  }
+}
+
