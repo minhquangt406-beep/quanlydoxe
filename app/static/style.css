@@ -1244,3 +1244,24 @@ button { touch-action: manipulation; }
   .real-slot .slot-icon{height:13px!important;font-size:10px!important}
   .zone-title h3{font-size:10px!important}
 }
+
+/* ===== ONLY THE OUTER PARKING-MAP FRAME ===== */
+.parking-map{
+  width:min(760px,100%)!important;
+  max-width:760px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:900px){
+  .parking-map{
+    width:calc(100% - 28px)!important;
+    max-width:720px!important;
+  }
+}
+@media(max-width:700px){
+  .parking-map{
+    width:calc(100% - 36px)!important;
+    max-width:600px!important;
+  }
+}
