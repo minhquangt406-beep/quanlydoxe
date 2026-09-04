@@ -261,7 +261,11 @@ async function openPaymentModal(recordId){
   try{
     const d=await api(`/api/checkout-preview/${recordId}`);
     const plate=formatPlate(d.license_plate);
-    const amount=money(d.fee);
+    const amountValue=Math.max(0, Number(d.fee||0));
+    const amount=money(amountValue);
+    const cleanPlate=String(plate).replace(/[^A-Z0-9]/g,"");
+    const transferContent=`VE-${cleanPlate}`;
+    const vietQrUrl=(value)=>`https://img.vietqr.io/image/TCB-998888056789-compact2.png?amount=${Math.max(0,Math.round(Number(value)||0))}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent("NONG MINH QUANG")}&t=${Date.now()}`;
     body.innerHTML=`
       <div class="pay-shell">
         <div class="pay-head">
@@ -320,7 +324,7 @@ async function openPaymentModal(recordId){
             <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
             <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
             <div><span>●</span><label>Số tiền</label><strong id="paymentBankAmount">${amount}</strong></div>
-            <div><span>▤</span><label>Nội dung CK</label><b>VE-${String(plate).replace(/[^A-Z0-9]/g,"")}</b></div>
+            <div><span>▤</span><label>Nội dung CK</label><b>${transferContent}</b></div>
           </div>
         </div>
 
@@ -328,14 +332,14 @@ async function openPaymentModal(recordId){
           <div class="pay-qr-title">THÔNG TIN MÃ QR</div>
           <div class="pay-qr-grid">
             <div class="pay-qr-image-wrap">
-              <img src="/static/images/payment-qr.jpg?v=beautiful1" alt="Mã QR Techcombank">
+              <img id="paymentQRImage" src="${vietQrUrl(amountValue)}" alt="Mã QR Techcombank với đúng số tiền thanh toán">
             </div>
             <div class="pay-qr-info">
               <div><span>🏦</span><label>Ngân hàng</label><b>TECHCOMBANK</b></div>
               <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
               <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
               <div><span>●</span><label>Số tiền</label><strong>${amount}</strong></div>
-              <div><span>▤</span><label>Nội dung CK</label><b>VE-${String(plate).replace(/[^A-Z0-9]/g,"")}</b></div>
+              <div><span>▤</span><label>Nội dung CK</label><b>${transferContent}</b></div>
             </div>
           </div>
         </div>
@@ -369,9 +373,12 @@ async function openPaymentModal(recordId){
         const isFree = method === "Miễn phí";
         document.querySelector("#paymentQR").classList.toggle("hidden",!isQR);
         document.querySelector("#paymentBank").classList.toggle("hidden",!isBank);
-        const total = isFree ? "0 VNĐ" : amount;
+        const totalValue = isFree ? 0 : amountValue;
+        const total = money(totalValue);
         document.querySelector("#paymentTotalAmount").textContent = total;
         document.querySelector("#paymentBankAmount").textContent = total;
+        const qrImage=document.querySelector("#paymentQRImage");
+        if(qrImage) qrImage.src=vietQrUrl(totalValue);
       };
     });
 
