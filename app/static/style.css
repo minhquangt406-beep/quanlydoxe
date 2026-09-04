@@ -1265,3 +1265,179 @@ button { touch-action: manipulation; }
     max-width:600px!important;
   }
 }
+
+
+/* =========================================================
+   PARKING MAP — COMPACT DESKTOP / PREMIUM PRO
+   Optimized for PC: smaller frame, denser layout, clearer slots.
+   ========================================================= */
+.area-overview .parking-map,
+.area-panel-large .parking-map{
+  padding:12px;
+  border-radius:18px;
+  box-shadow:inset 0 1px 0 #fff, 0 8px 24px rgba(15,23,42,.05);
+}
+
+/* Dashboard: show Khu A + Khu B side-by-side instead of a tall stack. */
+.area-overview .parking-map{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.area-overview .parking-map .map-legend{
+  grid-column:1 / -1;
+  margin-top:0;
+  padding:4px 3px 1px;
+}
+
+/* The zones themselves become compact cards. */
+.area-overview .map-zone,
+.area-panel-large .map-zone{
+  padding:11px;
+  border-radius:15px;
+  box-shadow:0 5px 15px rgba(15,23,42,.045);
+}
+.area-overview .map-zone + .map-zone,
+.area-panel-large .map-zone + .map-zone{
+  margin-top:0;
+}
+.area-overview .zone-title,
+.area-panel-large .zone-title{
+  margin-bottom:9px;
+  gap:8px;
+}
+.area-overview .zone-title h3,
+.area-panel-large .zone-title h3{
+  font-size:14px;
+  line-height:1.2;
+  margin:5px 0 2px;
+}
+.area-overview .zone-title .zone-chip,
+.area-panel-large .zone-title .zone-chip{
+  padding:5px 8px;
+  font-size:8px;
+}
+.area-overview .zone-title .muted,
+.area-panel-large .zone-title .muted{
+  font-size:9px;
+}
+
+/* Six compact columns fit the real 12-slot / 8-slot layout nicely. */
+.area-overview .real-slot-grid,
+.area-panel-large .real-slot-grid{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:7px;
+}
+.area-overview .real-slot,
+.area-panel-large .real-slot{
+  min-height:76px;
+  border-width:1.5px;
+  border-radius:10px;
+  padding:7px;
+  box-shadow:0 3px 8px rgba(15,23,42,.055);
+}
+.area-overview .real-slot:hover,
+.area-panel-large .real-slot:hover{
+  transform:translateY(-3px) scale(1.015);
+  box-shadow:0 10px 20px rgba(15,23,42,.11);
+}
+.area-overview .real-slot:before,
+.area-panel-large .real-slot:before{
+  left:5px;
+  right:5px;
+  top:5px;
+  height:3px;
+}
+.area-overview .slot-top,
+.area-panel-large .slot-top{
+  font-size:8px;
+  gap:3px;
+}
+.area-overview .slot-icon,
+.area-panel-large .slot-icon{
+  font-size:17px;
+}
+.area-overview .plate,
+.area-panel-large .plate{
+  font-size:9px;
+  border-width:1px;
+  border-radius:4px;
+  padding:2px 3px;
+  letter-spacing:.02em;
+}
+.area-overview .slot-status,
+.area-panel-large .slot-status{
+  font-size:6.5px;
+  letter-spacing:.045em;
+}
+
+/* Make the empty/occupied state immediately scannable. */
+.area-overview .real-slot.empty,
+.area-panel-large .real-slot.empty{
+  background:linear-gradient(180deg,#ffffff,#f7fffb);
+}
+.area-overview .real-slot.occupied,
+.area-panel-large .real-slot.occupied{
+  background:linear-gradient(180deg,#fffafa,#fff4f5);
+}
+
+/* Slots page: keep each area's frame compact and centered. */
+.area-panel-large .parking-map{
+  display:block;
+}
+.area-panel-large .map-zone{
+  width:100%;
+}
+
+/* Hide the decorative dotted texture a little on small frames so it
+   doesn't compete with the parking slots. */
+.area-overview .parking-map:after,
+.area-panel-large .parking-map:after{
+  background-size:22px 22px;
+  opacity:.22;
+}
+
+/* PC / laptop */
+@media (min-width:1200px){
+  .area-overview .parking-map,
+  .area-panel-large .parking-map{
+    max-width:100%;
+  }
+}
+
+/* Medium screens: keep two dashboard zones but reduce slot density. */
+@media (max-width:1100px){
+  .area-overview .parking-map{
+    grid-template-columns:1fr;
+  }
+  .area-overview .parking-map .map-legend{
+    grid-column:auto;
+  }
+  .area-overview .map-zone + .map-zone{
+    margin-top:10px;
+  }
+  .area-overview .real-slot-grid,
+  .area-panel-large .real-slot-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+/* Tablet / mobile */
+@media (max-width:700px){
+  .area-overview .parking-map,
+  .area-panel-large .parking-map{
+    padding:9px;
+    border-radius:15px;
+  }
+  .area-overview .real-slot-grid,
+  .area-panel-large .real-slot-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+  }
+  .area-overview .real-slot,
+  .area-panel-large .real-slot{
+    min-height:70px;
+    padding:6px;
+  }
+}
