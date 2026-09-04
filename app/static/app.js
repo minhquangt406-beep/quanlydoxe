@@ -488,10 +488,13 @@ boot();
     if(mobileMenu) mobileMenu.setAttribute('aria-expanded',open?'true':'false');
   };
   mobileMenu?.setAttribute('aria-expanded','false');
-  mobileMenu?.addEventListener('click',()=>{
-    sidebar?.classList.toggle('mobile-open');
+  mobileMenu?.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(!sidebar) return;
+    sidebar.classList.toggle('mobile-open');
     syncMobileNav();
-  });
+  },{passive:false});
   document.addEventListener('click',async e=>{
     const navBtn=e.target.closest('.sidebar nav button, .mobile-bottom-nav button');
     if(navBtn && window.innerWidth<=760){
