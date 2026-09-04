@@ -2273,3 +2273,33 @@ button { touch-action: manipulation; }
 .payment-history-tab[data-pay-filter="free"].active{background:#fff2df;box-shadow:0 0 0 2px rgba(182,106,5,.10)}
 @media(max-width:1100px){.payment-history-tabs{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.payment-history-tabs{grid-template-columns:1fr 1fr}}
+
+/* ===== Compact active vehicles dashboard ===== */
+.active-vehicles-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  max-height:270px;
+  overflow:auto;
+  padding-right:2px;
+}
+.active-row{
+  min-width:0;
+  border:1px solid #e7eaf1;
+  background:linear-gradient(145deg,#fff,#fafbff);
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 3px 10px rgba(30,41,80,.04);
+}
+.active-row-main{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.active-row-main b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.active-slot{flex:0 0 auto;padding:3px 6px;border-radius:7px;background:#eef0ff;color:#5146c9;font-size:9px;font-weight:900}
+.active-row-meta{display:flex;justify-content:space-between;gap:6px;margin-top:5px;color:#7b8495;font-size:9px;white-space:nowrap;overflow:hidden}
+.active-row-meta span{overflow:hidden;text-overflow:ellipsis}
+.active-row-duration{display:flex;align-items:baseline;justify-content:space-between;gap:5px;margin-top:7px;padding-top:6px;border-top:1px dashed #e3e6ed}
+.active-row-duration span{font-size:8px;color:#8a93a4;text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.active-row-duration b{font-size:11px;color:#168b60;white-space:nowrap}
+.active-more{text-align:center;margin-top:8px;font-size:9px}
+@media(max-width:1200px){.active-vehicles-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:900px){.active-vehicles-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:250px;gap:7px}.active-row{padding:8px}.active-row-main b{font-size:11px}.active-row-meta{font-size:8px}.active-row-duration b{font-size:10px}}
+@media(max-width:420px){.active-vehicles-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:230px;gap:6px}.active-row{padding:7px;border-radius:10px}.active-slot{font-size:8px;padding:2px 5px}.active-row-meta{margin-top:4px}.active-row-duration{margin-top:5px;padding-top:5px}}
