@@ -1245,12 +1245,12 @@ button { touch-action: manipulation; }
   .zone-title h3{font-size:10px!important}
 }
 
-/* ===== ONLY THE OUTER PARKING-MAP FRAME ===== */
+/* ===== OUTER PARKING-MAP FRAME — FULL WIDTH DESKTOP ===== */
 .parking-map{
-  width:min(760px,100%)!important;
-  max-width:760px!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
   box-sizing:border-box!important;
 }
 @media(max-width:900px){
@@ -1480,4 +1480,93 @@ button { touch-action: manipulation; }
 }
 @media (max-width:900px){
   .area-list{grid-template-columns:1fr!important;}
+}
+
+
+/* =========================================================
+   FINAL PARKING MAP — WIDE FULLSCREEN + 2 VEHICLE TYPES
+   ========================================================= */
+.area-overview{width:100%!important;}
+.area-overview .parking-map{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:18px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:18px!important;
+  align-items:stretch!important;
+  background:linear-gradient(180deg,#eef3f7,#e4ebf1)!important;
+  border:1px solid #d5dfe8!important;
+  border-radius:22px!important;
+}
+.area-overview .map-zone{
+  min-width:0!important;
+  width:100%!important;
+  padding:17px!important;
+  border-radius:18px!important;
+}
+.area-overview .real-slot-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.area-overview .real-slot{
+  min-height:118px!important;
+  padding:10px!important;
+  border-radius:13px!important;
+}
+.area-overview .slot-icon{
+  height:50px!important;
+  margin:3px 0 1px!important;
+  font-size:0!important;
+}
+.vehicle-svg{width:45px!important;height:45px!important;display:block!important;color:#18a66f!important;filter:drop-shadow(0 4px 5px rgba(24,166,111,.16));}
+.empty-svg{width:43px!important;height:43px!important;display:block!important;color:#b9c7d3!important;}
+.area-overview .real-slot.occupied,
+.area-panel-large .real-slot.occupied{
+  background:linear-gradient(180deg,#ecfff6,#dff8ec)!important;
+  border-color:#9de0c2!important;
+  color:#168b60!important;
+  box-shadow:0 5px 14px rgba(24,166,111,.08)!important;
+}
+.area-overview .real-slot.occupied .slot-top span:first-child,
+.area-panel-large .real-slot.occupied .slot-top span:first-child{color:#168b60!important;}
+.area-overview .real-slot.occupied .slot-top span:last-child,
+.area-panel-large .real-slot.occupied .slot-top span:last-child{color:#3e8068!important;font-weight:800!important;}
+.area-overview .real-slot.occupied .slot-status,
+.area-panel-large .real-slot.occupied .slot-status{color:#168b60!important;}
+.area-overview .real-slot.empty,
+.area-panel-large .real-slot.empty{
+  background:linear-gradient(180deg,#ffffff,#f7fafc)!important;
+  border-color:#d5e0e8!important;
+}
+.area-overview .real-slot.empty .slot-status,
+.area-panel-large .real-slot.empty .slot-status{color:#8a98a8!important;}
+.area-overview .map-legend{grid-column:1/-1!important;gap:28px!important;margin:0!important;padding:5px 4px 0!important;justify-content:flex-start!important;}
+.area-overview .map-legend span{display:inline-flex!important;align-items:center!important;gap:7px!important;font-weight:800!important;}
+.area-overview .map-legend .legend-dot{width:22px!important;height:22px!important;border-radius:7px!important;display:grid!important;place-items:center!important;margin:0!important;background:#e9f8f1!important;position:relative!important;}
+.area-overview .map-legend .legend-empty{background:#fff!important;border:1px dashed #b9c7d3!important;}
+.area-overview .map-legend .legend-empty:after{content:'□';font-size:15px;color:#9eabb8;line-height:1;}
+.area-overview .map-legend .legend-car{background:#dff8ec!important;}
+.area-overview .map-legend .legend-car:after{content:'🚗';font-size:12px;filter:grayscale(1) brightness(.7) sepia(1) saturate(4);}
+.area-overview .map-legend .legend-bike{background:#dff8ec!important;}
+.area-overview .map-legend .legend-bike:after{content:'🏍';font-size:12px;filter:grayscale(1) brightness(.7) sepia(1) saturate(4);}
+@media(min-width:1500px){
+  .area-overview .parking-map{padding:20px!important;gap:20px!important;}
+  .area-overview .map-zone{padding:19px!important;}
+  .area-overview .real-slot-grid{gap:12px!important;}
+  .area-overview .real-slot{min-height:125px!important;}
+  .vehicle-svg{width:48px!important;height:48px!important;}
+}
+@media(max-width:1100px){
+  .area-overview .parking-map{grid-template-columns:1fr!important;}
+  .area-overview .map-legend{grid-column:auto!important;}
+  .area-overview .real-slot-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+}
+@media(max-width:700px){
+  .area-overview .parking-map{padding:9px!important;gap:9px!important;}
+  .area-overview .map-zone{padding:10px!important;}
+  .area-overview .real-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;}
+  .area-overview .real-slot{min-height:91px!important;}
+  .vehicle-svg{width:34px!important;height:34px!important;}
 }
