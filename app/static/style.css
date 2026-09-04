@@ -1441,3 +1441,43 @@ button { touch-action: manipulation; }
     padding:6px;
   }
 }
+
+/* ===== DESKTOP PARKING MAP — FULL FRAME ===== */
+@media (min-width:901px){
+  .area-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%;}
+  .area-panel-large{padding:0!important;overflow:hidden;border-radius:20px;}
+  .area-panel-large .parking-map{width:100%;min-height:600px;padding:26px!important;border-radius:20px!important;}
+  .area-panel-large .map-zone{padding:20px!important;border-radius:20px;}
+  .area-panel-large .real-slot-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+  .area-panel-large .real-slot{min-height:118px;padding:12px;border-radius:15px;}
+  .area-panel-large .slot-icon{font-size:28px;}
+  .area-panel-large .plate{font-size:13px;padding:4px 6px;}
+  .area-panel-large .map-legend{margin-top:18px;font-size:11px;}
+}
+@media (min-width:1400px){
+  .area-panel-large .parking-map{min-height:650px;padding:30px!important;}
+  .area-panel-large .real-slot-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:15px;}
+  .area-panel-large .real-slot{min-height:125px;}
+}
+
+/* ===== PARKING MAP — WIDE 2-ZONE DESKTOP ===== */
+@media (min-width:901px){
+  .main{padding-left:24px;padding-right:24px;}
+  .area-list{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:20px!important;width:100%;align-items:stretch;}
+  .area-panel-large{width:100%;min-width:0;padding:0!important;}
+  .area-panel-large .parking-map{width:100%;min-height:690px!important;padding:24px!important;border-radius:22px!important;}
+  .area-panel-large .map-zone{width:100%;min-height:625px;padding:20px!important;border-radius:20px;}
+  .area-panel-large .real-slot-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;}
+  .area-panel-large .real-slot{min-height:118px!important;padding:12px!important;}
+}
+@media (min-width:1400px){
+  .main{padding-left:22px;padding-right:22px;}
+  .area-list{gap:22px!important;}
+  .area-panel-large .parking-map{min-height:760px!important;padding:28px!important;}
+  .area-panel-large .map-zone{min-height:700px;padding:24px!important;}
+  .area-panel-large .real-slot-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:15px!important;}
+  .area-panel-large .real-slot{min-height:128px!important;}
+}
+@media (max-width:900px){
+  .area-list{grid-template-columns:1fr!important;}
+}
