@@ -2263,3 +2263,13 @@ button { touch-action: manipulation; }
 @media(max-width:900px){.payment-history-tabs{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.payment-history-tabs{grid-template-columns:1fr}.payment-history-summary{font-size:10px}.payment-history-panel .panel-head{align-items:flex-start;flex-direction:column}.payment-history-panel .panel-head input{width:100%!important}.payment-badge{font-size:8px}}
 .payment-pending{background:#fff7ed!important;color:#c2410c!important;border-color:#fed7aa!important}
+
+/* Payment history: clearly distinguish pending from free */
+.payment-history-tabs{grid-template-columns:repeat(5,1fr)}
+.payment-pending{background:#e8f4ff!important;color:#0864a5!important;border-color:#9ed0f5!important}
+.payment-history-tab[data-pay-filter="pending"]{border-color:#9ed0f5;background:#f2f9ff}
+.payment-history-tab[data-pay-filter="pending"].active{background:#e1f2ff;box-shadow:0 0 0 2px rgba(8,100,165,.10)}
+.payment-history-tab[data-pay-filter="free"]{border-color:#f0c98d;background:#fffaf1}
+.payment-history-tab[data-pay-filter="free"].active{background:#fff2df;box-shadow:0 0 0 2px rgba(182,106,5,.10)}
+@media(max-width:1100px){.payment-history-tabs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.payment-history-tabs{grid-template-columns:1fr 1fr}}
