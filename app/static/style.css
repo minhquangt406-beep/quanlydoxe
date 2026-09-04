@@ -2307,3 +2307,17 @@ button { touch-action: manipulation; }
 /* Xe đạp: không hiển thị/không yêu cầu biển số khi check-in */
 #quickPlateField.is-bike .plate-input-wrap { opacity:.55; }
 #quickPlateField.is-bike .plate-input-wrap input { cursor:not-allowed; background:#f5f6fb; }
+
+/* Xe đạp: hiển thị logo riêng và màu nhận diện riêng trên sơ đồ bãi */
+.real-slot.vehicle-bicycle .bicycle-svg,
+.area-overview .real-slot.vehicle-bicycle .bicycle-svg,
+.area-panel-large .real-slot.vehicle-bicycle .bicycle-svg {
+  color: #7c3aed !important;
+}
+.real-slot.vehicle-bicycle .plate,
+.area-overview .real-slot.vehicle-bicycle .plate,
+.area-panel-large .real-slot.vehicle-bicycle .plate {
+  color: #6d28d9 !important;
+  font-weight: 800 !important;
+}
+.active-row .bicycle-inline-icon { width: 22px; height: 22px; vertical-align: middle; margin-right: 5px; color: #7c3aed; }
