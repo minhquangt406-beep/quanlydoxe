@@ -658,9 +658,12 @@ def history(db: Session = Depends(get_db), user: User = Depends(current_user), q
     for r,v,s in rows:
         text = f"{r.id} {v.license_plate} {v.vehicle_type} {s.name}".lower()
         if q.lower() not in text: continue
+        payment = db.query(Payment).filter(Payment.record_id == r.id).first()
         result.append({"id": r.id, "license_plate": v.license_plate, "vehicle_type": v.vehicle_type,
                        "slot": s.name, "time_in": r.time_in.isoformat(),
-                       "time_out": r.time_out.isoformat() if r.time_out else None, "fee": r.fee})
+                       "time_out": r.time_out.isoformat() if r.time_out else None, "fee": r.fee,
+                       "payment_method": payment.method if payment else ("Miễn phí" if float(r.fee or 0) == 0 else "Chưa thanh toán"),
+                       "paid_at": payment.paid_at.isoformat() if payment else None})
     return result
 
 @app.get("/api/auto-slot")
