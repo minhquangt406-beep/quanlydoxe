@@ -482,7 +482,7 @@ def slots(db: Session = Depends(get_db), user: User = Depends(current_user)):
     active_rows = (db.query(ParkingRecord.slot_id, Vehicle.license_plate, Vehicle.vehicle_type, ParkingRecord.time_in)
                    .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
                    .filter(ParkingRecord.time_out.is_(None)).all())
-    active_map = {row[0]: {"license_plate": row[1], "vehicle_type": row[2], "time_in": row[3].isoformat()} for row in active_rows}
+    active_map = {row[0]: {"license_plate": (None if row[2] == "Xe đạp" else row[1]), "vehicle_type": row[2], "time_in": row[3].isoformat()} for row in active_rows}
     return [{"id": s.id, "area_id": s.area_id, "area_name": areas_map.get(s.area_id, ""),
              "name": s.name, "status": s.status, **active_map.get(s.id, {})}
             for s in db.query(ParkingSlot).order_by(ParkingSlot.area_id, ParkingSlot.id).all()]
@@ -510,19 +510,27 @@ def add_price(data: PriceIn, db: Session = Depends(get_db), user: User = Depends
 
 @app.get("/api/vehicles")
 def vehicles(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    return [{"id": v.id, "license_plate": v.license_plate, "vehicle_type": v.vehicle_type}
+    return [{"id": v.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type}
             for v in db.query(Vehicle).order_by(Vehicle.id.desc()).all()]
 
 @app.post("/api/checkin")
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    plate = format_license_plate(data.license_plate)
-    if not plate: raise HTTPException(400, "Biển số không được trống")
-    detected_type = infer_vehicle_type(plate)
-    # Nếu biển số khớp quy tắc thì luôn ưu tiên loại xe được nhận diện,
-    # không để giá trị mặc định "Xe máy" từ form ghi đè kết quả.
-    vehicle_type = detected_type or (data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy")
+    # Xe đạp không có biển số. Hệ thống chỉ tạo mã nội bộ để quản lý dữ liệu;
+    # mã này không được hiển thị như biển số trên giao diện.
+    requested_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy"
+    raw_plate = str(data.license_plate or "").strip()
+    if requested_type == "Xe đạp":
+        plate = ""
+        vehicle_type = "Xe đạp"
+    else:
+        plate = format_license_plate(raw_plate)
+        if not plate:
+            raise HTTPException(400, "Vui lòng nhập biển số xe")
+        detected_type = infer_vehicle_type(plate)
+        vehicle_type = detected_type or requested_type
+
     active_vehicle_ids = [x[0] for x in db.query(ParkingRecord.vehicle_id).filter(ParkingRecord.time_out.is_(None)).all()]
-    existing = db.query(Vehicle).filter(Vehicle.license_plate == plate).first()
+    existing = None if vehicle_type == "Xe đạp" else db.query(Vehicle).filter(Vehicle.license_plate == plate).first()
     if existing and existing.id in active_vehicle_ids:
         raise HTTPException(409, "Xe đang tồn tại trong bãi")
     slot = db.get(ParkingSlot, data.slot_id) if data.slot_id else None
@@ -533,16 +541,18 @@ def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(c
         if not slot:
             raise HTTPException(409, "Bãi đã đầy, không còn vị trí trống")
     if not existing:
-        existing = Vehicle(license_plate=plate, vehicle_type=vehicle_type)
+        internal_plate = plate or f"XE-DAP-{secrets.token_hex(5).upper()}"
+        existing = Vehicle(license_plate=internal_plate, vehicle_type=vehicle_type)
         db.add(existing); db.flush()
     else:
         existing.vehicle_type = vehicle_type
     record = ParkingRecord(vehicle_id=existing.id, slot_id=slot.id, time_in=now_vn())
     slot.status = "occupied"
     db.add(record)
-    audit(db, user, "CHECKIN", f"{plate} → {slot.name} ({vehicle_type})")
+    audit_label = "Xe đạp (không biển số)" if vehicle_type == "Xe đạp" else f"{plate} ({vehicle_type})"
+    audit(db, user, "CHECKIN", f"{audit_label} → {slot.name}")
     db.commit(); db.refresh(record)
-    return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name, "vehicle_type": vehicle_type}
+    return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name, "vehicle_type": vehicle_type, "license_plate": None if vehicle_type == "Xe đạp" else plate}
 
 def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     vehicle = db.get(Vehicle, record.vehicle_id)
@@ -568,11 +578,15 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
     duration_text = f"{parked_hours} giờ {parked_mins} phút" if parked_hours else f"{parked_mins} phút"
     price = db.query(Pricing).filter(Pricing.vehicle_type == (vehicle.vehicle_type if vehicle else "")).first()
     price_per_hour = float(price.price_per_hour) if price else 0
+    vehicle_type = vehicle.vehicle_type if vehicle else ""
+    # Xe đạp không có biển số, nên dùng nội dung chuyển khoản riêng và duy nhất theo mã lượt.
+    transfer_content = f"VE-XEDAP-{record.id}" if vehicle_type == "Xe đạp" else f"VE-{(vehicle.license_plate if vehicle else '')}"
     return {
         "record_id": record.id,
-        "license_plate": vehicle.license_plate if vehicle else "",
-        "vehicle_type": vehicle.vehicle_type if vehicle else "",
+        "license_plate": vehicle.license_plate if vehicle and vehicle_type != "Xe đạp" else "",
+        "vehicle_type": vehicle_type,
         "slot": slot.name if slot else "",
+        "transfer_content": transfer_content,
         "hours": round(hours, 4),
         "billable_hours": round(hours, 4),
         "parked_minutes": parked_minutes,
@@ -615,7 +629,7 @@ def receipt(record_id: int, db: Session = Depends(get_db), user: User = Depends(
 @app.get("/api/active")
 def active(db: Session = Depends(get_db), user: User = Depends(current_user)):
     q = db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.desc()).all()
-    return [{"id": r.id, "license_plate": v.license_plate, "vehicle_type": v.vehicle_type,
+    return [{"id": r.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type,
              "slot": s.name, "time_in": r.time_in.isoformat()} for r,v,s in q]
 
 @app.delete("/api/history/{record_id}")
@@ -659,7 +673,7 @@ def history(db: Session = Depends(get_db), user: User = Depends(current_user), q
         text = f"{r.id} {v.license_plate} {v.vehicle_type} {s.name}".lower()
         if q.lower() not in text: continue
         payment = db.query(Payment).filter(Payment.record_id == r.id).first()
-        result.append({"id": r.id, "license_plate": v.license_plate, "vehicle_type": v.vehicle_type,
+        result.append({"id": r.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type,
                        "slot": s.name, "time_in": r.time_in.isoformat(),
                        "time_out": r.time_out.isoformat() if r.time_out else None, "fee": r.fee,
                        "payment_method": payment.method if payment else ("Miễn phí" if float(r.fee or 0) == 0 else "Chưa thanh toán"),
