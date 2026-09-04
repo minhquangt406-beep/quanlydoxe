@@ -2221,3 +2221,32 @@ button { touch-action: manipulation; }
   .pay-bank-info>div{grid-template-columns:22px 95px 1fr;font-size:12px;padding:9px 0}
   .pay-bank-info b{font-size:13px}
 }
+
+/* ===== ACTIVITY LOG COLOR CODING ===== */
+.activity-list{display:flex;flex-direction:column;gap:0}
+.activity-item{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:14px 0;border-bottom:1px solid var(--line)}
+.activity-item:last-child{border-bottom:0}
+.activity-main{min-width:0;display:flex;align-items:center;gap:12px}
+.activity-badge{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:92px;padding:7px 10px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em;white-space:nowrap;border:1px solid transparent}
+.activity-badge span{font-size:13px;font-weight:950;line-height:1}
+.activity-badge.checkin{color:#047857;background:#ecfdf5;border-color:#a7f3d0}
+.activity-badge.checkout{color:#b91c1c;background:#fef2f2;border-color:#fecaca}
+.activity-badge.login{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+.activity-badge.other{color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe}
+.activity-detail{font-size:13px;color:var(--ink);font-weight:650;overflow-wrap:anywhere}
+.activity-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.activity-checkin{background:linear-gradient(90deg,rgba(16,185,129,.035),transparent 55%)}
+.activity-checkout{background:linear-gradient(90deg,rgba(239,68,68,.035),transparent 55%)}
+.activity-login{background:linear-gradient(90deg,rgba(59,130,246,.035),transparent 55%)}
+.activity-other{background:linear-gradient(90deg,rgba(124,58,237,.025),transparent 55%)}
+@media(max-width:760px){
+  .activity-item{align-items:flex-start;flex-direction:column;gap:7px;padding:13px 0}
+  .activity-main{width:100%;align-items:flex-start}
+  .activity-meta{white-space:normal;margin-left:104px}
+}
+@media(max-width:430px){
+  .activity-main{gap:8px}
+  .activity-badge{min-width:82px;font-size:9px;padding:6px 8px}
+  .activity-detail{font-size:12px}
+  .activity-meta{margin-left:90px;font-size:10px}
+}
