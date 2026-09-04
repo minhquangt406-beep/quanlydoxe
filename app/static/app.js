@@ -42,6 +42,11 @@ window.addEventListener("pageshow",()=>{
   }
   refreshLastSeen();
 });
+// Ghi nhận chính xác thời điểm người dùng rời khỏi web.
+// Khi quay lại sau >= 30 phút, phiên đăng nhập sẽ bị xóa tự động.
+window.addEventListener("pagehide",()=>{
+  if(token) localStorage.setItem("parking_last_seen",String(Date.now()));
+});
 setInterval(()=>{
   if(document.visibilityState==="visible") refreshLastSeen();
 },60000);

@@ -740,21 +740,44 @@ def analytics(db: Session = Depends(get_db), user: User = Depends(current_user))
     return {"today_checkins": ins, "today_checkouts": outs, "today_revenue": float(revenue), "vehicle_types": types}
 
 def local_ai(db: Session, question: str):
-    total = db.query(ParkingSlot).count()
+    """Answer the user's specific parking question instead of returning a generic dashboard summary."""
+    q = (question or "").strip().lower()
+    total_slots = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
+    empty = max(total_slots - occupied, 0)
     revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
-    rows = db.query(ParkingRecord.time_in).all()
+    active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
+    rows = db.query(ParkingRecord.time_in, ParkingRecord.time_out, ParkingRecord.fee).all()
+
     counts = {}
-    for (dt,) in rows:
-        counts[dt.hour] = counts.get(dt.hour, 0) + 1
+    for time_in, _, _ in rows:
+        counts[time_in.hour] = counts.get(time_in.hour, 0) + 1
     peak = max(counts, key=counts.get) if counts else None
-    if not rows:
-        return "Chưa có đủ dữ liệu thực tế trong database để phân tích."
     peak_text = f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "chưa xác định"
-    suggestion = f"Nên tăng nhân sự quanh {peak_text} vì đây là khung có nhiều lượt xe vào nhất theo dữ liệu hiện có."
-    return (f"Phân tích từ database: hiện có {occupied}/{total} vị trí đang sử dụng "
-            f"({(occupied/total*100 if total else 0):.1f}% lấp đầy), doanh thu đã ghi nhận "
-            f"{revenue:,.0f} VNĐ. Khung giờ cao điểm là {peak_text}. {suggestion}")
+
+    # Match the question first. Only return the requested metric.
+    if any(k in q for k in ["trống", "còn bao nhiêu chỗ", "còn chỗ", "vị trí trống"]):
+        return f"Hiện còn {empty} vị trí trống trên tổng {total_slots} vị trí."
+    if any(k in q for k in ["đang gửi", "đang trong bãi", "trong bãi", "xe hiện tại", "xe đang đỗ"]):
+        return f"Hiện có {active} xe đang gửi trong bãi."
+    if any(k in q for k in ["lấp đầy", "tỷ lệ sử dụng", "chiếm bao nhiêu phần trăm"]):
+        rate = occupied / total_slots * 100 if total_slots else 0
+        return f"Tỷ lệ lấp đầy hiện tại là {rate:.1f}% ({occupied}/{total_slots} vị trí)."
+    if any(k in q for k in ["doanh thu", "thu được", "tiền thu"]):
+        return f"Doanh thu đã ghi nhận là {float(revenue):,.0f} VNĐ."
+    if any(k in q for k in ["cao điểm", "đông nhất", "nhiều xe nhất", "giờ nào đông"]):
+        return f"Khung giờ có nhiều lượt vào nhất là {peak_text} ({counts.get(peak, 0)} lượt)." if peak is not None else "Chưa đủ dữ liệu để xác định giờ cao điểm."
+    if any(k in q for k in ["check in", "check-in", "xe vào", "lượt vào"]):
+        return f"Có {len([r for r in rows if r[0] is not None])} lượt xe vào trong dữ liệu hiện có."
+    if any(k in q for k in ["check out", "check-out", "xe ra", "lượt ra"]):
+        return f"Có {len([r for r in rows if r[1] is not None])} lượt xe đã ra trong dữ liệu hiện có."
+    if any(k in q for k in ["trạng thái", "tình hình", "tổng quan"]):
+        rate = occupied / total_slots * 100 if total_slots else 0
+        return f"Bãi hiện có {active} xe đang gửi, {empty} chỗ trống và tỷ lệ lấp đầy {rate:.1f}%."
+
+    return ("Mình chưa xác định được chỉ số bạn muốn hỏi. Bạn có thể hỏi cụ thể như: "
+            "‘Còn bao nhiêu chỗ trống?’, ‘Hiện có bao nhiêu xe đang gửi?’, "
+            "‘Doanh thu là bao nhiêu?’, hoặc ‘Giờ nào đông nhất?’")
 
 @app.post("/api/ai")
 def ai(data: AIQuestion, db: Session = Depends(get_db), user: User = Depends(manager_only)):
@@ -770,10 +793,18 @@ def ai(data: AIQuestion, db: Session = Depends(get_db), user: User = Depends(man
         hourly = {}
         for (dt,) in rows: hourly[dt.hour] = hourly.get(dt.hour, 0) + 1
         client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-        prompt = f"""Bạn là trợ lý phân tích bãi đỗ xe. Không tự tạo số liệu.
-Dữ liệu thực tế: tổng vị trí={total}, đang dùng={occupied}, doanh thu={revenue},
-lượt vào theo giờ={hourly}. Câu hỏi quản lý: {data.question}
-Trả lời ngắn gọn, có số liệu, và nếu phù hợp hãy đề xuất vận hành/nhân sự."""
+        active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
+        empty = max(total - occupied, 0)
+        prompt = f"""Bạn là trợ lý AI cho hệ thống quản lý bãi đỗ xe.
+QUY TẮC BẮT BUỘC:
+1. Trả lời ĐÚNG trọng tâm câu hỏi, không tự động đưa ra bản tổng quan nếu người dùng chỉ hỏi một chỉ số.
+2. Chỉ dùng số liệu trong dữ liệu được cung cấp; không bịa hoặc suy đoán.
+3. Trả lời bằng tiếng Việt, ưu tiên 1-3 câu ngắn.
+4. Nếu câu hỏi hỏi một con số, đưa con số đó ngay ở câu đầu.
+5. Chỉ đề xuất giải pháp khi người dùng hỏi ‘nên làm gì’, ‘đề xuất’, ‘tư vấn’ hoặc câu hỏi cần nhận định.
+6. Nếu dữ liệu không đủ, nói rõ thiếu dữ liệu nào.
+Dữ liệu thực tế: tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, doanh thu={revenue:,.0f} VNĐ, lượt vào theo giờ={hourly}.
+Câu hỏi của người dùng: {data.question}"""
         response = client.chat.completions.create(
             model=DEEPSEEK_MODEL,
             messages=[{"role":"system","content":"Bạn là trợ lý phân tích bãi đỗ xe."},
