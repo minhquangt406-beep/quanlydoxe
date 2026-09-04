@@ -1662,3 +1662,50 @@ button { touch-action: manipulation; }
   }
 }
 
+
+
+/* FINAL BALANCED MAP SIZE — slightly smaller, cleaner, easier to scan */
+@media (min-width:901px){
+  .area-list{
+    gap:20px !important;
+  }
+  .area-panel-large .parking-map{
+    min-height:680px !important;
+    height:auto !important;
+    padding:20px !important;
+    border-radius:20px !important;
+  }
+  .area-panel-large .map-zone{
+    min-height:630px !important;
+    padding:18px !important;
+    border-radius:18px !important;
+  }
+  .area-panel-large .real-slot-grid{
+    gap:12px !important;
+  }
+  .area-panel-large .real-slot{
+    min-height:112px !important;
+    padding:10px !important;
+    border-radius:14px !important;
+  }
+}
+@media (min-width:1400px){
+  .area-list{
+    gap:22px !important;
+  }
+  .area-panel-large .parking-map{
+    min-height:700px !important;
+    padding:22px !important;
+  }
+  .area-panel-large .map-zone{
+    min-height:650px !important;
+    padding:20px !important;
+  }
+  .area-panel-large .real-slot-grid{
+    gap:13px !important;
+  }
+  .area-panel-large .real-slot{
+    min-height:116px !important;
+  }
+}
+
