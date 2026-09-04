@@ -755,10 +755,14 @@ button { touch-action: manipulation; }
 .pay-plate{font-size:24px;font-weight:900;letter-spacing:.02em}
 .pay-meta{font-size:13px;color:#7b8499;margin-top:3px}
 .pay-meta span{margin:0 5px}
-.pay-duration{padding:9px 13px;border-radius:999px;background:#f0edff;color:#5d50cf;font-weight:800;font-size:13px}
+.pay-parked-time{margin-top:5px;font-size:12px;color:#59657d;white-space:nowrap}
+.pay-parked-time b{color:#5d50cf}
+.pay-duration{min-width:72px;padding:7px 10px;border-radius:13px;background:#f0edff;color:#5d50cf;font-weight:800;font-size:13px;text-align:center;line-height:1.15}
+.pay-duration small{display:block;font-size:8px;letter-spacing:.06em;opacity:.75;margin-bottom:3px}
+.pay-duration b{display:block;font-size:13px}.pay-duration em{display:block;font-style:normal;font-size:8px;margin-top:2px;opacity:.7}
 .pay-total-card{margin-top:12px;padding:18px;text-align:center;border:1px solid #e7e9f2;border-radius:18px;background:linear-gradient(135deg,#fafaff,#f8f8fc)}
 .pay-total-card span{display:block;font-size:12px;font-weight:900;letter-spacing:.06em;color:#677188}
-.pay-total-card strong{display:block;margin-top:3px;font-size:35px;color:#5d50cf;line-height:1.1}
+.pay-total-card small{display:block;margin-top:4px;font-size:10px;color:#68748a}.pay-total-card strong{display:block;margin-top:3px;font-size:35px;color:#5d50cf;line-height:1.1}
 .pay-section-title{font-size:14px;font-weight:900;color:#4e5870;margin:22px 0 10px}
 .pay-method-list{display:grid;gap:9px}
 .pay-method{display:flex;align-items:center;width:100%;min-height:72px;padding:10px 14px;border:1.5px solid #e5e8f0;border-radius:16px;background:#fff;text-align:left;cursor:pointer;transition:.18s;box-sizing:border-box}
@@ -794,8 +798,8 @@ button { touch-action: manipulation; }
   .pay-head h2{font-size:21px}.pay-head p{font-size:12px}
   .pay-close{width:38px;height:38px;font-size:24px}
   .pay-vehicle-card{margin-top:15px;padding:12px}
-  .pay-plate{font-size:20px}.pay-duration{font-size:11px;padding:7px 9px}
-  .pay-total-card{padding:14px}.pay-total-card strong{font-size:30px}
+  .pay-plate{font-size:20px}.pay-parked-time{font-size:10px}.pay-duration{min-width:62px;font-size:10px;padding:6px 8px}.pay-duration small{font-size:7px}.pay-duration b{font-size:11px}
+  .pay-total-card{padding:14px}.pay-total-card small{display:block;margin-top:4px;font-size:10px;color:#68748a}.pay-total-card strong{font-size:30px}
   .pay-section-title{margin-top:17px;font-size:12px}
   .pay-method{min-height:62px;padding:8px 10px}.pay-method-icon{width:38px;height:38px;flex-basis:38px}
   .pay-method-side{display:none}.pay-method-badge{font-size:9px}
@@ -808,7 +812,7 @@ button { touch-action: manipulation; }
   .pay-shell{padding:15px 12px}
   .pay-head{gap:10px}.pay-head-icon{width:40px;height:40px;font-size:20px}.pay-head h2{font-size:18px}
   .pay-head p{display:none}.pay-vehicle-card{gap:9px}.pay-car-icon{width:40px;height:40px;font-size:20px}
-  .pay-plate{font-size:18px}.pay-meta{font-size:11px}.pay-total-card strong{font-size:27px}
+  .pay-plate{font-size:18px}.pay-meta{font-size:11px}.pay-total-card small{display:block;margin-top:4px;font-size:10px;color:#68748a}.pay-total-card strong{font-size:27px}
   .pay-method-text b{font-size:13px}.pay-method-text small{font-size:10px}
 }
 
@@ -893,7 +897,7 @@ button { touch-action: manipulation; }
 #slotModal .pay-car-icon{width:42px!important;height:42px!important;font-size:22px!important}
 #slotModal .pay-plate{font-size:21px!important}
 #slotModal .pay-total-card{margin-top:9px!important;padding:12px!important}
-#slotModal .pay-total-card strong{font-size:29px!important}
+#slotModal .pay-total-card small{display:block;margin-top:4px;font-size:10px;color:#68748a}.pay-total-card strong{font-size:29px!important}
 #slotModal .pay-section-title{margin:15px 0 8px!important;font-size:12px!important}
 #slotModal .pay-method{min-height:58px!important;padding:8px 11px!important}
 #slotModal .pay-method-icon{width:36px!important;height:36px!important;flex-basis:36px!important;font-size:18px!important}
@@ -923,8 +927,11 @@ button { touch-action: manipulation; }
   #slotModal .pay-car-icon{width:36px!important;height:36px!important;font-size:19px!important}
   #slotModal .pay-plate{font-size:18px!important}
   #slotModal .pay-meta{font-size:10px!important}
-  #slotModal .pay-duration{font-size:10px!important;padding:6px 8px!important}
-  #slotModal .pay-total-card strong{font-size:26px!important}
+  #slotModal .pay-parked-time{font-size:9px!important;margin-top:3px!important}
+  #slotModal .pay-duration{min-width:58px!important;font-size:10px!important;padding:5px 7px!important}
+  #slotModal .pay-duration small{font-size:6px!important}
+  #slotModal .pay-duration b{font-size:10px!important}
+  #slotModal .pay-total-card small{display:block;margin-top:4px;font-size:10px;color:#68748a}.pay-total-card strong{font-size:26px!important}
   #slotModal .pay-method{min-height:54px!important}
   #slotModal .pay-qr-grid{grid-template-columns:1fr!important}
   #slotModal .pay-qr-image-wrap{width:min(190px,65vw)!important;margin:auto!important}

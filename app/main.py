@@ -548,8 +548,10 @@ def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     vehicle = db.get(Vehicle, record.vehicle_id)
     price = db.query(Pricing).filter(Pricing.vehicle_type == vehicle.vehicle_type).first()
     if not price: raise HTTPException(400, "Chưa có bảng giá cho loại xe")
-    hours = max(1, math.ceil((time_out - record.time_in).total_seconds() / 3600))
-    return hours, hours * price.price_per_hour
+    total_seconds = max(0, (time_out - record.time_in).total_seconds())
+    billable_hours = total_seconds / 3600.0
+    fee = billable_hours * float(price.price_per_hour)
+    return billable_hours, round(fee)
 
 @app.get("/api/checkout-preview/{record_id}")
 def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -560,13 +562,24 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
     slot = db.get(ParkingSlot, record.slot_id)
     time_out = now_vn()
     hours, fee = calculate_fee(db, record, time_out)
+    parked_minutes = max(0, int((time_out - record.time_in).total_seconds() // 60))
+    parked_hours = parked_minutes // 60
+    parked_mins = parked_minutes % 60
+    duration_text = f"{parked_hours} giờ {parked_mins} phút" if parked_hours else f"{parked_mins} phút"
+    price = db.query(Pricing).filter(Pricing.vehicle_type == (vehicle.vehicle_type if vehicle else "")).first()
+    price_per_hour = float(price.price_per_hour) if price else 0
     return {
         "record_id": record.id,
         "license_plate": vehicle.license_plate if vehicle else "",
         "vehicle_type": vehicle.vehicle_type if vehicle else "",
         "slot": slot.name if slot else "",
-        "hours": hours,
+        "hours": round(hours, 4),
+        "billable_hours": round(hours, 4),
+        "parked_minutes": parked_minutes,
+        "duration_text": duration_text,
+        "price_per_hour": price_per_hour,
         "fee": fee,
+        "billing_text": f"{hours:.2f} giờ × {price_per_hour:,.0f} VNĐ/giờ = {fee:,.0f} VNĐ"
     }
 
 @app.post("/api/checkout")

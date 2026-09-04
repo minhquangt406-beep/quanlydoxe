@@ -284,14 +284,16 @@ async function openPaymentModal(recordId){
           <div class="pay-car-icon">🚘</div>
           <div class="pay-vehicle-info">
             <div class="pay-plate">${plate}</div>
-            <div class="pay-meta">${d.vehicle_type||"—"} <span>•</span> ${d.slot||"—"} <span>•</span> ${d.hours} giờ</div>
+            <div class="pay-meta">${d.vehicle_type||"—"} <span>•</span> ${d.slot||"—"}</div>
+            <div class="pay-parked-time">⏱ Đã đỗ: <b>${d.duration_text||`${d.hours} giờ`}</b></div>
           </div>
-          <div class="pay-duration">${d.hours} giờ</div>
+          <div class="pay-duration"><small>THỜI GIAN TÍNH PHÍ</small><b>${d.billable_hours != null ? d.billable_hours.toFixed(2) : d.hours} giờ</b><em>tính chính xác theo phút</em></div>
         </div>
 
         <div class="pay-total-card" id="paymentTotalCard">
           <span>TỔNG THANH TOÁN</span>
           <strong id="paymentTotalAmount">${amount}</strong>
+          <small id="paymentCalculation">${d.billing_text||`${d.billable_hours != null ? d.billable_hours.toFixed(2) : d.hours} giờ tính phí`}</small>
         </div>
 
         <div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
@@ -382,6 +384,8 @@ async function openPaymentModal(recordId){
         const totalValue = isFree ? 0 : amountValue;
         const total = money(totalValue);
         document.querySelector("#paymentTotalAmount").textContent = total;
+        const calc=document.querySelector("#paymentCalculation");
+        if(calc) calc.textContent = isFree ? "Miễn phí · không thu tiền" : (d.billing_text||`${d.billable_hours != null ? d.billable_hours.toFixed(2) : d.hours} giờ tính phí`);
         document.querySelector("#paymentBankAmount").textContent = total;
         const qrImage=document.querySelector("#paymentQRImage");
         if(qrImage) qrImage.src=vietQrUrl(totalValue);
