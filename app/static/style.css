@@ -2321,3 +2321,9 @@ button { touch-action: manipulation; }
   font-weight: 800 !important;
 }
 .active-row .bicycle-inline-icon { width: 22px; height: 22px; vertical-align: middle; margin-right: 5px; color: #7c3aed; }
+
+/* ===== Role-specific sidebar identity ===== */
+.sidebar .storage{transition:.2s ease}
+.sidebar .storage.manager-profile{border-color:rgba(99,102,241,.28);background:rgba(99,102,241,.09)}
+.sidebar .storage.staff-profile{border-color:rgba(59,130,246,.25);background:rgba(59,130,246,.07)}
+.sidebar .storage b{font-weight:800;color:#e5e7eb}
