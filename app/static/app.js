@@ -261,7 +261,11 @@ async function openPaymentModal(recordId){
   try{
     const d=await api(`/api/checkout-preview/${recordId}`);
     const plate=formatPlate(d.license_plate);
-    const amount=money(d.fee);
+    const amountValue=Math.max(0, Number(d.fee||0));
+    const amount=money(amountValue);
+    const cleanPlate=String(plate).replace(/[^A-Z0-9]/g,"");
+    const transferContent=`VE-${cleanPlate}`;
+    const vietQrUrl=(value)=>`https://img.vietqr.io/image/TCB-998888056789-compact2.png?amount=${Math.max(0,Math.round(Number(value)||0))}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent("NONG MINH QUANG")}&t=${Date.now()}`;
     body.innerHTML=`
       <div class="pay-shell">
         <div class="pay-head">
@@ -283,9 +287,9 @@ async function openPaymentModal(recordId){
           <div class="pay-duration">${d.hours} giờ</div>
         </div>
 
-        <div class="pay-total-card">
+        <div class="pay-total-card" id="paymentTotalCard">
           <span>TỔNG THANH TOÁN</span>
-          <strong>${amount}</strong>
+          <strong id="paymentTotalAmount">${amount}</strong>
         </div>
 
         <div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
@@ -313,18 +317,29 @@ async function openPaymentModal(recordId){
           </button>
         </div>
 
+        <div id="paymentBank" class="pay-qr-panel hidden">
+          <div class="pay-qr-title">THÔNG TIN CHUYỂN KHOẢN</div>
+          <div class="pay-bank-info">
+            <div><span>🏦</span><label>Ngân hàng</label><b>TECHCOMBANK</b></div>
+            <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
+            <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
+            <div><span>●</span><label>Số tiền</label><strong id="paymentBankAmount">${amount}</strong></div>
+            <div><span>▤</span><label>Nội dung CK</label><b>${transferContent}</b></div>
+          </div>
+        </div>
+
         <div id="paymentQR" class="pay-qr-panel hidden">
           <div class="pay-qr-title">THÔNG TIN MÃ QR</div>
           <div class="pay-qr-grid">
             <div class="pay-qr-image-wrap">
-              <img src="/static/images/payment-qr.jpg?v=beautiful1" alt="Mã QR Techcombank">
+              <img id="paymentQRImage" src="${vietQrUrl(amountValue)}" alt="Mã QR Techcombank với đúng số tiền thanh toán">
             </div>
             <div class="pay-qr-info">
               <div><span>🏦</span><label>Ngân hàng</label><b>TECHCOMBANK</b></div>
               <div><span>👤</span><label>Chủ tài khoản</label><b>NONG MINH QUANG</b></div>
               <div><span>💳</span><label>Số tài khoản</label><b>9988 8805 6789</b></div>
               <div><span>●</span><label>Số tiền</label><strong>${amount}</strong></div>
-              <div><span>▤</span><label>Nội dung CK</label><b>VE-${String(plate).replace(/[^A-Z0-9]/g,"")}</b></div>
+              <div><span>▤</span><label>Nội dung CK</label><b>${transferContent}</b></div>
             </div>
           </div>
         </div>
@@ -340,10 +355,14 @@ async function openPaymentModal(recordId){
 
     modal.classList.remove("hidden");
     document.body.classList.add("modal-open");
+    // Ẩn nút đóng mặc định của modal để không bị trùng với nút X của giao diện thanh toán.
+    const outerClose=document.querySelector("#modalClose");
+    if(outerClose) outerClose.style.display="none";
 
     const close=()=>{
       modal.classList.add("hidden");
       document.body.classList.remove("modal-open");
+      if(outerClose) outerClose.style.display="";
     };
     document.querySelector("#paymentClose").onclick=close;
     document.querySelector("#paymentCancel").onclick=close;
@@ -353,7 +372,17 @@ async function openPaymentModal(recordId){
       btn.onclick=()=>{
         method=btn.dataset.method;
         document.querySelectorAll(".pay-method").forEach(x=>x.classList.toggle("active",x===btn));
-        document.querySelector("#paymentQR").classList.toggle("hidden",method!=="QR ngân hàng");
+        const isBank = method === "Chuyển khoản";
+        const isQR = method === "QR ngân hàng";
+        const isFree = method === "Miễn phí";
+        document.querySelector("#paymentQR").classList.toggle("hidden",!isQR);
+        document.querySelector("#paymentBank").classList.toggle("hidden",!isBank);
+        const totalValue = isFree ? 0 : amountValue;
+        const total = money(totalValue);
+        document.querySelector("#paymentTotalAmount").textContent = total;
+        document.querySelector("#paymentBankAmount").textContent = total;
+        const qrImage=document.querySelector("#paymentQRImage");
+        if(qrImage) qrImage.src=vietQrUrl(totalValue);
       };
     });
 
@@ -492,7 +521,8 @@ boot();
     e.preventDefault();
     e.stopPropagation();
     if(!sidebar) return;
-    sidebar.classList.toggle('mobile-open');
+    const isOpen=sidebar.classList.toggle('mobile-open');
+    document.body.classList.toggle('sidebar-open',isOpen);
     syncMobileNav();
   },{passive:false});
   document.addEventListener('click',async e=>{
@@ -501,18 +531,21 @@ boot();
       const page=navBtn.dataset.page;
       if(page && typeof navigate==='function') await navigate(page);
       sidebar?.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
       syncMobileNav();
       return;
     }
     if(window.innerWidth<=760 && sidebar?.classList.contains('mobile-open') &&
        !e.target.closest('.sidebar') && !e.target.closest('#mobileMenu')){
       sidebar.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
       syncMobileNav();
     }
   });
   window.addEventListener('resize',()=>{
     if(window.innerWidth>760){
       sidebar?.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
       syncMobileNav();
     }
   });
@@ -521,7 +554,7 @@ boot();
       e.preventDefault(); $('#plate')?.focus() || $('#search')?.focus();
       toast('Đã chuyển đến ô nhập nhanh');
     }
-    if(e.key==='Escape') document.querySelector('#slotModal:not(.hidden) .modal-close')?.click();
+    if(e.key==='Escape') document.querySelector('#slotModal:not(.hidden) .pay-close, #slotModal:not(.hidden) .slot-close, #slotModal:not(.hidden) .modal-close')?.click();
   });
   // Subtle page entrance animation whenever content is replaced.
   const content=document.getElementById('content');
@@ -613,34 +646,3 @@ document.addEventListener("submit", function(e){
   },true);
   document.addEventListener("keydown",e=>{if(e.key==="Escape") close();});
 })();
-
-
-// ===== INDEPENDENT MOBILE SIDEBAR BUTTON =====
-(function(){
-  const btn=document.getElementById('mobileMenuFixed');
-  const sidebar=document.querySelector('.sidebar');
-  if(!btn || !sidebar) return;
-
-  function sync(){
-    const open=sidebar.classList.contains('mobile-open');
-    document.body.classList.toggle('mobile-nav-open',open);
-    btn.setAttribute('aria-expanded',open?'true':'false');
-  }
-
-  btn.addEventListener('click',function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    sidebar.classList.toggle('mobile-open');
-    sync();
-  },{passive:false});
-
-  btn.addEventListener('touchend',function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    sidebar.classList.toggle('mobile-open');
-    sync();
-  },{passive:false});
-
-  sync();
-})();
-
