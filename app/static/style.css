@@ -827,7 +827,7 @@ button { touch-action: manipulation; }
 .slot-kicker{font-size:10px;font-weight:950;letter-spacing:.13em;color:#7569a8;margin-bottom:3px}
 .slot-head-copy h3{margin:0;font-size:27px;letter-spacing:-.04em}
 .slot-head-copy p{margin:4px 0 0;color:#7b8499;font-size:12px}.slot-head-copy p span{margin:0 5px}
-.slot-close{position:absolute;right:0;top:0;width:40px;height:40px;border:0;border-radius:13px;background:#f3f4f7;color:#5f6879;font-size:26px;cursor:pointer}
+.slot-close{position:absolute;right:0;top:0;width:40px;height:40px;border:0;border-radius:13px;background:#f3f4f7;color:#5f6879;font-size:26px;cursor:pointer}#slotModal > .modal-card > .modal-close{display:none!important}
 .slot-status{display:flex;align-items:center;gap:12px;margin-top:20px;padding:14px 16px;border-radius:16px}
 .slot-status.ready{background:linear-gradient(90deg,#ebfaf3,#f4fcf8);border:1px solid #c8efdc;color:#27825f}
 .slot-status.occupied{background:#fff3f4;border:1px solid #f5c8ce;color:#b53649}

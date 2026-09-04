@@ -554,7 +554,7 @@ boot();
       e.preventDefault(); $('#plate')?.focus() || $('#search')?.focus();
       toast('Đã chuyển đến ô nhập nhanh');
     }
-    if(e.key==='Escape') document.querySelector('#slotModal:not(.hidden) .pay-close, #slotModal:not(.hidden) .slot-close, #slotModal:not(.hidden) .modal-close')?.click();
+    if(e.key==='Escape') document.querySelector('#slotModal:not(.hidden) .pay-close, #slotModal:not(.hidden) .slot-close')?.click();
   });
   // Subtle page entrance animation whenever content is replaced.
   const content=document.getElementById('content');
