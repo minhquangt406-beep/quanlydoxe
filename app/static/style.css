@@ -1815,3 +1815,123 @@ button { touch-action: manipulation; }
   }
 }
 
+
+
+/* =========================================================
+   FIX: DASHBOARD OVERVIEW LIVE MAP
+   The screenshot is the Overview page, so size the .area-overview
+   map directly. Match the requested reference while keeping text
+   readable and balanced.
+   ========================================================= */
+@media (min-width:901px){
+  .area-overview .parking-map{
+    width:100% !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding:14px !important;
+    gap:16px !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-overview .map-zone{
+    width:100% !important;
+    min-width:0 !important;
+    padding:15px !important;
+    border-radius:17px !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-overview .zone-title{
+    margin-bottom:11px !important;
+    gap:10px !important;
+  }
+
+  .area-overview .zone-title h3{
+    font-size:17px !important;
+    line-height:1.2 !important;
+    margin:5px 0 3px !important;
+  }
+
+  .area-overview .zone-title .muted{
+    font-size:10px !important;
+  }
+
+  .area-overview .zone-title .zone-chip{
+    font-size:8px !important;
+    padding:5px 8px !important;
+  }
+
+  .area-overview .real-slot-grid{
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:10px !important;
+  }
+
+  .area-overview .real-slot{
+    min-height:112px !important;
+    padding:9px !important;
+    border-radius:13px !important;
+    box-sizing:border-box !important;
+  }
+
+  .area-overview .slot-top{
+    font-size:11px !important;
+    line-height:1.15 !important;
+  }
+
+  .area-overview .slot-top span:last-child{
+    font-size:9px !important;
+  }
+
+  .area-overview .slot-status{
+    font-size:9px !important;
+    line-height:1.2 !important;
+  }
+
+  .area-overview .plate{
+    font-size:11px !important;
+    padding:3px 5px !important;
+    border-radius:5px !important;
+  }
+
+  .area-overview .slot-icon{
+    height:45px !important;
+    margin:3px 0 1px !important;
+  }
+
+  .area-overview .map-legend{
+    gap:22px !important;
+    padding-top:7px !important;
+  }
+
+  .area-overview .map-legend span{
+    font-size:11px !important;
+  }
+}
+
+@media (min-width:1400px){
+  .area-overview .parking-map{
+    padding:16px !important;
+    gap:18px !important;
+  }
+
+  .area-overview .map-zone{
+    padding:16px !important;
+  }
+
+  .area-overview .real-slot-grid{
+    gap:11px !important;
+  }
+
+  .area-overview .real-slot{
+    min-height:116px !important;
+  }
+}
+
+/* Do not carry desktop sizing onto small screens. */
+@media (max-width:900px){
+  .area-overview .parking-map{
+    width:100% !important;
+    grid-template-columns:1fr !important;
+  }
+}
+
