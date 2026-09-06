@@ -693,7 +693,7 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
     return {"message": f"Đã xóa {area.name}"}
 
 @app.get("/api/slots")
-def slots(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
+def slots(db: Session = Depends(get_db), user: User = Depends(current_user)):
     areas_map = {a.id: a.name for a in db.query(Area).all()}
     active_rows = (db.query(ParkingRecord.slot_id, Vehicle.license_plate, Vehicle.vehicle_type, ParkingRecord.time_in)
                    .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)

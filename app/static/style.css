@@ -2351,3 +2351,17 @@ button { touch-action: manipulation; }
 
 /* Guest password recovery */
 .forgot-link{display:flex;justify-content:flex-end;margin:-6px 0 8px}.forgot-link .link-btn{font-size:12px}.form-note{padding:10px 12px;border:1px solid #dfe3ff;background:#f6f7ff;color:#5b5fc7;border-radius:11px;font-size:12px;line-height:1.5;margin-bottom:10px}.login-card .link-btn{background:none;border:0;color:#5b5ce2;font-weight:800;cursor:pointer;padding:0}.login-card .link-btn:hover{text-decoration:underline}.login-card button:disabled{opacity:.55;cursor:not-allowed}.success{color:#087f58;background:#effbf5;border:1px solid #b9ecd3;border-radius:10px;padding:9px 11px;font-size:12px;margin-top:8px}.guest-register-link.hidden{display:none!important}
+/* ===== GUEST READ-ONLY PARKING MAP ===== */
+.guest-profile{border-color:rgba(245,158,11,.28)!important;background:rgba(245,158,11,.08)!important}
+.guest-notice{border-color:rgba(59,130,246,.18);background:linear-gradient(90deg,rgba(59,130,246,.07),rgba(139,92,246,.05));}
+.guest-area-card{min-height:150px}
+.guest-mini-bar{height:5px;border-radius:99px;background:#e8edf5;overflow:hidden;margin-top:12px}
+.guest-mini-bar span{display:block;height:100%;border-radius:99px;background:#f59e0b}
+.guest-map-panel{margin-top:18px}
+.guest-slot{cursor:default!important}
+.guest-slot:hover{transform:none!important}
+.guest-area-list .map-zone{margin-bottom:16px}
+@media(max-width:760px){.guest-map-panel{padding:12px}.guest-area-card{min-height:125px}.guest-slot-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}}
+
+/* Reports: newest revenue first */
+.report-bars{display:flex;flex-direction:column;gap:10px}.report-bar-row:first-child{font-weight:700}.revenue-control-panel .btn:disabled{opacity:.65;cursor:wait}
