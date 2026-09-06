@@ -481,17 +481,31 @@ def ensure_monthly_revenue_period(db: Session):
     return db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
 
 def current_revenue(db: Session):
+    """Return revenue accumulated since the most recent reset marker.
+
+    A reset is a logical baseline: historical ParkingRecord.fee values are never
+    changed or deleted. Only records closed after the latest reset contribute to the
+    current counter. This makes the manual reset reliable even when the database
+    already contains older records from the same month.
+    """
     ensure_monthly_revenue_period(db)
     now = now_vn()
     month_label = now.strftime("%Y-%m")
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    # The latest reset marker wins. On a new month the monthly marker automatically
-    # becomes the starting point; a manual reset can start a fresh counter mid-month.
-    marker = db.query(RevenueReset).filter(RevenueReset.reset_at >= month_start).order_by(RevenueReset.reset_at.desc()).first()
+
+    # Pick the newest marker inside the current month. This includes both the
+    # automatic month-start marker and any later manual reset marker.
+    marker = (db.query(RevenueReset)
+                .filter(RevenueReset.reset_at >= month_start, RevenueReset.reset_at <= now)
+                .order_by(RevenueReset.reset_at.desc(), RevenueReset.id.desc())
+                .first())
     if not marker:
         marker = db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
+
     total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
-        ParkingRecord.time_out.is_not(None), ParkingRecord.time_out >= marker.reset_at
+        ParkingRecord.time_out.is_not(None),
+        ParkingRecord.time_out > marker.reset_at,
+        ParkingRecord.time_out <= now
     ).scalar() or 0
     return float(total), marker
 
@@ -570,7 +584,10 @@ def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_on
     db.add(snapshot)
     audit(db, user, "RESET_REVENUE", f"Reset doanh thu {total:.0f} VNĐ")
     db.commit()
-    return {"message": "Đã reset số tiền doanh thu hiện tại", "current_revenue": 0, "reset_at": now.isoformat()}
+    # Re-read through the same calculation used by the dashboard so the response
+    # is guaranteed to reflect the new baseline immediately.
+    fresh_total, _ = current_revenue(db)
+    return {"message": "Đã reset số tiền doanh thu hiện tại", "current_revenue": fresh_total, "reset_at": now.isoformat()}
 
 @app.get("/api/revenue/history")
 def revenue_history(db: Session = Depends(get_db), user: User = Depends(manager_only)):
