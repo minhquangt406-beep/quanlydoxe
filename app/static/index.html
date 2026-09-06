@@ -16,6 +16,7 @@
     <form id="loginForm" autocomplete="off">
       <label>Tài khoản<input id="username" name="login_username" autocomplete="off" placeholder="Nhập tài khoản"></label>
       <label>Mật khẩu<input id="password" name="login_password" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"></label>
+      <div class="forgot-link"><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
       <button class="primary wide">Đăng nhập hệ thống</button>
       <div id="loginError" class="error"></div>
     </form>
@@ -23,10 +24,22 @@
     <form id="registerForm" class="hidden" autocomplete="off">
       <label>Họ tên<input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></label>
       <label>Tài khoản<input id="registerUsername" autocomplete="username" placeholder="khach01"></label>
+      <label>Số điện thoại<input id="registerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
       <label>Mật khẩu<input id="registerPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
       <button class="primary wide">Đăng ký tài khoản khách</button>
       <div id="registerError" class="error"></div>
       <button type="button" id="cancelRegister" class="btn wide">Quay lại đăng nhập</button>
+    </form>
+    <form id="forgotForm" class="hidden" autocomplete="off">
+      <div class="form-note">Nhập tài khoản và số điện thoại đã đăng ký. Hệ thống sẽ gửi mã OTP 6 số về điện thoại.</div>
+      <label>Tài khoản<input id="forgotUsername" autocomplete="username" placeholder="Tài khoản khách"></label>
+      <label>Số điện thoại<input id="forgotPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
+      <button type="button" class="primary wide" id="sendOtp">Gửi mã OTP</button>
+      <label>Mã OTP<input id="resetOtp" inputmode="numeric" maxlength="6" placeholder="6 chữ số"></label>
+      <label>Mật khẩu mới<input id="resetPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
+      <button type="submit" class="primary wide">Đặt lại mật khẩu</button>
+      <div id="forgotError" class="error"></div>
+      <button type="button" id="cancelForgot" class="btn wide">Quay lại đăng nhập</button>
     </form>
   </div>
 </div>
@@ -62,6 +75,6 @@
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
 </div>
-<script src="/static/app.js?v=guestregister20260904v1"></script>
+<script src="/static/app.js?v=guestregisterforgototp20260904v2"></script>
 </body>
 </html>

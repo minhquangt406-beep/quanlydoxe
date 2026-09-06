@@ -2348,3 +2348,6 @@ button { touch-action: manipulation; }
 .link-btn{border:0;background:none;color:#5b4df6;font-weight:700;cursor:pointer;padding:0;font:inherit}
 .wide{width:100%}
 #registerForm{margin-top:12px}
+
+/* Guest password recovery */
+.forgot-link{display:flex;justify-content:flex-end;margin:-6px 0 8px}.forgot-link .link-btn{font-size:12px}.form-note{padding:10px 12px;border:1px solid #dfe3ff;background:#f6f7ff;color:#5b5fc7;border-radius:11px;font-size:12px;line-height:1.5;margin-bottom:10px}.login-card .link-btn{background:none;border:0;color:#5b5ce2;font-weight:800;cursor:pointer;padding:0}.login-card .link-btn:hover{text-decoration:underline}.login-card button:disabled{opacity:.55;cursor:not-allowed}.success{color:#087f58;background:#effbf5;border:1px solid #b9ecd3;border-radius:10px;padding:9px 11px;font-size:12px;margin-top:8px}.guest-register-link.hidden{display:none!important}

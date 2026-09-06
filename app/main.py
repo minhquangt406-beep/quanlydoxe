@@ -1,4 +1,4 @@
-import os, math, hashlib, secrets
+import os, math, hashlib, secrets, re, json, urllib.request, urllib.parse, base64
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -33,6 +33,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
+OTP_TTL_MINUTES = 10
+OTP_RESEND_SECONDS = 60
 
 # Parking timestamps are stored as naive local Vietnam time so the displayed
 # check-in/check-out time matches the operator's clock on Render/Linux too.
@@ -58,6 +63,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False, default="staff")
     full_name = Column(String(100), nullable=False, default="Nhân viên")
+    phone = Column(String(30), nullable=False, default="")
 
 class Area(Base):
     __tablename__ = "areas"
@@ -136,6 +142,17 @@ class RevenueReset(Base):
     amount_before = Column(Float, nullable=False, default=0)
     reset_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
+class PasswordResetOTP(Base):
+    __tablename__ = "password_reset_otps"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    phone = Column(String(30), nullable=False)
+    otp_hash = Column(String(255), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=now_vn)
+    used = Column(Boolean, nullable=False, default=False)
+    attempts = Column(Integer, nullable=False, default=0)
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True)
@@ -145,6 +162,21 @@ class AuditLog(Base):
     created_at = Column(DateTime, nullable=False, default=now_vn)
 
 Base.metadata.create_all(bind=engine)
+
+def ensure_auth_schema():
+    """Lightweight migration for existing SQLite/PostgreSQL installations."""
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    try:
+        cols = {c["name"] for c in insp.get_columns("users")}
+        if "phone" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''"))
+    except Exception:
+        pass
+    Base.metadata.create_all(bind=engine)
+
+ensure_auth_schema()
 
 def hash_password(password: str, salt: Optional[str] = None):
     salt = salt or secrets.token_hex(16)
@@ -319,24 +351,113 @@ class GuestRegisterIn(BaseModel):
     username: str
     password: str
     full_name: str
+    phone: str
+
+class ForgotPasswordRequest(BaseModel):
+    username: str
+    phone: str
+
+class ResetPasswordIn(BaseModel):
+    username: str
+    phone: str
+    otp: str
+    new_password: str
+
+def normalize_phone(phone: str) -> str:
+    raw = re.sub(r"\D", "", str(phone or ""))
+    if raw.startswith("84") and len(raw) == 11:
+        raw = "0" + raw[2:]
+    return raw
+
+def valid_vn_phone(phone: str) -> bool:
+    return bool(re.fullmatch(r"0(?:3|5|7|8|9)\d{8}", normalize_phone(phone)))
+
+def send_sms(phone: str, message: str):
+    """Send SMS through Twilio. Configure TWILIO_* environment variables in production."""
+    if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_FROM_PHONE):
+        raise HTTPException(503, "Hệ thống gửi SMS OTP chưa được cấu hình. Vui lòng cấu hình TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN và TWILIO_FROM_PHONE.")
+    data = urllib.parse.urlencode({"To": phone, "From": TWILIO_FROM_PHONE, "Body": message}).encode()
+    auth = base64.b64encode(f"{TWILIO_ACCOUNT_SID}:{TWILIO_AUTH_TOKEN}".encode()).decode()
+    req = urllib.request.Request(
+        f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json",
+        data=data, headers={"Authorization": f"Basic {auth}"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            if resp.status >= 300:
+                raise RuntimeError(f"SMS provider returned {resp.status}")
+    except Exception:
+        raise HTTPException(502, "Không thể gửi mã OTP lúc này. Vui lòng thử lại sau.")
+
+def make_otp() -> str:
+    return f"{secrets.randbelow(1000000):06d}"
+
+def otp_hash(otp: str) -> str:
+    return hashlib.sha256((SECRET_KEY + ":otp:" + otp).encode()).hexdigest()
 
 @app.post("/api/auth/register")
 def register_guest(data: GuestRegisterIn, db: Session = Depends(get_db)):
     username = data.username.strip()
     full_name = data.full_name.strip()
+    phone = normalize_phone(data.phone)
     if len(username) < 4 or len(username) > 50:
         raise HTTPException(400, "Tài khoản phải từ 4 đến 50 ký tự")
     if len(data.password) < 8:
         raise HTTPException(400, "Mật khẩu phải có ít nhất 8 ký tự")
     if len(full_name) < 2:
         raise HTTPException(400, "Vui lòng nhập họ tên")
+    if not valid_vn_phone(phone):
+        raise HTTPException(400, "Số điện thoại không hợp lệ. Hãy nhập số di động Việt Nam 10 số.")
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(409, "Tài khoản đã tồn tại")
-    user = User(username=username, password_hash=hash_password(data.password), role="guest", full_name=full_name)
+    if db.query(User).filter(User.phone == phone, User.role == "guest").first():
+        raise HTTPException(409, "Số điện thoại này đã được đăng ký")
+    user = User(username=username, password_hash=hash_password(data.password), role="guest", full_name=full_name, phone=phone)
     db.add(user); db.flush()
     audit(db, user, "REGISTER_GUEST", "Khách tự đăng ký tài khoản chỉ xem chỗ trống")
     db.commit()
     return {"message": "Đăng ký thành công. Bạn có thể đăng nhập để xem tình trạng chỗ trống.", "role": "guest"}
+
+@app.post("/api/auth/forgot-password/request")
+def request_password_reset(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    username = data.username.strip()
+    phone = normalize_phone(data.phone)
+    user = db.query(User).filter(User.username == username, User.role == "guest", User.phone == phone).first()
+    if not user:
+        raise HTTPException(404, "Không tìm thấy tài khoản khách phù hợp với số điện thoại này")
+    latest = db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == user.id, PasswordResetOTP.used == False).order_by(PasswordResetOTP.created_at.desc()).first()
+    now = now_vn()
+    if latest and (now - latest.created_at).total_seconds() < OTP_RESEND_SECONDS:
+        remain = OTP_RESEND_SECONDS - int((now - latest.created_at).total_seconds())
+        raise HTTPException(429, f"Vui lòng chờ {max(1, remain)} giây trước khi gửi mã mới")
+    otp = make_otp()
+    row = PasswordResetOTP(user_id=user.id, phone=phone, otp_hash=otp_hash(otp), expires_at=now + timedelta(minutes=OTP_TTL_MINUTES))
+    db.add(row); db.commit()
+    send_sms(phone, f"Parking AI Pro: Ma OTP dat lai mat khau cua ban la {otp}. Ma co hieu luc {OTP_TTL_MINUTES} phut. Khong chia se ma nay cho nguoi khac.")
+    return {"message": "Đã gửi mã OTP đến số điện thoại đã đăng ký.", "expires_in": OTP_TTL_MINUTES * 60}
+
+@app.post("/api/auth/forgot-password/reset")
+def reset_password(data: ResetPasswordIn, db: Session = Depends(get_db)):
+    username = data.username.strip(); phone = normalize_phone(data.phone); otp = data.otp.strip()
+    if not re.fullmatch(r"\d{6}", otp):
+        raise HTTPException(400, "Mã OTP phải gồm 6 chữ số")
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "Mật khẩu mới phải có ít nhất 8 ký tự")
+    user = db.query(User).filter(User.username == username, User.role == "guest", User.phone == phone).first()
+    if not user:
+        raise HTTPException(400, "Thông tin tài khoản không chính xác")
+    row = db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == user.id, PasswordResetOTP.phone == phone, PasswordResetOTP.used == False).order_by(PasswordResetOTP.created_at.desc()).first()
+    if not row or row.expires_at < now_vn():
+        raise HTTPException(400, "Mã OTP đã hết hạn hoặc không tồn tại")
+    if row.attempts >= 5:
+        raise HTTPException(429, "Mã OTP đã bị khóa do nhập sai quá nhiều lần")
+    if not secrets.compare_digest(row.otp_hash, otp_hash(otp)):
+        row.attempts += 1; db.commit()
+        raise HTTPException(400, "Mã OTP không đúng")
+    user.password_hash = hash_password(data.new_password)
+    row.used = True
+    audit(db, user, "PASSWORD_RESET", "Khách đặt lại mật khẩu bằng OTP SMS")
+    db.commit()
+    return {"message": "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới."}
 
 seed()
 
@@ -864,5 +985,13 @@ Câu hỏi của người dùng: {data.question}"""
         return {"answer": response.choices[0].message.content, "mode": "deepseek", "provider": "DeepSeek"}
     except Exception:
         return {"answer": local_ai(db, data.question), "mode": "fallback", "provider": "local"}
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "service": "parking-ai-pro"}
+
+@app.get("/", response_class=HTMLResponse)
+def root():
+    return FileResponse(BASE_DIR / "app" / "static" / "index.html")
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "app" / "static"), name="static")
