@@ -313,12 +313,11 @@ def seed():
     try:
         if not db.query(User).filter(User.username == "guest").first():
             db.add(User(username="guest", password_hash=hash_password("guest12345"), role="guest", full_name="Khách xem bãi"))
-            db.flush()
-        if db.query(User).count() == 0:
-            db.add_all([
-                User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"),
-                User(username="staff", password_hash=hash_password("staff123"), role="staff", full_name="Nhân viên bãi xe"),
-            ])
+        if not db.query(User).filter(User.username == "admin").first():
+            db.add(User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"))
+        if not db.query(User).filter(User.username == "staff").first():
+            db.add(User(username="staff", password_hash=hash_password("staff123"), role="staff", full_name="Nhân viên bãi xe"))
+        db.flush()
         if db.query(Area).count() == 0:
             a1, a2 = Area(name="Khu A", capacity=12), Area(name="Khu B", capacity=8)
             db.add_all([a1, a2]); db.flush()
@@ -495,6 +494,66 @@ def current_revenue(db: Session):
         ParkingRecord.time_out.is_not(None), ParkingRecord.time_out >= marker.reset_at
     ).scalar() or 0
     return float(total), marker
+
+@app.post("/api/account/password")
+def change_password(data: PasswordChange, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "Mật khẩu mới phải có ít nhất 8 ký tự")
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(400, "Mật khẩu hiện tại không đúng")
+    user.password_hash = hash_password(data.new_password)
+    audit(db, user, "CHANGE_PASSWORD", "Đổi mật khẩu tài khoản")
+    db.commit()
+    return {"message": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."}
+
+@app.get("/api/users")
+def users(db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    return [{"id": u.id, "username": u.username, "role": u.role, "full_name": u.full_name}
+            for u in db.query(User).order_by(User.id).all()]
+
+@app.post("/api/users")
+def create_user(data: UserCreate, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    username = data.username.strip()
+    if not username or len(data.password) < 8:
+        raise HTTPException(400, "Tài khoản không trống và mật khẩu tối thiểu 8 ký tự")
+    if data.role not in ("manager", "staff"):
+        raise HTTPException(400, "Vai trò không hợp lệ")
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(409, "Tài khoản đã tồn tại")
+    u = User(username=username, password_hash=hash_password(data.password), role=data.role, full_name=data.full_name.strip() or "Nhân viên")
+    db.add(u); db.flush(); audit(db, user, "CREATE_USER", f"Tạo tài khoản {u.username} ({u.role})"); db.commit(); db.refresh(u)
+    return {"message": "Đã tạo tài khoản", "id": u.id}
+
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    if user_id == user.id:
+        raise HTTPException(400, "Không thể tự xóa tài khoản đang đăng nhập")
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Tài khoản không tồn tại")
+    if target.role == "guest":
+        raise HTTPException(400, "Không xóa tài khoản khách tại đây")
+    audit(db, user, "DELETE_USER", f"Xóa tài khoản {target.username}")
+    db.delete(target); db.commit()
+    return {"message": "Đã xóa tài khoản"}
+
+@app.get("/api/company")
+def get_company(db: Session = Depends(get_db), user: User = Depends(current_user)):
+    c = db.query(CompanySetting).first()
+    if not c:
+        c = CompanySetting(); db.add(c); db.commit(); db.refresh(c)
+    return {"company_name": c.company_name, "phone": c.phone, "address": c.address}
+
+@app.put("/api/company")
+def update_company(data: CompanyIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    c = db.query(CompanySetting).first()
+    if not c:
+        c = CompanySetting(); db.add(c)
+    c.company_name = data.company_name.strip() or "Parking AI Pro"
+    c.phone = data.phone.strip(); c.address = data.address.strip()
+    audit(db, user, "UPDATE_COMPANY", "Cập nhật thông tin doanh nghiệp")
+    db.commit()
+    return {"message": "Đã lưu thông tin doanh nghiệp"}
 
 @app.get("/api/revenue")
 def revenue_summary(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
