@@ -128,6 +128,14 @@ class Payment(Base):
     paid_at = Column(DateTime, nullable=False, default=now_vn)
     amount = Column(Float, nullable=False, default=0)
 
+class RevenueReset(Base):
+    __tablename__ = "revenue_resets"
+    id = Column(Integer, primary_key=True)
+    reset_at = Column(DateTime, nullable=False, default=now_vn)
+    period_label = Column(String(20), nullable=False)
+    amount_before = Column(Float, nullable=False, default=0)
+    reset_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True)
@@ -177,6 +185,11 @@ def current_user(credentials: HTTPAuthorizationCredentials = Depends(security), 
 def manager_only(user: User = Depends(current_user)):
     if user.role != "manager":
         raise HTTPException(status_code=403, detail="Chỉ Quản lý được sử dụng chức năng này")
+    return user
+
+def non_guest_user(user: User = Depends(current_user)):
+    if user.role == "guest":
+        raise HTTPException(status_code=403, detail="Tài khoản khách chỉ được xem tình trạng chỗ trống")
     return user
 
 class LoginIn(BaseModel):
@@ -266,6 +279,9 @@ def infer_vehicle_type(plate: str) -> Optional[str]:
 def seed():
     db = SessionLocal()
     try:
+        if not db.query(User).filter(User.username == "guest").first():
+            db.add(User(username="guest", password_hash=hash_password("guest12345"), role="guest", full_name="Khách xem bãi"))
+            db.flush()
         if db.query(User).count() == 0:
             db.add_all([
                 User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"),
@@ -286,105 +302,125 @@ def seed():
     finally:
         db.close()
 
-seed()
-
-
-def normalize_license_plate(value: str) -> str:
-    import re
-    s = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
-    if re.fullmatch(r"\d{2}[A-Z]{2}\d{5}", s):
-        return f"{s[:4]}-{s[4:7]}.{s[7:]}"
-    if re.fullmatch(r"\d{2}[A-Z]\d{6}", s):
-        return f"{s[:3]}-{s[3:6]}.{s[6:]}"
-    if re.fullmatch(r"\d{2}[A-Z]\d{5}", s):
-        return f"{s[:3]}-{s[3:6]}.{s[6:]}"
-    return s
-
-def detect_vehicle_type_from_plate(value: str) -> str:
-    import re
-    s = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
-    if re.fullmatch(r"\d{2}[A-Z]{2}\d{5}", s):
-        return "Xe máy"
-    return "Ô tô"
-
-@app.get("/")
-def home():
-    return FileResponse(BASE_DIR / "app" / "static" / "index.html")
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok", "database": "connected", "time": now_vn().isoformat()}
-
 @app.post("/api/auth/login")
 def login(data: LoginIn, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.username).first()
+    user = db.query(User).filter(User.username == data.username.strip()).first()
     if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Sai tài khoản hoặc mật khẩu")
+        raise HTTPException(401, "Sai tài khoản hoặc mật khẩu")
     audit(db, user, "LOGIN", "Đăng nhập hệ thống")
     db.commit()
-    return {"access_token": token_for(user), "token_type": "bearer",
-            "user": {"id": user.id, "username": user.username, "role": user.role, "full_name": user.full_name}}
+    return {"access_token": token_for(user), "token_type": "bearer", "user": {"id": user.id, "username": user.username, "role": user.role, "full_name": user.full_name}}
 
 @app.get("/api/me")
 def me(user: User = Depends(current_user)):
     return {"id": user.id, "username": user.username, "role": user.role, "full_name": user.full_name}
 
-@app.post("/api/account/password")
-def change_password(data: PasswordChange, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    if len(data.new_password) < 8:
-        raise HTTPException(400, "Mật khẩu mới phải có ít nhất 8 ký tự")
-    if not verify_password(data.current_password, user.password_hash):
-        raise HTTPException(400, "Mật khẩu hiện tại không đúng")
-    user.password_hash = hash_password(data.new_password)
-    db.commit()
-    return {"message": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."}
+class GuestRegisterIn(BaseModel):
+    username: str
+    password: str
+    full_name: str
 
-@app.get("/api/users")
-def users(db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    return [{"id": u.id, "username": u.username, "role": u.role, "full_name": u.full_name}
-            for u in db.query(User).order_by(User.id).all()]
-
-@app.post("/api/users")
-def create_user(data: UserCreate, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+@app.post("/api/auth/register")
+def register_guest(data: GuestRegisterIn, db: Session = Depends(get_db)):
     username = data.username.strip()
-    if not username or len(data.password) < 8:
-        raise HTTPException(400, "Tài khoản không trống và mật khẩu tối thiểu 8 ký tự")
-    if data.role not in ("manager", "staff"):
-        raise HTTPException(400, "Vai trò không hợp lệ")
+    full_name = data.full_name.strip()
+    if len(username) < 4 or len(username) > 50:
+        raise HTTPException(400, "Tài khoản phải từ 4 đến 50 ký tự")
+    if len(data.password) < 8:
+        raise HTTPException(400, "Mật khẩu phải có ít nhất 8 ký tự")
+    if len(full_name) < 2:
+        raise HTTPException(400, "Vui lòng nhập họ tên")
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(409, "Tài khoản đã tồn tại")
-    u = User(username=username, password_hash=hash_password(data.password), role=data.role, full_name=data.full_name.strip() or "Nhân viên")
-    db.add(u); db.flush(); audit(db, user, "CREATE_USER", f"Tạo tài khoản {u.username} ({u.role})"); db.commit(); db.refresh(u)
-    return {"message": "Đã tạo tài khoản", "id": u.id}
-
-@app.delete("/api/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    if user_id == user.id:
-        raise HTTPException(400, "Không thể tự xóa tài khoản đang đăng nhập")
-    target = db.get(User, user_id)
-    if not target:
-        raise HTTPException(404, "Tài khoản không tồn tại")
-    audit(db, user, "DELETE_USER", f"Xóa tài khoản {target.username}")
-    db.delete(target); db.commit()
-    return {"message": "Đã xóa tài khoản"}
-
-@app.get("/api/company")
-def get_company(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    c = db.query(CompanySetting).first()
-    if not c:
-        c = CompanySetting(); db.add(c); db.commit(); db.refresh(c)
-    return {"company_name": c.company_name, "phone": c.phone, "address": c.address}
-
-@app.put("/api/company")
-def update_company(data: CompanyIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    c = db.query(CompanySetting).first()
-    if not c:
-        c = CompanySetting(); db.add(c)
-    c.company_name = data.company_name.strip() or "Parking AI Pro"
-    c.phone = data.phone.strip(); c.address = data.address.strip()
-    audit(db, user, "UPDATE_COMPANY", "Cập nhật thông tin doanh nghiệp")
+    user = User(username=username, password_hash=hash_password(data.password), role="guest", full_name=full_name)
+    db.add(user); db.flush()
+    audit(db, user, "REGISTER_GUEST", "Khách tự đăng ký tài khoản chỉ xem chỗ trống")
     db.commit()
-    return {"message": "Đã lưu thông tin doanh nghiệp"}
+    return {"message": "Đăng ký thành công. Bạn có thể đăng nhập để xem tình trạng chỗ trống.", "role": "guest"}
+
+seed()
+
+
+def ensure_monthly_revenue_period(db: Session):
+    """Create an automatic monthly reset marker on the first access of a new month.
+    Payment/parking history is never deleted; only the current revenue counter starts at 0.
+    """
+    now = now_vn()
+    month_label = now.strftime("%Y-%m")
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    exists = db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
+    if not exists:
+        # Archive the previous month's revenue before starting the new counter.
+        prev_amount = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+            ParkingRecord.time_out.is_not(None),
+            ParkingRecord.time_out >= month_start
+        ).scalar() or 0
+        # This marker is the start of the current month, so amount_before is informational.
+        db.add(RevenueReset(reset_at=month_start, period_label=month_label, amount_before=0, reset_by=None))
+        db.commit()
+    return db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
+
+def current_revenue(db: Session):
+    ensure_monthly_revenue_period(db)
+    now = now_vn()
+    month_label = now.strftime("%Y-%m")
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # The latest reset marker wins. On a new month the monthly marker automatically
+    # becomes the starting point; a manual reset can start a fresh counter mid-month.
+    marker = db.query(RevenueReset).filter(RevenueReset.reset_at >= month_start).order_by(RevenueReset.reset_at.desc()).first()
+    if not marker:
+        marker = db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
+    total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+        ParkingRecord.time_out.is_not(None), ParkingRecord.time_out >= marker.reset_at
+    ).scalar() or 0
+    return float(total), marker
+
+@app.get("/api/revenue")
+def revenue_summary(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
+    total, marker = current_revenue(db)
+    month_start = marker.reset_at
+    return {"current_revenue": total, "period": marker.period_label, "reset_at": month_start.isoformat()}
+
+@app.post("/api/revenue/reset")
+def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    now = now_vn()
+    total, marker = current_revenue(db)
+    # Keep a permanent snapshot, then start a fresh counter immediately.
+    snapshot = RevenueReset(reset_at=now, period_label=f"RESET-{now.strftime('%Y-%m-%d %H:%M')}", amount_before=total, reset_by=user.id)
+    db.add(snapshot)
+    audit(db, user, "RESET_REVENUE", f"Reset doanh thu {total:.0f} VNĐ")
+    db.commit()
+    return {"message": "Đã reset số tiền doanh thu hiện tại", "current_revenue": 0, "reset_at": now.isoformat()}
+
+@app.get("/api/revenue/history")
+def revenue_history(db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    ensure_monthly_revenue_period(db)
+    rows = db.query(RevenueReset).order_by(RevenueReset.reset_at.desc()).all()
+    out=[]
+    now = now_vn()
+    for r in rows:
+        if r.period_label.startswith("RESET-"):
+            label = "Reset thủ công · " + r.reset_at.strftime("%d/%m/%Y %H:%M")
+            amount = float(r.amount_before or 0)
+        else:
+            label = "Tháng " + r.period_label
+            start_month = r.reset_at
+            if r.period_label == now.strftime("%Y-%m"):
+                end_month = now
+            else:
+                y, m = map(int, r.period_label.split("-"))
+                if m == 12:
+                    end_month = datetime(y + 1, 1, 1)
+                else:
+                    end_month = datetime(y, m + 1, 1)
+            amount = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+                ParkingRecord.time_out.is_not(None),
+                ParkingRecord.time_out >= start_month,
+                ParkingRecord.time_out < end_month
+            ).scalar() or 0
+            amount = float(amount)
+        out.append({"id": r.id, "period": label, "reset_at": r.reset_at.isoformat(), "amount": amount})
+    return out
 
 @app.get("/api/reports")
 def reports(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db), user: User = Depends(manager_only)):
@@ -414,7 +450,7 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user))
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
     empty = total - occupied
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
-    revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
+    revenue, _rev_marker = current_revenue(db)
     closed = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_not(None)).count()
     peak = None
     rows = db.query(ParkingRecord.time_in).all()
@@ -477,7 +513,7 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
     return {"message": f"Đã xóa {area.name}"}
 
 @app.get("/api/slots")
-def slots(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def slots(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     areas_map = {a.id: a.name for a in db.query(Area).all()}
     active_rows = (db.query(ParkingRecord.slot_id, Vehicle.license_plate, Vehicle.vehicle_type, ParkingRecord.time_in)
                    .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
@@ -495,7 +531,7 @@ def add_slot(data: SlotIn, db: Session = Depends(get_db), user: User = Depends(m
     return {"message": "Đã tạo vị trí", "id": s.id}
 
 @app.get("/api/pricing")
-def pricing(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def pricing(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     return [{"id": p.id, "vehicle_type": p.vehicle_type, "price_per_hour": p.price_per_hour}
             for p in db.query(Pricing).order_by(Pricing.id).all()]
 
@@ -509,12 +545,12 @@ def add_price(data: PriceIn, db: Session = Depends(get_db), user: User = Depends
     return {"message": "Đã lưu bảng giá"}
 
 @app.get("/api/vehicles")
-def vehicles(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def vehicles(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     return [{"id": v.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type}
             for v in db.query(Vehicle).order_by(Vehicle.id.desc()).all()]
 
 @app.post("/api/checkin")
-def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     # Xe đạp không có biển số. Hệ thống chỉ tạo mã nội bộ để quản lý dữ liệu;
     # mã này không được hiển thị như biển số trên giao diện.
     requested_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy"
@@ -564,7 +600,7 @@ def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     return billable_hours, round(fee)
 
 @app.get("/api/checkout-preview/{record_id}")
-def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     record = db.get(ParkingRecord, record_id)
     if not record or record.time_out is not None:
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
@@ -597,7 +633,7 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
     }
 
 @app.post("/api/checkout")
-def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     record = db.get(ParkingRecord, data.record_id)
     if not record or record.time_out is not None:
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
@@ -617,7 +653,7 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
     return {"message": "Cho xe ra thành công", "record_id": record.id, "hours": hours, "fee": fee, "time_out": time_out.isoformat(), "payment_method": method}
 
 @app.get("/api/receipt/{record_id}")
-def receipt(record_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def receipt(record_id: int, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     row = db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.id == record_id).first()
     if not row:
         raise HTTPException(404, "Không tìm thấy hóa đơn")
@@ -627,7 +663,7 @@ def receipt(record_id: int, db: Session = Depends(get_db), user: User = Depends(
     return HTMLResponse(html)
 
 @app.get("/api/active")
-def active(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def active(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     q = db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.desc()).all()
     return [{"id": r.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type,
              "slot": s.name, "time_in": r.time_in.isoformat()} for r,v,s in q]
@@ -666,7 +702,7 @@ def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db), user: User = 
     return {"message": f"Đã xóa xe {plate}"}
 
 @app.get("/api/history")
-def history(db: Session = Depends(get_db), user: User = Depends(current_user), q: str = Query("", max_length=100)):
+def history(db: Session = Depends(get_db), user: User = Depends(non_guest_user), q: str = Query("", max_length=100)):
     rows = db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).order_by(ParkingRecord.id.desc()).limit(500).all()
     result = []
     for r,v,s in rows:
@@ -681,14 +717,14 @@ def history(db: Session = Depends(get_db), user: User = Depends(current_user), q
     return result
 
 @app.get("/api/auto-slot")
-def auto_slot(vehicle_type: str = Query("Xe máy"), db: Session = Depends(get_db), user: User = Depends(current_user)):
+def auto_slot(vehicle_type: str = Query("Xe máy"), db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     slot = db.query(ParkingSlot).filter(ParkingSlot.status == "empty").order_by(ParkingSlot.area_id, ParkingSlot.id).first()
     if not slot: raise HTTPException(409, "Bãi đã đầy")
     area = db.get(Area, slot.area_id)
     return {"slot_id": slot.id, "slot": slot.name, "area": area.name if area else "", "vehicle_type": vehicle_type}
 
 @app.get("/api/monthly")
-def monthly(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def monthly(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     rows=db.query(MonthlyPass).order_by(MonthlyPass.expires_at.asc()).all(); out=[]
     for x in rows:
         v=db.get(Vehicle,x.vehicle_id)
@@ -737,12 +773,12 @@ def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
     return {"occupancy_rate":round(rate,1),"peak_hour":f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "Chưa đủ dữ liệu","projected_peak_occupancy":projected,"risk":"Cao" if projected>=90 else "Trung bình" if projected>=70 else "Thấp","recommendation":"Chuẩn bị điều hướng sang khu còn nhiều chỗ và tăng nhân sự tại giờ cao điểm." if projected>=70 else "Bãi đang ổn định; duy trì phân bổ hiện tại."}
 
 @app.get("/api/activity")
-def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(current_user)):
+def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     rows = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.id.desc()).limit(limit).all()
     return [{"id": a.id, "username": u.username if u else "system", "action": a.action, "detail": a.detail, "created_at": a.created_at.isoformat()} for a,u in rows]
 
 @app.get("/api/analytics")
-def analytics(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def analytics(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
     today = now_vn().date()
     start = datetime.combine(today, datetime.min.time())
     end = start + timedelta(days=1)

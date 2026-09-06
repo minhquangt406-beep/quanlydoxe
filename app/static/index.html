@@ -19,6 +19,15 @@
       <button class="primary wide">Đăng nhập hệ thống</button>
       <div id="loginError" class="error"></div>
     </form>
+    <div class="guest-register-link"><span>Khách mới?</span> <button type="button" id="showRegister" class="link-btn">Tạo tài khoản chỉ để xem chỗ trống</button></div>
+    <form id="registerForm" class="hidden" autocomplete="off">
+      <label>Họ tên<input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></label>
+      <label>Tài khoản<input id="registerUsername" autocomplete="username" placeholder="khach01"></label>
+      <label>Mật khẩu<input id="registerPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
+      <button class="primary wide">Đăng ký tài khoản khách</button>
+      <div id="registerError" class="error"></div>
+      <button type="button" id="cancelRegister" class="btn wide">Quay lại đăng nhập</button>
+    </form>
   </div>
 </div>
 
@@ -53,6 +62,6 @@
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
 </div>
-<script src="/static/app.js?v=rolesidebar20260904v1"></script>
+<script src="/static/app.js?v=guestregister20260904v1"></script>
 </body>
 </html>
