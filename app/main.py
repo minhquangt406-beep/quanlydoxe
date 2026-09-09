@@ -138,7 +138,7 @@ class RevenueReset(Base):
     __tablename__ = "revenue_resets"
     id = Column(Integer, primary_key=True)
     reset_at = Column(DateTime, nullable=False, default=now_vn)
-    period_label = Column(String(50), nullable=False)
+    period_label = Column(String(20), nullable=False)
     amount_before = Column(Float, nullable=False, default=0)
     reset_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
@@ -164,16 +164,30 @@ class AuditLog(Base):
 Base.metadata.create_all(bind=engine)
 
 def ensure_auth_schema():
-    """Lightweight migration for existing SQLite/PostgreSQL installations."""
+    """Lightweight migrations for existing SQLite/PostgreSQL installations.
+
+    create_all() does not add columns to tables that already exist. Older
+    deployments therefore need these small, idempotent migrations before the
+    revenue endpoints can safely read/write the reset history.
+    """
     from sqlalchemy import inspect, text
-    insp = inspect(engine)
-    try:
-        cols = {c["name"] for c in insp.get_columns("users")}
-        if "phone" not in cols:
-            with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''"))
-    except Exception:
-        pass
+
+    Base.metadata.create_all(bind=engine)
+    def add_column_if_missing(table, column, ddl):
+        try:
+            inspector = inspect(engine)
+            cols = {c["name"] for c in inspector.get_columns(table)}
+            if column not in cols:
+                with engine.begin() as conn:
+                    conn.execute(text(ddl))
+        except Exception:
+            # Never prevent the app from starting; the endpoint will surface
+            # a useful database error if a migration is impossible.
+            pass
+
+    add_column_if_missing("users", "phone", "ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''")
+    add_column_if_missing("revenue_resets", "amount_before", "ALTER TABLE revenue_resets ADD COLUMN amount_before FLOAT NOT NULL DEFAULT 0")
+    add_column_if_missing("revenue_resets", "reset_by", "ALTER TABLE revenue_resets ADD COLUMN reset_by INTEGER")
     Base.metadata.create_all(bind=engine)
 
 ensure_auth_schema()
@@ -587,7 +601,7 @@ def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_on
     total, _ = current_revenue(db)
     snapshot = RevenueReset(
         reset_at=now,
-        period_label=f"R-{now.strftime('%Y%m%d%H%M%S')}",
+        period_label=f"RESET-{now.strftime('%m%d-%H%M%S')}",
         amount_before=float(total),
         reset_by=user.id,
     )
