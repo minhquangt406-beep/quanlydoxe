@@ -53,6 +53,36 @@ setInterval(()=>{
 
 const titles={dashboard:"Tổng quan",parking:"Xe vào / Xe ra",slots:"Vị trí đỗ",history:"Lịch sử",vehicles:"Phương tiện",pricing:"Bảng giá",areas:"Khu vực",ai:"AI phân tích",reports:"Báo cáo doanh thu",users:"Tài khoản",settings:"Cài đặt doanh nghiệp",activity:"Nhật ký hoạt động",monthly:"Vé tháng","ai-center":"AI Center"};
 async function api(path,opt={}){opt.headers={...(opt.headers||{}),...(token?{Authorization:"Bearer "+token}:{})};if(opt.body&&typeof opt.body!=="string"){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(opt.body)}const r=await fetch(path,opt);const raw=await r.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={detail:raw}}if(!r.ok)throw new Error(data.detail||`Lỗi API ${r.status}: ${path}`);return data}
+function addAISupportMessage(text, role="bot"){
+  const box=$("#aiSupportMessages"); if(!box) return;
+  const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
+  const badge=document.createElement("b"); badge.textContent=role==="user"?"Bạn":"AI";
+  const body=document.createElement("span"); body.textContent=text;
+  row.append(badge,body); box.appendChild(row); box.scrollTop=box.scrollHeight;
+}
+function setAISupportBusy(busy){
+  const input=$("#aiSupportInput"), btn=$("#aiSupportForm button");
+  if(input) input.disabled=busy;
+  if(btn){btn.disabled=busy;btn.textContent=busy?"…":"➤";}
+}
+function initAISupport(){
+  const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
+  if(!toggle||!panel||!form||!input) return;
+  const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");setTimeout(()=>input.focus(),80)};
+  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open")};
+  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
+  close?.addEventListener("click",shut);
+  $$("[data-ai-q]").forEach(b=>b.addEventListener("click",()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
+  form.addEventListener("submit",async e=>{
+    e.preventDefault(); const q=input.value.trim(); if(!q||!token)return;
+    addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
+    try{const d=await api("/api/ai/support",{method:"POST",body:{question:q}});addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot");}
+    catch(err){addAISupportMessage("Không thể kết nối trợ lý AI lúc này. Bạn vui lòng thử lại sau.","bot");}
+    finally{setAISupportBusy(false);input.focus();}
+  });
+}
+initAISupport();
+
 function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"} function duration(s){if(!s)return "—"; const ms=Math.max(0,Date.now()-new Date(s).getTime()), m=Math.floor(ms/60000), h=Math.floor(m/60), mm=m%60; return h?`${h} giờ ${mm} phút`:`${mm} phút`}
 function toast(msg,type="success"){const el=$("#toast");if(!el)return;el.textContent=msg;el.className="toast show "+type;clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.className="toast",2600)}
 function activityMeta(action){const a=String(action||"").toUpperCase();if(a==="CHECKIN")return {cls:"checkin",icon:"↓",label:"CHECK IN"};if(a==="CHECKOUT")return {cls:"checkout",icon:"↑",label:"CHECK OUT"};if(a==="LOGIN")return {cls:"login",icon:"↪",label:"LOGIN"};return {cls:"other",icon:"•",label:String(action||"KHÁC")};}

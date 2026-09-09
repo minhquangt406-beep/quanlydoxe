@@ -1045,6 +1045,87 @@ def export_history(db:Session=Depends(get_db), user:User=Depends(manager_only)):
     for r,v,s in rows: w.writerow([r.id,v.license_plate,v.vehicle_type,s.name,r.time_in,r.time_out or "",r.fee or 0])
     return StreamingResponse(iter([buf.getvalue().encode("utf-8-sig")]),media_type="text/csv; charset=utf-8",headers={"Content-Disposition":f'attachment; filename="parking-history-{now_vn():%Y%m%d-%H%M%S}.csv"'})
 
+class AISupportQuestion(BaseModel):
+    question: str
+
+
+def local_ai_support(db: Session, question: str, user: User):
+    """Customer-facing assistant available to every authenticated role.
+    Guests only receive public parking information; staff/managers may receive
+    operational metrics, but never passwords or other sensitive account data.
+    """
+    q = (question or "").strip().lower()
+    total = db.query(ParkingSlot).count()
+    occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
+    empty = max(total - occupied, 0)
+    active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
+    company = db.query(CompanySetting).first()
+
+    if any(k in q for k in ["chỗ trống", "vị trí trống", "còn chỗ", "bao nhiêu chỗ"]):
+        return f"Hiện bãi còn {empty} vị trí trống trên tổng {total} vị trí." if total else "Hiện chưa có dữ liệu vị trí đỗ."
+    if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]):
+        if user.role == "guest":
+            return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
+        return f"Hiện có {active} xe đang gửi trong bãi."
+    if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]):
+        return f"Địa chỉ bãi xe: {company.address or 'Chưa được cấu hình'}."
+    if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]):
+        return f"Số liên hệ: {company.phone or 'Chưa được cấu hình'}."
+    if any(k in q for k in ["hướng dẫn", "sử dụng", "làm thế nào", "thế nào"]):
+        if user.role == "guest":
+            return "Bạn có thể xem sơ đồ và tình trạng chỗ trống. Nếu cần hỗ trợ thêm, hãy mô tả câu hỏi ngay trong khung chat này."
+        return "Bạn có thể dùng menu bên trái để quản lý xe, vị trí đỗ, lịch sử và các chức năng vận hành. Tôi có thể hướng dẫn từng bước."
+    if any(k in q for k in ["giá", "phí", "bao nhiêu tiền", "bảng giá"]):
+        if user.role == "guest":
+            return "Bạn vui lòng liên hệ nhân viên/quản lý để biết mức phí hiện hành của từng loại xe."
+        prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
+        return "Bảng giá hiện tại: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
+    if any(k in q for k in ["cảm ơn", "thanks"]):
+        return "Rất vui được hỗ trợ bạn! 😊"
+    if any(k in q for k in ["xin chào", "hello", "chào", "hi"]):
+        return f"Xin chào {user.full_name}! 👋 Tôi là trợ lý AI của Parking AI Pro. Bạn muốn hỏi về chỗ trống, vị trí đỗ, hướng dẫn sử dụng hay thông tin liên hệ?"
+    return "Tôi có thể hỗ trợ về chỗ trống, tình trạng xe trong bãi, vị trí đỗ, hướng dẫn sử dụng, thông tin liên hệ và bảng giá. Bạn hãy hỏi cụ thể nhé."
+
+
+@app.post("/api/ai/support")
+def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    question = (data.question or "").strip()
+    if not question:
+        raise HTTPException(400, "Vui lòng nhập câu hỏi")
+
+    # Fast local answers keep the assistant useful even when no external AI key
+    # is configured. DeepSeek adds natural-language support when available.
+    if not DEEPSEEK_API_KEY:
+        return {"answer": local_ai_support(db, question, user), "mode": "local", "provider": "local"}
+    try:
+        from openai import OpenAI
+        total = db.query(ParkingSlot).count()
+        occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
+        empty = max(total - occupied, 0)
+        active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
+        company = db.query(CompanySetting).first()
+        prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
+        public_context = f"Tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, địa chỉ={company.address if company else ''}, điện thoại={company.phone if company else ''}."
+        if user.role == "guest":
+            context = public_context + " Tài khoản khách không được cung cấp doanh thu, nhật ký, dữ liệu tài khoản hoặc thông tin quản trị."
+        else:
+            revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
+            context = public_context + f" Doanh thu ghi nhận={float(revenue):,.0f} VNĐ. Bảng giá=" + "; ".join(f"{x.vehicle_type}:{float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices)
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+        prompt = f"""Bạn là trợ lý AI hỗ trợ người dùng của Parking AI Pro. Người dùng là {('khách' if user.role == 'guest' else 'nhân viên/quản lý')}.
+Quy tắc: trả lời bằng tiếng Việt, thân thiện, ngắn gọn 1-4 câu; chỉ dùng dữ liệu trong ngữ cảnh; không bịa; không tiết lộ dữ liệu quản trị cho khách; nếu không biết thì hướng dẫn liên hệ nhân viên.
+Ngữ cảnh: {context}
+Câu hỏi: {question}"""
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            messages=[{"role": "system", "content": "Bạn là trợ lý chăm sóc khách hàng và hỗ trợ vận hành bãi xe."}, {"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        return {"answer": response.choices[0].message.content, "mode": "deepseek", "provider": "DeepSeek"}
+    except Exception:
+        return {"answer": local_ai_support(db, question, user), "mode": "fallback", "provider": "local"}
+
+
 @app.get("/api/ai/prediction")
 def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
     total=db.query(ParkingSlot).count(); occupied=db.query(ParkingSlot).filter(ParkingSlot.status=="occupied").count(); rate=(occupied/total*100 if total else 0)
