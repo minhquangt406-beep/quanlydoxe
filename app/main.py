@@ -1,4 +1,4 @@
-import os, math, hashlib, secrets, re, json, urllib.request, urllib.parse, base64
+import os, math, hashlib, secrets, re, json, urllib.request, urllib.parse, base64, time, threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -38,6 +38,23 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
 OTP_TTL_MINUTES = 10
 OTP_RESEND_SECONDS = 60
+AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "12"))
+AI_SUPPORT_RATE_LIMIT = int(os.getenv("AI_SUPPORT_RATE_LIMIT", "20"))
+AI_SUPPORT_WINDOW_SECONDS = int(os.getenv("AI_SUPPORT_WINDOW_SECONDS", "60"))
+_ai_support_rate = {}
+_ai_support_rate_lock = threading.Lock()
+
+def ai_support_rate_ok(user_id: int):
+    now = time.monotonic()
+    with _ai_support_rate_lock:
+        bucket = _ai_support_rate.get(user_id, [])
+        bucket = [t for t in bucket if now - t < AI_SUPPORT_WINDOW_SECONDS]
+        if len(bucket) >= AI_SUPPORT_RATE_LIMIT:
+            _ai_support_rate[user_id] = bucket
+            return False
+        bucket.append(now)
+        _ai_support_rate[user_id] = bucket
+        return True
 
 # Parking timestamps are stored as naive local Vietnam time so the displayed
 # check-in/check-out time matches the operator's clock on Render/Linux too.
@@ -1045,15 +1062,28 @@ def export_history(db:Session=Depends(get_db), user:User=Depends(manager_only)):
     for r,v,s in rows: w.writerow([r.id,v.license_plate,v.vehicle_type,s.name,r.time_in,r.time_out or "",r.fee or 0])
     return StreamingResponse(iter([buf.getvalue().encode("utf-8-sig")]),media_type="text/csv; charset=utf-8",headers={"Content-Disposition":f'attachment; filename="parking-history-{now_vn():%Y%m%d-%H%M%S}.csv"'})
 
+class AISupportMessage(BaseModel):
+    role: str
+    content: str
+
+
 class AISupportQuestion(BaseModel):
     question: str
+    history: list[AISupportMessage] = []
+
+
+def _clean_ai_history(history):
+    cleaned = []
+    for item in (history or [])[-10:]:
+        role = item.role if item.role in {"user", "assistant"} else "user"
+        content = (item.content or "").strip()
+        if content:
+            cleaned.append({"role": role, "content": content[:1000]})
+    return cleaned
 
 
 def local_ai_support(db: Session, question: str, user: User):
-    """Customer-facing assistant available to every authenticated role.
-    Guests only receive public parking information; staff/managers may receive
-    operational metrics, but never passwords or other sensitive account data.
-    """
+    """Deterministic fallback assistant. It never exposes sensitive admin data to guests."""
     q = (question or "").strip().lower()
     total = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
@@ -1061,12 +1091,19 @@ def local_ai_support(db: Session, question: str, user: User):
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
     company = db.query(CompanySetting).first()
 
+    # Area-specific availability is useful even without an external AI key.
+    m = re.search(r"(?:khu|khu vực)\s*([a-z])", q)
+    if m and any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ"]):
+        area = db.query(Area).filter(func.lower(Area.name).contains(m.group(1))).first()
+        if area:
+            slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
+            free = sum(1 for slot in slots if slot.status != "occupied")
+            return f"{area.name} hiện còn {free}/{len(slots)} vị trí trống."
+
     if any(k in q for k in ["chỗ trống", "vị trí trống", "còn chỗ", "bao nhiêu chỗ"]):
         return f"Hiện bãi còn {empty} vị trí trống trên tổng {total} vị trí." if total else "Hiện chưa có dữ liệu vị trí đỗ."
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]):
-        if user.role == "guest":
-            return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
-        return f"Hiện có {active} xe đang gửi trong bãi."
+        return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]):
         return f"Địa chỉ bãi xe: {company.address or 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]):
@@ -1092,11 +1129,17 @@ def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: Use
     question = (data.question or "").strip()
     if not question:
         raise HTTPException(400, "Vui lòng nhập câu hỏi")
+    if len(question) > 500:
+        raise HTTPException(400, "Câu hỏi tối đa 500 ký tự")
+    if not ai_support_rate_ok(user.id):
+        raise HTTPException(429, "Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.")
 
-    # Fast local answers keep the assistant useful even when no external AI key
-    # is configured. DeepSeek adds natural-language support when available.
+    history = _clean_ai_history(data.history)
+
+    # Always keep a deterministic fallback available.
     if not DEEPSEEK_API_KEY:
-        return {"answer": local_ai_support(db, question, user), "mode": "local", "provider": "local"}
+        return {"answer": local_ai_support(db, question, user), "mode": "local", "provider": "local", "history_used": bool(history)}
+
     try:
         from openai import OpenAI
         total = db.query(ParkingSlot).count()
@@ -1107,23 +1150,24 @@ def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: Use
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
         public_context = f"Tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, địa chỉ={company.address if company else ''}, điện thoại={company.phone if company else ''}."
         if user.role == "guest":
-            context = public_context + " Tài khoản khách không được cung cấp doanh thu, nhật ký, dữ liệu tài khoản hoặc thông tin quản trị."
+            context = public_context + " Tài khoản khách tuyệt đối không được cung cấp doanh thu, nhật ký, dữ liệu tài khoản hoặc thông tin quản trị."
         else:
             revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
             context = public_context + f" Doanh thu ghi nhận={float(revenue):,.0f} VNĐ. Bảng giá=" + "; ".join(f"{x.vehicle_type}:{float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices)
-        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-        prompt = f"""Bạn là trợ lý AI hỗ trợ người dùng của Parking AI Pro. Người dùng là {('khách' if user.role == 'guest' else 'nhân viên/quản lý')}.
-Quy tắc: trả lời bằng tiếng Việt, thân thiện, ngắn gọn 1-4 câu; chỉ dùng dữ liệu trong ngữ cảnh; không bịa; không tiết lộ dữ liệu quản trị cho khách; nếu không biết thì hướng dẫn liên hệ nhân viên.
-Ngữ cảnh: {context}
-Câu hỏi: {question}"""
-        response = client.chat.completions.create(
-            model=DEEPSEEK_MODEL,
-            messages=[{"role": "system", "content": "Bạn là trợ lý chăm sóc khách hàng và hỗ trợ vận hành bãi xe."}, {"role": "user", "content": prompt}],
-            temperature=0.3,
-        )
-        return {"answer": response.choices[0].message.content, "mode": "deepseek", "provider": "DeepSeek"}
+
+        system = """Bạn là trợ lý AI chăm sóc khách hàng và hỗ trợ vận hành của Parking AI Pro. Trả lời bằng tiếng Việt, rõ ràng, thân thiện, ưu tiên câu trả lời ngắn gọn. Chỉ dùng dữ liệu trong ngữ cảnh được cung cấp, không bịa. Nếu người dùng hỏi dữ liệu không có, nói rõ bạn chưa có dữ liệu và hướng dẫn họ. Không tiết lộ bí mật, mật khẩu, token hay dữ liệu tài khoản. Với khách, tuyệt đối không tiết lộ doanh thu, nhật ký, thông tin quản trị hoặc dữ liệu riêng tư. Khi người dùng hỏi tiếp câu có liên quan, hãy dùng lịch sử hội thoại để hiểu ngữ cảnh."""
+        messages = [{"role": "system", "content": system}, {"role": "system", "content": f"Ngữ cảnh dữ liệu hiện tại: {context}"}]
+        messages.extend(history)
+        messages.append({"role": "user", "content": question})
+
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+        response = client.chat.completions.create(model=DEEPSEEK_MODEL, messages=messages, temperature=0.2, max_tokens=500)
+        answer = (response.choices[0].message.content or "").strip()
+        if not answer:
+            raise RuntimeError("AI trả về nội dung rỗng")
+        return {"answer": answer, "mode": "deepseek", "provider": "DeepSeek", "history_used": bool(history)}
     except Exception:
-        return {"answer": local_ai_support(db, question, user), "mode": "fallback", "provider": "local"}
+        return {"answer": local_ai_support(db, question, user), "mode": "fallback", "provider": "local", "history_used": bool(history)}
 
 
 @app.get("/api/ai/prediction")

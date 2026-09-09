@@ -19,7 +19,7 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const AWAY_TIMEOUT_MS=30*60*1000;
 let token=localStorage.getItem("parking_token"), me=null;
-function clearAuth(){localStorage.removeItem("parking_token");localStorage.removeItem("parking_last_seen");token=null;}
+function clearAuth(){localStorage.removeItem("parking_token");localStorage.removeItem("parking_last_seen");sessionStorage.removeItem("parking_ai_support_history");token=null;}
 function refreshLastSeen(){if(token) localStorage.setItem("parking_last_seen",String(Date.now()));}
 function isAwayExpired(){const last=Number(localStorage.getItem("parking_last_seen")||0);return !!token && (!last || Date.now()-last>=AWAY_TIMEOUT_MS);}
 if(isAwayExpired()) clearAuth();
@@ -53,32 +53,57 @@ setInterval(()=>{
 
 const titles={dashboard:"Tổng quan",parking:"Xe vào / Xe ra",slots:"Vị trí đỗ",history:"Lịch sử",vehicles:"Phương tiện",pricing:"Bảng giá",areas:"Khu vực",ai:"AI phân tích",reports:"Báo cáo doanh thu",users:"Tài khoản",settings:"Cài đặt doanh nghiệp",activity:"Nhật ký hoạt động",monthly:"Vé tháng","ai-center":"AI Center"};
 async function api(path,opt={}){opt.headers={...(opt.headers||{}),...(token?{Authorization:"Bearer "+token}:{})};if(opt.body&&typeof opt.body!=="string"){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(opt.body)}const r=await fetch(path,opt);const raw=await r.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={detail:raw}}if(!r.ok)throw new Error(data.detail||`Lỗi API ${r.status}: ${path}`);return data}
-function addAISupportMessage(text, role="bot"){
+let aiSupportHistory=[];
+function loadAISupportHistory(){
+  try{const raw=sessionStorage.getItem("parking_ai_support_history");const parsed=raw?JSON.parse(raw):[];aiSupportHistory=Array.isArray(parsed)?parsed.slice(-10):[];}catch(_){aiSupportHistory=[];}
+}
+function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
+function addAISupportMessage(text, role="bot", persist=true){
   const box=$("#aiSupportMessages"); if(!box) return;
   const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
   const badge=document.createElement("b"); badge.textContent=role==="user"?"Bạn":"AI";
   const body=document.createElement("span"); body.textContent=text;
   row.append(badge,body); box.appendChild(row); box.scrollTop=box.scrollHeight;
+  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:String(text)});saveAISupportHistory();}
 }
 function setAISupportBusy(busy){
   const input=$("#aiSupportInput"), btn=$("#aiSupportForm button");
   if(input) input.disabled=busy;
-  if(btn){btn.disabled=busy;btn.textContent=busy?"…":"➤";}
+  if(btn){btn.disabled=busy;btn.textContent=busy?"…":"➤";btn.setAttribute("aria-busy",busy?"true":"false");}
+}
+function renderAISupportHistory(){
+  const box=$("#aiSupportMessages"); if(!box) return;
+  box.innerHTML="";
+  if(!aiSupportHistory.length){
+    addAISupportMessage("Xin chào! 👋 Tôi là trợ lý AI của Parking AI Pro. Tôi có thể hỗ trợ về chỗ trống, vị trí đỗ, hướng dẫn sử dụng, thông tin liên hệ và các câu hỏi về bãi xe.","bot",false);
+    return;
+  }
+  aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
 }
 function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
+  loadAISupportHistory(); renderAISupportHistory();
   const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");setTimeout(()=>input.focus(),80)};
   const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open")};
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
   close?.addEventListener("click",shut);
-  $$("[data-ai-q]").forEach(b=>b.addEventListener("click",()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
+  $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
-    e.preventDefault(); const q=input.value.trim(); if(!q||!token)return;
-    addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
-    try{const d=await api("/api/ai/support",{method:"POST",body:{question:q}});addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot");}
-    catch(err){addAISupportMessage("Không thể kết nối trợ lý AI lúc này. Bạn vui lòng thử lại sau.","bot");}
-    finally{setAISupportBusy(false);input.focus();}
+    e.preventDefault(); const q=input.value.trim(); if(!q||!token||form.dataset.busy==="1")return;
+    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
+    try{
+      const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),20000);
+      let d;
+      try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
+      finally{clearTimeout(timer)}
+      const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
+      addAISupportMessage(answer,"bot");
+    }catch(err){
+      const msg=err.name==="AbortError"?"Trợ lý đang phản hồi chậm. Bạn thử gửi lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Không thể kết nối trợ lý AI lúc này. Bạn vui lòng thử lại sau.");
+      addAISupportMessage(msg,"bot");
+    }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
 }
 initAISupport();
