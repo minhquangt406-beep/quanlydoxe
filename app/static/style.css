@@ -2716,3 +2716,100 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
   .login-card p{font-size:12px!important}
   .login-security{display:flex!important}
 }
+
+
+/* =========================================================
+   PARKING AI PRO — LOGIN EXPERIENCE V4
+   Clean premium SaaS / operations-center presentation.
+   Functional markup remains unchanged.
+   ========================================================= */
+.login-page{
+  min-height:100vh!important;
+  padding:clamp(20px,3vw,42px)!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.08fr) minmax(390px,.72fr)!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:clamp(42px,6vw,110px)!important;
+  position:relative!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(circle at 12% 18%,rgba(99,102,241,.22),transparent 30%),
+    radial-gradient(circle at 92% 82%,rgba(6,182,212,.15),transparent 28%),
+    linear-gradient(135deg,#07101f 0%,#0c1630 54%,#10162b 100%)!important;
+}
+.login-page:before{opacity:.55!important;background-size:42px 42px!important}
+.login-page:after{content:"";position:absolute;inset:auto -10% -35% 35%;height:55%;background:radial-gradient(ellipse,rgba(99,102,241,.16),transparent 68%);filter:blur(25px);pointer-events:none}
+.login-showcase{display:flex!important;width:min(760px,100%)!important;min-height:650px!important;height:auto!important;padding:4px 0!important;position:relative!important;z-index:1!important}
+.showcase-top{margin-bottom:4px!important}
+.showcase-brand{gap:12px!important}
+.showcase-logo{width:46px!important;height:46px!important;border-radius:14px!important;font-size:20px!important}
+.showcase-brand b{font-size:14px!important;letter-spacing:-.02em!important}
+.live-badge{padding:8px 11px!important;font-size:8px!important}
+.showcase-copy{max-width:650px!important;margin-top:clamp(55px,9vh,95px)!important}
+.showcase-kicker{font-size:9px!important;letter-spacing:.17em!important}
+.showcase-copy h2{max-width:630px!important;font-size:clamp(42px,4.7vw,68px)!important;line-height:1.02!important;letter-spacing:-.055em!important;margin:14px 0 18px!important}
+.showcase-copy p{max-width:570px!important;font-size:14px!important;line-height:1.75!important;color:#aab8d0!important}
+.showcase-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.showcase-chips span{padding:8px 11px;border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(255,255,255,.045);color:#c8d2e5;font-size:9px;font-weight:800;letter-spacing:.01em;backdrop-filter:blur(10px)}
+.parking-visual{height:205px!important;margin:26px 0 18px!important;border-radius:20px!important;background:linear-gradient(145deg,rgba(20,35,62,.96),rgba(7,15,29,.96))!important;box-shadow:0 25px 65px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.07)!important}
+.parking-visual:before{inset:47px 18px 18px!important;border-color:rgba(148,163,184,.12)!important}
+.visual-head{padding:14px 16px!important;font-size:8px!important}
+.slot{width:56px!important;height:38px!important;border-radius:9px!important;font-size:8px!important}
+.showcase-stats{gap:9px!important}
+.showcase-stats div{padding:13px 14px!important;border-radius:14px!important;background:rgba(255,255,255,.045)!important}
+.showcase-stats b{font-size:16px!important}
+.showcase-stats span{font-size:8px!important}
+.login-card{
+  width:min(430px,100%)!important;
+  justify-self:end!important;
+  padding:34px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:26px!important;
+  background:rgba(255,255,255,.985)!important;
+  box-shadow:0 35px 100px rgba(0,0,0,.36),0 1px 0 rgba(255,255,255,.95) inset!important;
+  z-index:3!important;
+}
+.login-card:before{content:"";position:absolute;left:34px;right:34px;top:0;height:3px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,#4f46e5,#8b5cf6,#06b6d4)}
+.login-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:19px}
+.brand-mark{width:54px!important;height:54px!important;border-radius:16px!important;margin:0!important;font-size:24px!important}
+.secure-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #e6eaf1;border-radius:999px;background:#f8fafc;color:#7a8495;font-size:8px;font-weight:900;letter-spacing:.06em}
+.secure-pill i{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.09)}
+.login-card h1{font-size:34px!important;line-height:1.08!important;margin:6px 0 7px!important;letter-spacing:-.045em!important}
+.login-card>p{font-size:12px!important;line-height:1.55!important;margin:0 0 23px!important;color:#7b879a!important}
+.login-card label{font-size:11px!important;margin:12px 0!important;color:#283449!important}
+.login-card input{height:46px!important;padding:11px 13px!important;border-radius:11px!important;background:#f8fafc!important;border-color:#e2e7ef!important;font-size:13px!important}
+.login-card input:focus{background:#fff!important;border-color:#8b82f6!important;box-shadow:0 0 0 4px rgba(99,102,241,.09)!important}
+.primary{height:46px!important;border-radius:11px!important;font-size:13px!important;box-shadow:0 10px 22px rgba(79,70,229,.22)!important}
+.forgot-link{margin-top:1px!important}
+.link-btn{font-size:10px!important;font-weight:800!important}
+.guest-register-link{font-size:10px!important;margin-top:15px!important}
+.login-security{margin-top:18px!important;padding:10px 11px!important;border-radius:12px!important}
+.login-security>span{width:29px!important;height:29px!important;font-size:13px!important}
+.login-security small{font-size:8px!important}
+.login-security b{font-size:9px!important}
+
+@media(max-width:1050px){
+ .login-page{grid-template-columns:minmax(0,1fr) minmax(350px,.72fr);gap:40px!important}
+ .showcase-copy h2{font-size:clamp(38px,5vw,58px)!important}
+ .showcase-chips span:nth-child(3){display:none}
+}
+@media(max-width:820px){
+ .login-page{display:block!important;padding:22px!important;overflow:auto!important}
+ .login-showcase{display:none!important}
+ .login-card{width:min(430px,100%)!important;margin:5vh auto!important;justify-self:auto!important}
+}
+@media(max-width:480px){
+ .login-page{padding:12px!important}
+ .login-card{padding:28px 22px!important;border-radius:22px!important;margin:3vh auto!important}
+ .login-card:before{left:22px;right:22px}
+ .login-head{margin-bottom:17px}
+ .secure-pill{font-size:7px;padding:6px 8px}
+ .login-card h1{font-size:30px!important}
+ .login-card>p{font-size:11px!important}
+}
+
+/* FINAL FIX: the login page must disappear completely after authentication.
+   .login-page has display:grid!important, so the generic .hidden rule can lose
+   the cascade. Keep this selector at the end of the stylesheet. */
+#loginView.login-page.hidden{display:none!important;visibility:hidden!important;pointer-events:none!important;height:0!important;min-height:0!important;overflow:hidden!important}
