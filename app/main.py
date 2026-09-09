@@ -138,7 +138,7 @@ class RevenueReset(Base):
     __tablename__ = "revenue_resets"
     id = Column(Integer, primary_key=True)
     reset_at = Column(DateTime, nullable=False, default=now_vn)
-    period_label = Column(String(20), nullable=False)
+    period_label = Column(String(50), nullable=False)
     amount_before = Column(Float, nullable=False, default=0)
     reset_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
@@ -587,7 +587,7 @@ def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_on
     total, _ = current_revenue(db)
     snapshot = RevenueReset(
         reset_at=now,
-        period_label=f"RESET-{now.strftime('%Y-%m-%d %H:%M:%S')}",
+        period_label=f"R-{now.strftime('%Y%m%d%H%M%S')}",
         amount_before=float(total),
         reset_by=user.id,
     )
