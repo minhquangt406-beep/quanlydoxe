@@ -576,11 +576,30 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depend
     target = db.get(User, user_id)
     if not target:
         raise HTTPException(404, "Tài khoản không tồn tại")
-    if target.role == "guest":
-        raise HTTPException(400, "Không xóa tài khoản khách tại đây")
-    audit(db, user, "DELETE_USER", f"Xóa tài khoản {target.username}")
-    db.delete(target); db.commit()
-    return {"message": "Đã xóa tài khoản"}
+
+    # Keep the account-management screen fully functional on PostgreSQL too.
+    # Older deployments have foreign keys from audit/OTP/revenue-reset rows
+    # back to users, so a direct DELETE can fail. Preserve audit history by
+    # detaching nullable references, and remove only disposable OTP rows.
+    username = target.username
+    db.query(AuditLog).filter(AuditLog.user_id == target.id).update(
+        {AuditLog.user_id: None}, synchronize_session=False
+    )
+    db.query(RevenueReset).filter(RevenueReset.reset_by == target.id).update(
+        {RevenueReset.reset_by: None}, synchronize_session=False
+    )
+    db.query(PasswordResetOTP).filter(PasswordResetOTP.user_id == target.id).delete(
+        synchronize_session=False
+    )
+
+    audit(db, user, "DELETE_USER", f"Xóa tài khoản {username}")
+    db.delete(target)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(500, "Không thể xóa tài khoản. Vui lòng thử lại.")
+    return {"message": f"Đã xóa tài khoản {username}"}
 
 @app.get("/api/company")
 def get_company(db: Session = Depends(get_db), user: User = Depends(current_user)):
