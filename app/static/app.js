@@ -85,6 +85,10 @@ function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
+  api("/api/ai/status").then(st=>{
+    const sub=panel.querySelector(".ai-support-head small");
+    if(sub){ sub.textContent = st.openai_configured ? `GPT AI · ${st.openai_model} · dữ liệu thời gian thực` : (st.deepseek_configured ? "AI dự phòng · dữ liệu thời gian thực" : "AI nội bộ · cần cấu hình API để chat tự nhiên"); }
+  }).catch(()=>{});
   const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");setTimeout(()=>input.focus(),80)};
   const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open")};
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
@@ -102,7 +106,7 @@ function initAISupport(){
       const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
       addAISupportMessage(answer,"bot");
     }catch(err){
-      const msg=err.name==="AbortError"?"Trợ lý đang phản hồi chậm. Bạn thử gửi lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Không thể kết nối trợ lý AI lúc này. Bạn vui lòng thử lại sau.");
+      const msg=err.name==="AbortError"?"Trợ lý đang phản hồi chậm. Bạn thử gửi lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"AI chưa kết nối được máy chủ AI lúc này. Nếu OPENAI_API_KEY đã có, hãy kiểm tra log Render để xem lỗi API. Nếu chưa cấu hình, hãy thêm OPENAI_API_KEY trên Render, chatbot sẽ chỉ dùng chế độ dữ liệu nội bộ. Vui lòng thử lại sau ít giây.");
       addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });

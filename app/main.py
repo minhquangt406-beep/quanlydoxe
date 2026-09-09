@@ -1144,7 +1144,7 @@ def local_ai_support(db: Session, question: str, user: User):
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
         return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
-    return "Tôi chưa kết nối được AI ngôn ngữ, nhưng vẫn có thể tra cứu chỗ trống, xe đang gửi, xe đỗ lâu nhất, giá và thông tin bãi."
+    return "Mình chưa được kết nối với AI ngôn ngữ bên ngoài ở thời điểm này. Tuy vậy, mình vẫn có thể tra cứu dữ liệu bãi xe trực tiếp như chỗ trống, xe đang gửi, xe đỗ lâu nhất, giá và thông tin liên hệ. Bạn có thể hỏi ngay, ví dụ: 'Bãi còn bao nhiêu chỗ?' hoặc 'Xe nào đỗ lâu nhất?'."
 
 
 AI_TOOLS = [
@@ -1188,22 +1188,92 @@ def _ai_tool_result(db: Session, name: str, args: dict, user: User):
 
 
 def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
+    """Call the selected LLM. OpenAI uses current GPT-5.x-compatible parameters;
+    DeepSeek keeps its OpenAI-compatible chat endpoint.
+    """
     from openai import OpenAI
-    if provider == "openai": client=OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
-    else: client=OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    if provider == "openai":
+        client = OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+        tool_messages = list(messages)
+        for _ in range(4):
+            # GPT-5.4 mini supports function calling, but sampling parameters such as
+            # temperature can cause request errors on reasoning models. Keep the request
+            # minimal and use low reasoning effort for a fast customer-support chat.
+            resp = client.chat.completions.create(
+                model=model,
+                messages=tool_messages,
+                tools=AI_TOOLS,
+                tool_choice="auto",
+                reasoning_effort="low",
+                max_completion_tokens=900,
+            )
+            msg = resp.choices[0].message
+            tool_calls = getattr(msg, "tool_calls", None) or []
+            if not tool_calls:
+                answer = (msg.content or "").strip()
+                if not answer:
+                    raise RuntimeError("OpenAI trả về phản hồi rỗng")
+                return answer
+            tool_messages.append(msg.model_dump() if hasattr(msg, "model_dump") else msg)
+            for tc in tool_calls:
+                try:
+                    args = json.loads(tc.function.arguments or "{}")
+                except Exception:
+                    args = {}
+                result = _ai_tool_result(db, tc.function.name, args, user)
+                tool_messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result, ensure_ascii=False),
+                })
+        raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
+
+    client = OpenAI(
+        api_key=api_key,
+        base_url=DEEPSEEK_BASE_URL,
+        max_retries=1,
+        timeout=AI_SUPPORT_TIMEOUT_SECONDS,
+    )
     tool_messages = list(messages)
     for _ in range(4):
-        resp=client.chat.completions.create(model=model, messages=tool_messages, tools=AI_TOOLS, tool_choice="auto", temperature=0.2, max_tokens=700)
-        msg=resp.choices[0].message
-        tool_calls=getattr(msg,"tool_calls",None) or []
-        if not tool_calls: return (msg.content or "").strip()
-        tool_messages.append(msg)
+        resp = client.chat.completions.create(
+            model=model,
+            messages=tool_messages,
+            tools=AI_TOOLS,
+            tool_choice="auto",
+            temperature=0.2,
+            max_tokens=900,
+        )
+        msg = resp.choices[0].message
+        tool_calls = getattr(msg, "tool_calls", None) or []
+        if not tool_calls:
+            answer = (msg.content or "").strip()
+            if not answer:
+                raise RuntimeError("DeepSeek trả về phản hồi rỗng")
+            return answer
+        tool_messages.append(msg.model_dump() if hasattr(msg, "model_dump") else msg)
         for tc in tool_calls:
-            try: args=json.loads(tc.function.arguments or "{}")
-            except Exception: args={}
-            result=_ai_tool_result(db,tc.function.name,args,user)
-            tool_messages.append({"role":"tool","tool_call_id":tc.id,"name":tc.function.name,"content":json.dumps(result,ensure_ascii=False)})
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except Exception:
+                args = {}
+            result = _ai_tool_result(db, tc.function.name, args, user)
+            tool_messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": json.dumps(result, ensure_ascii=False),
+            })
     raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
+
+
+@app.get("/api/ai/status")
+def ai_support_status(user: User = Depends(current_user)):
+    return {
+        "openai_configured": bool(OPENAI_API_KEY),
+        "openai_model": OPENAI_MODEL,
+        "deepseek_configured": bool(DEEPSEEK_API_KEY),
+        "ready": bool(OPENAI_API_KEY or DEEPSEEK_API_KEY),
+    }
 
 
 @app.post("/api/ai/support")
@@ -1218,9 +1288,11 @@ def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: Use
     if OPENAI_API_KEY:
         try: return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
         except Exception as openai_error:
+            print(f"[AI] OpenAI error: {type(openai_error).__name__}: {openai_error}")
             if DEEPSEEK_API_KEY:
                 try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
-                except Exception: pass
+                except Exception as deepseek_error:
+                    print(f"[AI] DeepSeek fallback error: {type(deepseek_error).__name__}: {deepseek_error}")
             return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history)}
     if DEEPSEEK_API_KEY:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
