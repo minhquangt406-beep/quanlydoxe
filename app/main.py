@@ -30,6 +30,8 @@ if DATABASE_URL.startswith("sqlite:///./") and not os.path.isabs(DATABASE_URL.re
     DATABASE_URL = f"sqlite:///{db_path}"
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
@@ -1107,24 +1109,16 @@ def _clean_ai_history(history):
 
 
 def local_ai_support(db: Session, question: str, user: User):
-    """Deterministic fallback assistant. It never exposes sensitive admin data to guests."""
+    """Deterministic fallback. It answers common operational questions from live DB data."""
     q = (question or "").strip().lower()
     total = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
     empty = max(total - occupied, 0)
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
     company = db.query(CompanySetting).first()
-
-    # Find the vehicle that has been parked the longest. This is intentionally
-    # handled locally so the answer works even when no external AI key exists.
-    oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot)
-              .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
-              .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id)
-              .filter(ParkingRecord.time_out.is_(None))
-              .order_by(ParkingRecord.time_in.asc())
-              .first())
-
-    # Area-specific availability is useful even without an external AI key.
+    oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
+              .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None))
+              .order_by(ParkingRecord.time_in.asc()).first())
     m = re.search(r"(?:khu|khu vực)\s*([a-z])", q)
     if m and any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ"]):
         area = db.query(Area).filter(func.lower(Area.name).contains(m.group(1))).first()
@@ -1132,103 +1126,106 @@ def local_ai_support(db: Session, question: str, user: User):
             slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
             free = sum(1 for slot in slots if slot.status != "occupied")
             return f"{area.name} hiện còn {free}/{len(slots)} vị trí trống."
-
     if any(k in q for k in ["chỗ trống", "vị trí trống", "còn chỗ", "bao nhiêu chỗ"]):
         return f"Hiện bãi còn {empty} vị trí trống trên tổng {total} vị trí." if total else "Hiện chưa có dữ liệu vị trí đỗ."
-    if any(k in q for k in ["đỗ lâu nhất", "đậu lâu nhất", "ở lâu nhất", "gửi lâu nhất", "vào lâu nhất", "xe nào lâu nhất", "xe đỗ lâu", "xe đậu lâu"]):
-        if not oldest:
-            return "Hiện chưa có xe nào đang ở trong bãi."
+    if any(k in q for k in ["đỗ lâu nhất", "đậu lâu nhất", "ở lâu nhất", "gửi lâu nhất", "vào lâu nhất", "xe nào lâu nhất"]):
+        if not oldest: return "Hiện chưa có xe nào đang ở trong bãi."
         record, vehicle, slot = oldest
         elapsed = max(now_vn() - record.time_in, timedelta(0)) if record.time_in else timedelta(0)
-        total_minutes = int(elapsed.total_seconds() // 60)
-        hours, minutes = divmod(total_minutes, 60)
-        duration_text = f"{hours} giờ {minutes} phút" if hours else f"{minutes} phút"
-        if user.role == "guest":
-            return f"Xe đang ở trong bãi lâu nhất đã ở tại vị trí {slot.name} khoảng {duration_text}. Vì quyền riêng tư, tôi không cung cấp biển số của xe khác cho tài khoản khách."
-        return f"Xe đỗ lâu nhất hiện tại là biển số {vehicle.license_plate}, tại vị trí {slot.name}, đã ở trong bãi khoảng {duration_text} (từ {record.time_in.strftime('%d/%m/%Y %H:%M')})."
-    if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]):
-        return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
-    if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]):
-        return f"Địa chỉ bãi xe: {company.address or 'Chưa được cấu hình'}."
-    if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]):
-        return f"Số liên hệ: {company.phone or 'Chưa được cấu hình'}."
-    if any(k in q for k in ["hướng dẫn", "sử dụng", "làm thế nào", "thế nào"]):
-        if user.role == "guest":
-            return "Bạn có thể xem sơ đồ và tình trạng chỗ trống. Nếu cần hỗ trợ thêm, hãy mô tả câu hỏi ngay trong khung chat này."
-        return "Bạn có thể dùng menu bên trái để quản lý xe, vị trí đỗ, lịch sử và các chức năng vận hành. Tôi có thể hướng dẫn từng bước."
+        mins = int(elapsed.total_seconds() // 60); h, m2 = divmod(mins, 60)
+        duration = f"{h} giờ {m2} phút" if h else f"{m2} phút"
+        if user.role == "guest": return f"Xe đang ở trong bãi lâu nhất đã ở tại vị trí {slot.name} khoảng {duration}. Vì quyền riêng tư, tôi không cung cấp biển số của xe khác cho tài khoản khách."
+        return f"Xe đỗ lâu nhất hiện tại là biển số {vehicle.license_plate}, tại vị trí {slot.name}, đã ở trong bãi khoảng {duration}, từ {record.time_in.strftime('%d/%m/%Y %H:%M')}."
+    if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
+    if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
+    if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
     if any(k in q for k in ["giá", "phí", "bao nhiêu tiền", "bảng giá"]):
-        if user.role == "guest":
-            return "Bạn vui lòng liên hệ nhân viên/quản lý để biết mức phí hiện hành của từng loại xe."
+        if user.role == "guest": return "Bạn có thể hỏi nhân viên/quản lý để biết mức phí hiện hành."
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
-        return "Bảng giá hiện tại: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
-    if any(k in q for k in ["cảm ơn", "thanks"]):
-        return "Rất vui được hỗ trợ bạn! 😊"
-    if any(k in q for k in ["xin chào", "hello", "chào", "hi"]):
-        return f"Xin chào {user.full_name}! 👋 Tôi là trợ lý AI của Parking AI Pro. Bạn muốn hỏi về chỗ trống, vị trí đỗ, hướng dẫn sử dụng hay thông tin liên hệ?"
-    return "Tôi có thể hỗ trợ về chỗ trống, tình trạng xe trong bãi, vị trí đỗ, hướng dẫn sử dụng, thông tin liên hệ và bảng giá. Bạn hãy hỏi cụ thể nhé."
+        return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
+    if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
+    return "Tôi chưa kết nối được AI ngôn ngữ, nhưng vẫn có thể tra cứu chỗ trống, xe đang gửi, xe đỗ lâu nhất, giá và thông tin bãi."
+
+
+AI_TOOLS = [
+    {"type":"function","function":{"name":"get_parking_status","description":"Lấy tổng số vị trí, số vị trí đang dùng, còn trống và số xe đang gửi.","parameters":{"type":"object","properties":{},"additionalProperties":False}}},
+    {"type":"function","function":{"name":"get_area_status","description":"Lấy tình trạng vị trí trống/đang dùng của một khu cụ thể, ví dụ Khu A.","parameters":{"type":"object","properties":{"area":{"type":"string","description":"Tên khu, ví dụ Khu A"}},"required":["area"],"additionalProperties":False}}},
+    {"type":"function","function":{"name":"get_longest_parked_vehicle","description":"Tìm xe đang trong bãi lâu nhất. Không trả biển số cho khách.","parameters":{"type":"object","properties":{},"additionalProperties":False}}},
+    {"type":"function","function":{"name":"get_active_vehicles","description":"Lấy danh sách xe đang trong bãi. Chỉ dùng khi người dùng là nhân viên hoặc quản lý.","parameters":{"type":"object","properties":{},"additionalProperties":False}}},
+    {"type":"function","function":{"name":"get_pricing","description":"Lấy bảng giá hiện tại. Không dùng để tiết lộ thông tin quản trị cho khách.","parameters":{"type":"object","properties":{},"additionalProperties":False}}},
+    {"type":"function","function":{"name":"get_business_info","description":"Lấy địa chỉ và số điện thoại liên hệ của bãi xe.","parameters":{"type":"object","properties":{},"additionalProperties":False}}},
+]
+
+
+def _ai_tool_result(db: Session, name: str, args: dict, user: User):
+    if name == "get_parking_status":
+        total = db.query(ParkingSlot).count(); occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
+        return {"total_slots": total, "occupied_slots": occupied, "free_slots": max(total-occupied,0), "active_vehicles": db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()}
+    if name == "get_area_status":
+        wanted = (args.get("area") or "").strip().lower()
+        area = db.query(Area).filter(func.lower(Area.name) == wanted).first()
+        if not area: area = db.query(Area).filter(func.lower(Area.name).contains(wanted.replace("khu ",""))).first()
+        if not area: return {"error":"Không tìm thấy khu này."}
+        slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
+        return {"area":area.name,"total":len(slots),"free":sum(1 for x in slots if x.status != "occupied"),"occupied":sum(1 for x in slots if x.status == "occupied")}
+    if name == "get_longest_parked_vehicle":
+        row = (db.query(ParkingRecord,Vehicle,ParkingSlot).join(Vehicle,ParkingRecord.vehicle_id==Vehicle.id).join(ParkingSlot,ParkingRecord.slot_id==ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.asc()).first())
+        if not row: return {"found":False}
+        r,v,slot=row; elapsed=max(now_vn()-r.time_in,timedelta(0)); mins=int(elapsed.total_seconds()//60); h,m=divmod(mins,60)
+        out={"found":True,"slot":slot.name,"duration":f"{h} giờ {m} phút" if h else f"{m} phút","time_in":r.time_in.strftime('%d/%m/%Y %H:%M')}
+        if user.role != "guest": out["license_plate"]=v.license_plate
+        return out
+    if name == "get_active_vehicles":
+        if user.role == "guest": return {"error":"Tài khoản khách không có quyền xem danh sách xe và biển số của người khác."}
+        rows=(db.query(ParkingRecord,Vehicle,ParkingSlot).join(Vehicle,ParkingRecord.vehicle_id==Vehicle.id).join(ParkingSlot,ParkingRecord.slot_id==ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.asc()).limit(100).all())
+        return {"vehicles":[{"license_plate":v.license_plate,"type":v.vehicle_type,"slot":slot.name,"time_in":r.time_in.strftime('%d/%m/%Y %H:%M')} for r,v,slot in rows]}
+    if name == "get_pricing":
+        if user.role == "guest": return {"error":"Khách không được xem dữ liệu quản trị; hãy liên hệ nhân viên để biết mức phí hiện hành."}
+        rows=db.query(Pricing).order_by(Pricing.vehicle_type).all(); return {"pricing":[{"vehicle_type":x.vehicle_type,"price_per_hour":float(x.price_per_hour)} for x in rows]}
+    if name == "get_business_info":
+        c=db.query(CompanySetting).first(); return {"address":c.address if c else "","phone":c.phone if c else ""}
+    return {"error":"Tool không tồn tại."}
+
+
+def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
+    from openai import OpenAI
+    if provider == "openai": client=OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    else: client=OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    tool_messages = list(messages)
+    for _ in range(4):
+        resp=client.chat.completions.create(model=model, messages=tool_messages, tools=AI_TOOLS, tool_choice="auto", temperature=0.2, max_tokens=700)
+        msg=resp.choices[0].message
+        tool_calls=getattr(msg,"tool_calls",None) or []
+        if not tool_calls: return (msg.content or "").strip()
+        tool_messages.append(msg)
+        for tc in tool_calls:
+            try: args=json.loads(tc.function.arguments or "{}")
+            except Exception: args={}
+            result=_ai_tool_result(db,tc.function.name,args,user)
+            tool_messages.append({"role":"tool","tool_call_id":tc.id,"name":tc.function.name,"content":json.dumps(result,ensure_ascii=False)})
+    raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
 
 
 @app.post("/api/ai/support")
 def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    question = (data.question or "").strip()
-    if not question:
-        raise HTTPException(400, "Vui lòng nhập câu hỏi")
-    if len(question) > 500:
-        raise HTTPException(400, "Câu hỏi tối đa 500 ký tự")
-    if not ai_support_rate_ok(user.id):
-        raise HTTPException(429, "Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.")
-
-    history = _clean_ai_history(data.history)
-
-    # Always keep a deterministic fallback available.
-    if not DEEPSEEK_API_KEY:
-        return {"answer": local_ai_support(db, question, user), "mode": "local", "provider": "local", "history_used": bool(history)}
-
-    try:
-        from openai import OpenAI
-        total = db.query(ParkingSlot).count()
-        occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
-        empty = max(total - occupied, 0)
-        active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
-        company = db.query(CompanySetting).first()
-        prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
-        oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot)
-                  .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
-                  .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id)
-                  .filter(ParkingRecord.time_out.is_(None))
-                  .order_by(ParkingRecord.time_in.asc())
-                  .first())
-        oldest_context = "chưa có xe đang đỗ"
-        if oldest:
-            old_record, old_vehicle, old_slot = oldest
-            elapsed = max(now_vn() - old_record.time_in, timedelta(0)) if old_record.time_in else timedelta(0)
-            total_minutes = int(elapsed.total_seconds() // 60)
-            oh, om = divmod(total_minutes, 60)
-            duration_text = f"{oh} giờ {om} phút" if oh else f"{om} phút"
-            if user.role == "guest":
-                oldest_context = f"xe đỗ lâu nhất ở vị trí {old_slot.name}, khoảng {duration_text}; không cung cấp biển số cho khách"
-            else:
-                oldest_context = f"biển số {old_vehicle.license_plate}, vị trí {old_slot.name}, khoảng {duration_text}, từ {old_record.time_in.strftime('%d/%m/%Y %H:%M')}"
-        public_context = f"Tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, xe đỗ lâu nhất={oldest_context}, địa chỉ={company.address if company else ''}, điện thoại={company.phone if company else ''}."
-        if user.role == "guest":
-            context = public_context + " Tài khoản khách tuyệt đối không được cung cấp doanh thu, nhật ký, dữ liệu tài khoản hoặc thông tin quản trị."
-        else:
-            revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
-            context = public_context + f" Doanh thu ghi nhận={float(revenue):,.0f} VNĐ. Bảng giá=" + "; ".join(f"{x.vehicle_type}:{float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices)
-
-        system = """Bạn là trợ lý AI chăm sóc khách hàng và hỗ trợ vận hành của Parking AI Pro. Trả lời bằng tiếng Việt, rõ ràng, thân thiện, ưu tiên câu trả lời ngắn gọn. Chỉ dùng dữ liệu trong ngữ cảnh được cung cấp, không bịa. Nếu người dùng hỏi dữ liệu không có, nói rõ bạn chưa có dữ liệu và hướng dẫn họ. Không tiết lộ bí mật, mật khẩu, token hay dữ liệu tài khoản. Với khách, tuyệt đối không tiết lộ doanh thu, nhật ký, thông tin quản trị hoặc dữ liệu riêng tư. Khi người dùng hỏi tiếp câu có liên quan, hãy dùng lịch sử hội thoại để hiểu ngữ cảnh."""
-        messages = [{"role": "system", "content": system}, {"role": "system", "content": f"Ngữ cảnh dữ liệu hiện tại: {context}"}]
-        messages.extend(history)
-        messages.append({"role": "user", "content": question})
-
-        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
-        response = client.chat.completions.create(model=DEEPSEEK_MODEL, messages=messages, temperature=0.2, max_tokens=500)
-        answer = (response.choices[0].message.content or "").strip()
-        if not answer:
-            raise RuntimeError("AI trả về nội dung rỗng")
-        return {"answer": answer, "mode": "deepseek", "provider": "DeepSeek", "history_used": bool(history)}
-    except Exception:
-        return {"answer": local_ai_support(db, question, user), "mode": "fallback", "provider": "local", "history_used": bool(history)}
+    question=(data.question or "").strip()
+    if not question: raise HTTPException(400,"Vui lòng nhập câu hỏi")
+    if len(question)>500: raise HTTPException(400,"Câu hỏi tối đa 500 ký tự")
+    if not ai_support_rate_ok(user.id): raise HTTPException(429,"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.")
+    history=_clean_ai_history(data.history)
+    system=f"""Bạn là trợ lý AI thực sự của Parking AI Pro. Người đang chat có vai trò: {user.role}. Hãy nói tiếng Việt tự nhiên, thân thiện, dễ hiểu như một nhân viên hỗ trợ giỏi. Hãy hiểu ngữ cảnh từ lịch sử hội thoại và câu hỏi nối tiếp. Khi câu hỏi cần dữ liệu bãi xe, hãy chủ động gọi tool phù hợp thay vì đoán. Không bịa số liệu. Nếu không đủ dữ liệu, nói rõ. Không tiết lộ mật khẩu, token hay bí mật. Khách không được xem biển số/danh sách xe của người khác, doanh thu, nhật ký hoạt động hay dữ liệu quản trị. Nhân viên được xem dữ liệu vận hành cần thiết; quản lý có quyền cao hơn. Không nói rằng bạn là hệ thống luật/từ khóa."""
+    messages=[{"role":"system","content":system}]+history+[{"role":"user","content":question}]
+    if OPENAI_API_KEY:
+        try: return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
+        except Exception as openai_error:
+            if DEEPSEEK_API_KEY:
+                try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
+                except Exception: pass
+            return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history)}
+    if DEEPSEEK_API_KEY:
+        try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
+        except Exception: pass
+    return {"answer":local_ai_support(db,question,user),"mode":"local","provider":"local","history_used":bool(history)}
 
 
 @app.get("/api/ai/prediction")
