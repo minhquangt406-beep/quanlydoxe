@@ -59,7 +59,7 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-3;back
 .notice{position:relative;overflow:hidden}.notice:after{content:"";position:absolute;top:0;bottom:0;width:80px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-120px);animation:noticeSweep 4s infinite}
 .ai-box{position:relative;overflow:auto}.ai-box:before{content:"DEEPSEEK";position:absolute;right:15px;top:13px;font-size:8px;letter-spacing:.16em;color:rgba(223,231,255,.35);font-weight:900}
 .table tbody tr{transition:transform .18s,background .18s}.table tbody tr:hover{transform:translateX(3px)}
-.page-enter{animation:pageEnter .32s ease both}.focus-mode .sidebar{transform:translateX(-265px)}.focus-mode{margin-left:0!important;width:100%!important}.focus-mode .topbar{padding-left:0}
+.page-enter{animation:pageEnter .32s ease both}.focus-active .sidebar{transform:translateX(-100%);visibility:hidden}.focus-active .main{margin-left:0!important;width:100%!important}.focus-active .topbar{padding-left:0}
 .mobile-menu{display:none;position:fixed;right:14px;bottom:14px;z-index:30;width:48px;height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,#5b5ff0,#8b5cf6);color:#fff;font-size:20px;box-shadow:0 16px 30px rgba(79,70,229,.3)}
 body.dark-mode{--bg:#080d18;--panel:#101827;--ink:#edf2ff;--muted:#8c9ab2;--line:#233047;--shadow:0 18px 55px rgba(0,0,0,.28);--shadow-sm:0 8px 24px rgba(0,0,0,.22);background:radial-gradient(700px 360px at 75% -5%,rgba(99,91,255,.16),transparent 65%),#080d18;color:var(--ink)}
 .dark-mode .topbar{background:rgba(8,13,24,.82)}.dark-mode .card,.dark-mode .panel,.dark-mode .userbox,.dark-mode .icon-btn,.dark-mode .btn{background:rgba(16,24,39,.86);border-color:#233047;color:var(--ink)}.dark-mode input,.dark-mode select,.dark-mode textarea{background:#0c1423;color:#edf2ff;border-color:#263650}.dark-mode .table tbody tr:hover{background:#121d2f}.dark-mode .parking-map{background:linear-gradient(180deg,#192433,#111a27);border-color:#263650}.dark-mode .map-zone.zone-a{background:linear-gradient(145deg,#1b2140,#151c36);border-color:#505bd0}.dark-mode .map-zone.zone-b{background:linear-gradient(145deg,#16332b,#122a24);border-color:#318d70}.dark-mode .real-slot{background:linear-gradient(145deg,#172131,#101923);border-color:#2b3a50}.dark-mode .real-slot.empty{background:linear-gradient(145deg,#13251f,#0f1d19)}.dark-mode .real-slot.occupied{background:linear-gradient(145deg,#281a20,#1e1419)}.dark-mode .modal-card{background:#101827;color:var(--ink)}.dark-mode .modal-close{background:#1d293b;color:#fff}.dark-mode .detail-item{background:#0c1423;border-color:#25344b}.dark-mode .notice{background:linear-gradient(90deg,#18213b,#201a36);border-color:#2d3b67;color:#b9c4ff}
@@ -2530,3 +2530,26 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
   .topbar-actions .icon-btn:nth-child(2){display:none}
   .real-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
+
+/* Guest check-in: chỉ hiển thị ô biển số, các thông tin khác do hệ thống tự xử lý. */
+.quick-form-grid.guest-only-plate {
+  grid-template-columns: minmax(0, 1fr);
+}
+.guest-entry-note {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid rgba(59,130,246,.18);
+  border-radius:14px;
+  background:rgba(59,130,246,.06);
+  color:inherit;
+}
+.guest-entry-note > span {
+  width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(34,197,94,.14);
+  color:#16a34a;font-weight:800;
+}
+.guest-entry-note div {display:flex;flex-direction:column;gap:3px}
+.guest-entry-note small {opacity:.7}

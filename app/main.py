@@ -277,7 +277,9 @@ class PriceIn(BaseModel):
 
 class CheckIn(BaseModel):
     license_plate: str
-    vehicle_type: str
+    # Nhân viên/quản lý có thể gửi loại xe; tài khoản khách chỉ gửi biển số
+    # và hệ thống sẽ tự nhận diện loại xe từ biển số.
+    vehicle_type: str = "Xe máy"
     slot_id: Optional[int] = None
 
 class CheckOut(BaseModel):
@@ -814,12 +816,27 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(non_guest_user)
             for v in db.query(Vehicle).order_by(Vehicle.id.desc()).all()]
 
 @app.post("/api/checkin")
-def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
-    # Xe đạp không có biển số. Hệ thống chỉ tạo mã nội bộ để quản lý dữ liệu;
-    # mã này không được hiển thị như biển số trên giao diện.
+def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    # Tài khoản khách chỉ được xem tình trạng bãi, không được ghi nhận xe.
+    if user.role == "guest":
+        raise HTTPException(403, "Tài khoản khách chỉ được xem tình trạng chỗ trống")
+    is_guest = False
     requested_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy"
     raw_plate = str(data.license_plate or "").strip()
-    if requested_type == "Xe đạp":
+
+    if is_guest:
+        if not raw_plate:
+            raise HTTPException(400, "Vui lòng nhập biển số xe")
+        plate = format_license_plate(raw_plate)
+        if not plate:
+            raise HTTPException(400, "Biển số xe không hợp lệ")
+        detected_type = infer_vehicle_type(plate)
+        # Khách không được tự chọn loại xe. Nếu không nhận diện được thì
+        # mặc định là xe máy để vẫn giữ quy trình nhập chỉ bằng biển số.
+        vehicle_type = detected_type or "Xe máy"
+    elif requested_type == "Xe đạp":
+        # Xe đạp không có biển số. Hệ thống chỉ tạo mã nội bộ để quản lý dữ liệu;
+        # mã này không được hiển thị như biển số trên giao diện.
         plate = ""
         vehicle_type = "Xe đạp"
     else:

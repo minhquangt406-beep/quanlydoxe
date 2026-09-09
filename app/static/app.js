@@ -133,6 +133,7 @@ function openSlotModal(slot){
   const m=$("#slotModal"),b=$("#modalBody");
   if(!m||!b)return;
   const occupied=slot.status==="occupied";
+  const isGuest=me?.role==="guest";
   b.innerHTML=`
     <div class="slot-modal-shell">
       <div class="slot-modal-head">
@@ -170,29 +171,35 @@ function openSlotModal(slot){
           <div><span>✓</span><div><small>Trạng thái</small><b>Sẵn sàng</b></div></div>
         </div>
 
-        <div class="quick-checkin beautiful-add">
-          <div class="quick-title-row">
-            <div class="add-icon">🚗</div>
-            <div><div class="quick-title">THÊM XE VÀO VỊ TRÍ</div><div class="quick-sub">Nhập biển số, hệ thống sẽ tự nhận diện loại xe.</div></div>
+        ${isGuest ? `
+          <div class="guest-entry-note guest-readonly-slot">
+            <span>👁</span><div><b>CHỈ XEM</b><small>Tài khoản khách không thể thêm xe hoặc ghi nhận biển số.</small></div>
           </div>
-          <div class="quick-form-grid">
-            <label class="plate-field" id="quickPlateField">BIỂN SỐ XE
-              <div class="plate-input-wrap"><span>⌕</span><input id="quickPlate" autocomplete="off" inputmode="text" autocapitalize="characters" placeholder="30A12345"></div>
-              <small class="field-hint" id="quickPlateHint">Ví dụ: 30A12345 → 30A-123.45</small>
-            </label>
-            <label>LOẠI XE
-              <select id="quickVtype">${vehicleTypes.map(v=>`<option value="${v}">${v}</option>`).join("")}</select>
-              <small class="field-hint" id="quickDetectHint">Đang chờ biển số...</small>
-            </label>
+        ` : `
+          <div class="quick-checkin beautiful-add">
+            <div class="quick-title-row">
+              <div class="add-icon">🚗</div>
+              <div><div class="quick-title">THÊM XE VÀO VỊ TRÍ</div><div class="quick-sub">Nhập biển số, hệ thống sẽ tự nhận diện loại xe.</div></div>
+            </div>
+            <div class="quick-form-grid">
+              <label class="plate-field" id="quickPlateField">BIỂN SỐ XE
+                <div class="plate-input-wrap"><span>⌕</span><input id="quickPlate" autocomplete="off" inputmode="text" autocapitalize="characters" placeholder="30A12345"></div>
+                <small class="field-hint" id="quickPlateHint">Ví dụ: 30A12345 → 30A-123.45</small>
+              </label>
+              <label>LOẠI XE
+                <select id="quickVtype">${vehicleTypes.map(v=>`<option value="${v}">${v}</option>`).join("")}</select>
+                <small class="field-hint" id="quickDetectHint">Đang chờ biển số...</small>
+              </label>
+            </div>
+            <div class="auto-detect-note">✨ <span><b>Tự động nhận diện</b> loại xe từ biển số</span><span class="detect-badge" id="detectBadge">Chờ nhập</span></div>
           </div>
-          <div class="auto-detect-note">✨ <span><b>Tự động nhận diện</b> loại xe từ biển số</span><span class="detect-badge" id="detectBadge">Chờ nhập</span></div>
-        </div>
+        `}
       `}
 
       <div class="modal-actions slot-actions">
         ${occupied
-          ? `<button class="btn" id="modalCancelCheckin">Đóng</button><button class="primary" id="modalCheckout">💳 Tính phí & xe ra</button>`
-          : `<button class="btn" id="modalCancelCheckin">Hủy bỏ</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}
+          ? `<button class="btn" id="modalCancelCheckin">Đóng</button>${isGuest ? "" : `<button class="primary" id="modalCheckout">💳 Tính phí & xe ra</button>`}`
+          : `${isGuest ? `<button class="btn" id="modalCancelCheckin">Đóng</button>` : `<button class="btn" id="modalCancelCheckin">Hủy bỏ</button><button class="primary" id="modalCheckin">🚗 Thêm xe vào ${slot.name}</button>`}`}
       </div>
     </div>`;
   m.classList.remove("hidden");
@@ -203,19 +210,26 @@ function openSlotModal(slot){
 
   if(occupied){
     $("#modalCancelCheckin").onclick=close;
-    $("#modalCheckout").onclick=async()=>{
-      try{
-        const active=await api("/api/active");
-        const row=active.find(x=>x.slot===slot.name);
-        if(!row) throw new Error("Không tìm thấy lượt gửi đang hoạt động");
-        close();
-        await openPaymentModal(row.id);
-      }catch(e){toast(e.message,"error")}
-    };
+    if(!isGuest){
+      $("#modalCheckout").onclick=async()=>{
+        try{
+          const active=await api("/api/active");
+          const row=active.find(x=>x.slot===slot.name);
+          if(!row) throw new Error("Không tìm thấy lượt gửi đang hoạt động");
+          close();
+          await openPaymentModal(row.id);
+        }catch(e){toast(e.message,"error")}
+      };
+    }
   }else{
     $("#modalCancelCheckin").onclick=close;
     const plateInput=$("#quickPlate"), typeSelect=$("#quickVtype");
     const update=()=>{
+      if(isGuest){
+        const raw=plateInput?.value||"";
+        const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+        return;
+      }
       const isBike=typeSelect.value === "Xe đạp";
       plateInput.disabled=isBike;
       plateInput.required=!isBike;
@@ -240,7 +254,7 @@ function openSlotModal(slot){
       }
     };
     ["input","keyup","change","paste"].forEach(ev=>plateInput.addEventListener(ev,update));
-    typeSelect.addEventListener("change",update);
+    typeSelect?.addEventListener("change",update);
     plateInput.addEventListener("blur",()=>{
       const formatted=formatPlate(plateInput.value);
       if(formatted)plateInput.value=formatted;
@@ -249,17 +263,19 @@ function openSlotModal(slot){
     update();
 
     const submit=async()=>{
-      const vehicleType=typeSelect.value||"Xe máy";
       const plate=plateInput.value.trim();
-      if(vehicleType !== "Xe đạp" && !plate){toast("Vui lòng nhập biển số xe","error");plateInput.focus();return;}
-      const formatted=vehicleType === "Xe đạp" ? "" : formatPlate(plate);
-      const finalType=vehicleType === "Xe đạp" ? "Xe đạp" : (detectVehicleType(formatted)||vehicleType);
+      if(!plate){toast("Vui lòng nhập biển số xe","error");plateInput.focus();return;}
+      const formatted=formatPlate(plate);
+      const vehicleType=isGuest ? undefined : (typeSelect.value||"Xe máy");
+      const finalType=isGuest ? (detectVehicleType(formatted)||"Xe máy") : (vehicleType === "Xe đạp" ? "Xe đạp" : (detectVehicleType(formatted)||vehicleType));
       const btn=$("#modalCheckin");
-      btn.disabled=true;btn.textContent="Đang thêm xe...";
+      btn.disabled=true;btn.textContent=isGuest?"Đang ghi nhận...":"Đang thêm xe...";
       try{
-        await api("/api/checkin",{method:"POST",body:{license_plate:formatted,vehicle_type:finalType,slot_id:Number(slot.id)}});
+        const body={license_plate:formatted,slot_id:Number(slot.id)};
+        if(!isGuest) body.vehicle_type=finalType;
+        await api("/api/checkin",{method:"POST",body});
         close();
-        toast(`✓ ${finalType === "Xe đạp" ? "Xe đạp" : formatted} đã vào ${slot.name}`);
+        toast(`✓ ${formatted} đã vào ${slot.name}`);
         await navigate("dashboard");
       }catch(e){
         toast(e.message,"error");
@@ -574,8 +590,11 @@ boot();
     syncTheme(); toast(body.classList.contains('dark-mode')?'Đã bật giao diện tối':'Đã bật giao diện sáng');
   });
   focusBtn?.addEventListener('click',()=>{
-    document.querySelector('.main')?.classList.toggle('focus-mode');
-    toast(document.querySelector('.main')?.classList.contains('focus-mode')?'Đã bật chế độ tập trung':'Đã tắt chế độ tập trung');
+    document.body.classList.toggle('focus-active');
+    const active=document.body.classList.contains('focus-active');
+    focusBtn.setAttribute('aria-pressed',active?'true':'false');
+    focusBtn.title=active?'Tắt chế độ tập trung':'Tập trung nội dung';
+    toast(active?'Đã bật chế độ tập trung':'Đã tắt chế độ tập trung');
   });
   const sidebar=document.querySelector('.sidebar');
   const syncMobileNav=()=>{
