@@ -1144,7 +1144,11 @@ def local_ai_support(db: Session, question: str, user: User):
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
         return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
-    return "Mình chưa được kết nối với AI ngôn ngữ bên ngoài ở thời điểm này. Tuy vậy, mình vẫn có thể tra cứu dữ liệu bãi xe trực tiếp như chỗ trống, xe đang gửi, xe đỗ lâu nhất, giá và thông tin liên hệ. Bạn có thể hỏi ngay, ví dụ: 'Bãi còn bao nhiêu chỗ?' hoặc 'Xe nào đỗ lâu nhất?'."
+    if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ"]):
+        return "Nếu bạn muốn tránh giờ đông, nên ưu tiên thời gian ngoài khung cao điểm của bãi. Nếu bạn cho mình biết ngày hoặc khung giờ bạn định đến, mình có thể hướng dẫn dựa trên dữ liệu vận hành hiện có."
+    if any(k in q for k in ["xin chào", "hello", "chào bạn", "chào anh", "chào em"]):
+        return "Xin chào! 👋 Mình có thể hỗ trợ bạn kiểm tra chỗ trống, khu A/B, vị trí đỗ, xe đang gửi, giá và hướng dẫn sử dụng bãi xe."
+    return "Mình có thể hỗ trợ bạn về bãi xe. Bạn có thể hỏi tự nhiên như: 'Bãi còn chỗ không?', 'Khu A còn bao nhiêu chỗ?', 'Xe nào đỗ lâu nhất?', hoặc 'Bãi có những mức phí nào?'"
 
 
 AI_TOOLS = [
@@ -1187,56 +1191,90 @@ def _ai_tool_result(db: Session, name: str, args: dict, user: User):
     return {"error":"Tool không tồn tại."}
 
 
-def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
-    """Call the selected LLM. OpenAI uses current GPT-5.x-compatible parameters;
-    DeepSeek keeps its OpenAI-compatible chat endpoint.
-    """
-    from openai import OpenAI
-    if provider == "openai":
-        client = OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
-        tool_messages = list(messages)
-        for _ in range(4):
-            # GPT-5.4 mini supports function calling, but sampling parameters such as
-            # temperature can cause request errors on reasoning models. Keep the request
-            # minimal and use low reasoning effort for a fast customer-support chat.
-            resp = client.chat.completions.create(
-                model=model,
-                messages=tool_messages,
-                tools=AI_TOOLS,
-                tool_choice="auto",
-                reasoning_effort="low",
-                max_completion_tokens=900,
-            )
-            msg = resp.choices[0].message
-            tool_calls = getattr(msg, "tool_calls", None) or []
-            if not tool_calls:
-                answer = (msg.content or "").strip()
-                if not answer:
-                    raise RuntimeError("OpenAI trả về phản hồi rỗng")
-                return answer
-            tool_messages.append(msg.model_dump() if hasattr(msg, "model_dump") else msg)
-            for tc in tool_calls:
-                try:
-                    args = json.loads(tc.function.arguments or "{}")
-                except Exception:
-                    args = {}
-                result = _ai_tool_result(db, tc.function.name, args, user)
-                tool_messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(result, ensure_ascii=False),
-                })
-        raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
+def _responses_tool_specs():
+    """Convert the existing Chat Completions tool schema to Responses API format."""
+    specs=[]
+    for item in AI_TOOLS:
+        fn=item.get("function", {})
+        specs.append({
+            "type":"function",
+            "name":fn.get("name"),
+            "description":fn.get("description", ""),
+            "parameters":fn.get("parameters", {"type":"object","properties":{}}),
+            "strict":False,
+        })
+    return specs
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url=DEEPSEEK_BASE_URL,
-        max_retries=1,
-        timeout=AI_SUPPORT_TIMEOUT_SECONDS,
-    )
-    tool_messages = list(messages)
+
+def _call_openai_responses(api_key: str, model: str, instructions: str, input_items, db, user):
+    """Reliable OpenAI Responses API loop with custom database tools."""
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    current_input = list(input_items)
+    tools = _responses_tool_specs()
+
+    for _ in range(5):
+        response = client.responses.create(
+            model=model,
+            instructions=instructions,
+            input=current_input,
+            tools=tools,
+            tool_choice="auto",
+            reasoning={"effort":"low"},
+            text={"verbosity":"medium"},
+            max_output_tokens=900,
+            store=False,
+        )
+
+        output_items = list(getattr(response, "output", []) or [])
+        calls = [x for x in output_items if getattr(x, "type", None) == "function_call"]
+        if not calls:
+            answer = (getattr(response, "output_text", "") or "").strip()
+            if answer:
+                return answer
+            raise RuntimeError("OpenAI Responses trả về phản hồi rỗng")
+
+        # Preserve the model's function-call items, then append our tool outputs.
+        for item in output_items:
+            if hasattr(item, "model_dump"):
+                current_input.append(item.model_dump(exclude_none=True))
+            elif isinstance(item, dict):
+                current_input.append(item)
+
+        for call in calls:
+            try:
+                args = json.loads(getattr(call, "arguments", "") or "{}")
+            except Exception:
+                args = {}
+            result = _ai_tool_result(db, getattr(call, "name", ""), args, user)
+            current_input.append({
+                "type":"function_call_output",
+                "call_id":getattr(call, "call_id", ""),
+                "output":json.dumps(result, ensure_ascii=False),
+            })
+
+    raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
+
+
+def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
+    """Call OpenAI through Responses API; keep DeepSeek on its compatible endpoint."""
+    if provider == "openai":
+        instructions = ""
+        input_items=[]
+        for msg in messages:
+            role=msg.get("role")
+            content=msg.get("content", "")
+            if role == "system":
+                instructions = content
+            else:
+                input_items.append({"role":role, "content":content})
+        return _call_openai_responses(api_key, model, instructions, input_items, db, user)
+
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    tool_messages=list(messages)
     for _ in range(4):
-        resp = client.chat.completions.create(
+        resp=client.chat.completions.create(
             model=model,
             messages=tool_messages,
             tools=AI_TOOLS,
@@ -1244,25 +1282,18 @@ def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
             temperature=0.2,
             max_tokens=900,
         )
-        msg = resp.choices[0].message
-        tool_calls = getattr(msg, "tool_calls", None) or []
+        msg=resp.choices[0].message
+        tool_calls=getattr(msg,"tool_calls",None) or []
         if not tool_calls:
-            answer = (msg.content or "").strip()
-            if not answer:
-                raise RuntimeError("DeepSeek trả về phản hồi rỗng")
+            answer=(msg.content or "").strip()
+            if not answer: raise RuntimeError("DeepSeek trả về phản hồi rỗng")
             return answer
-        tool_messages.append(msg.model_dump() if hasattr(msg, "model_dump") else msg)
+        tool_messages.append(msg.model_dump() if hasattr(msg,"model_dump") else msg)
         for tc in tool_calls:
-            try:
-                args = json.loads(tc.function.arguments or "{}")
-            except Exception:
-                args = {}
-            result = _ai_tool_result(db, tc.function.name, args, user)
-            tool_messages.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "content": json.dumps(result, ensure_ascii=False),
-            })
+            try: args=json.loads(tc.function.arguments or "{}")
+            except Exception: args={}
+            result=_ai_tool_result(db,tc.function.name,args,user)
+            tool_messages.append({"role":"tool","tool_call_id":tc.id,"content":json.dumps(result,ensure_ascii=False)})
     raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
 
 
