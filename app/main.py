@@ -215,7 +215,10 @@ def current_user(credentials: HTTPAuthorizationCredentials = Depends(security), 
         raise HTTPException(status_code=401, detail="Phiên đăng nhập không hợp lệ")
 
 def manager_only(user: User = Depends(current_user)):
-    if user.role != "manager":
+    # Accept the legacy ``admin`` role as a manager too. Older databases may
+    # still store the administrator role as ``admin`` even though the UI
+    # displays it as Quản lý.
+    if user.role not in ("manager", "admin"):
         raise HTTPException(status_code=403, detail="Chỉ Quản lý được sử dụng chức năng này")
     return user
 
@@ -577,17 +580,34 @@ def revenue_summary(db: Session = Depends(get_db), user: User = Depends(non_gues
 
 @app.post("/api/revenue/reset")
 def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    # A reset is a new immutable baseline, not deletion of payment history.
+    # Capture the current total first, then insert a marker at the exact same
+    # database time used by the revenue query.
     now = now_vn()
-    total, marker = current_revenue(db)
-    # Keep a permanent snapshot, then start a fresh counter immediately.
-    snapshot = RevenueReset(reset_at=now, period_label=f"RESET-{now.strftime('%Y-%m-%d %H:%M')}", amount_before=total, reset_by=user.id)
+    total, _ = current_revenue(db)
+    snapshot = RevenueReset(
+        reset_at=now,
+        period_label=f"RESET-{now.strftime('%Y-%m-%d %H:%M:%S')}",
+        amount_before=float(total),
+        reset_by=user.id,
+    )
     db.add(snapshot)
     audit(db, user, "RESET_REVENUE", f"Reset doanh thu {total:.0f} VNĐ")
     db.commit()
-    # Re-read through the same calculation used by the dashboard so the response
-    # is guaranteed to reflect the new baseline immediately.
-    fresh_total, _ = current_revenue(db)
-    return {"message": "Đã reset số tiền doanh thu hiện tại", "current_revenue": fresh_total, "reset_at": now.isoformat()}
+    db.refresh(snapshot)
+
+    # Do not rely on a second marker lookup that could select the monthly
+    # marker. Calculate strictly from this new baseline.
+    fresh_total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+        ParkingRecord.time_out.is_not(None),
+        ParkingRecord.time_out > snapshot.reset_at,
+        ParkingRecord.time_out <= now
+    ).scalar() or 0
+    return {
+        "message": "Đã reset số tiền doanh thu hiện tại về 0 VNĐ",
+        "current_revenue": float(fresh_total),
+        "reset_at": snapshot.reset_at.isoformat(),
+    }
 
 @app.get("/api/revenue/history")
 def revenue_history(db: Session = Depends(get_db), user: User = Depends(manager_only)):
