@@ -164,30 +164,44 @@ class AuditLog(Base):
 Base.metadata.create_all(bind=engine)
 
 def ensure_auth_schema():
-    """Lightweight migrations for existing SQLite/PostgreSQL installations.
+    """Repair/upgrade legacy SQLite or PostgreSQL schemas idempotently.
 
-    create_all() does not add columns to tables that already exist. Older
-    deployments therefore need these small, idempotent migrations before the
-    revenue endpoints can safely read/write the reset history.
+    Existing deployments may have been created before revenue reset fields were
+    introduced.  The migration must never silently leave a partially upgraded
+    table because the reports page depends on those fields.
     """
     from sqlalchemy import inspect, text
 
     Base.metadata.create_all(bind=engine)
+
     def add_column_if_missing(table, column, ddl):
         try:
             inspector = inspect(engine)
+            if not inspector.has_table(table):
+                Base.metadata.create_all(bind=engine)
+                inspector = inspect(engine)
             cols = {c["name"] for c in inspector.get_columns(table)}
             if column not in cols:
                 with engine.begin() as conn:
                     conn.execute(text(ddl))
-        except Exception:
-            # Never prevent the app from starting; the endpoint will surface
-            # a useful database error if a migration is impossible.
-            pass
+        except Exception as exc:
+            # Retry once with PostgreSQL's IF NOT EXISTS syntax.  This also
+            # handles races where another worker upgraded the schema first.
+            if engine.dialect.name == "postgresql":
+                try:
+                    with engine.begin() as conn:
+                        conn.execute(text(ddl.replace("ADD COLUMN ", "ADD COLUMN IF NOT EXISTS ")))
+                    return
+                except Exception:
+                    pass
+            # Keep startup alive; endpoints below use defensive schema repair
+            # and will return the real database error if a deployment is broken.
 
     add_column_if_missing("users", "phone", "ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''")
     add_column_if_missing("revenue_resets", "amount_before", "ALTER TABLE revenue_resets ADD COLUMN amount_before FLOAT NOT NULL DEFAULT 0")
     add_column_if_missing("revenue_resets", "reset_by", "ALTER TABLE revenue_resets ADD COLUMN reset_by INTEGER")
+    # Old versions used a 20-character period label.  New manual reset labels
+    # are intentionally kept below that limit, so no destructive ALTER is needed.
     Base.metadata.create_all(bind=engine)
 
 ensure_auth_schema()
@@ -601,7 +615,7 @@ def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_on
     total, _ = current_revenue(db)
     snapshot = RevenueReset(
         reset_at=now,
-        period_label=f"RESET-{now.strftime('%m%d-%H%M%S')}",
+        period_label=f"R{now.strftime('%m%d%H%M%S')}",
         amount_before=float(total),
         reset_by=user.id,
     )
@@ -630,7 +644,7 @@ def revenue_history(db: Session = Depends(get_db), user: User = Depends(manager_
     out=[]
     now = now_vn()
     for r in rows:
-        if r.period_label.startswith("RESET-"):
+        if r.period_label.startswith("RESET-") or r.period_label.startswith("R"):
             label = "Reset thủ công · " + r.reset_at.strftime("%d/%m/%Y %H:%M")
             amount = float(r.amount_before or 0)
         else:
