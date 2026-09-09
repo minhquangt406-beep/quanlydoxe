@@ -99,7 +99,7 @@ function initAISupport(){
     form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
-      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),20000);
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),35000);
       let d;
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
       finally{clearTimeout(timer)}
@@ -108,11 +108,11 @@ function initAISupport(){
       if(sub){
         if(d.mode==="openai") sub.textContent=`GPT AI · ${d.provider||"OpenAI"} · dữ liệu thời gian thực`;
         else if(d.mode==="deepseek-fallback"||d.mode==="deepseek") sub.textContent=`AI dự phòng · ${d.provider||"DeepSeek"} · dữ liệu thời gian thực`;
-        else sub.textContent="AI nội bộ · dữ liệu bãi xe thời gian thực";
+        else sub.textContent="AI nội bộ dự phòng · dữ liệu bãi xe thời gian thực";
       }
       addAISupportMessage(answer,"bot");
     }catch(err){
-      const msg=err.name==="AbortError"?"Trợ lý đang phản hồi chậm. Bạn thử gửi lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
+      const msg=err.name==="AbortError"?"Trợ lý đang xử lý lâu hơn bình thường. Bạn thử lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
       addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });

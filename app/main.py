@@ -40,7 +40,7 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
 OTP_TTL_MINUTES = 10
 OTP_RESEND_SECONDS = 60
-AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "12"))
+AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "20"))
 AI_SUPPORT_RATE_LIMIT = int(os.getenv("AI_SUPPORT_RATE_LIMIT", "20"))
 AI_SUPPORT_WINDOW_SECONDS = int(os.getenv("AI_SUPPORT_WINDOW_SECONDS", "60"))
 _ai_support_rate = {}
@@ -1144,8 +1144,23 @@ def local_ai_support(db: Session, question: str, user: User):
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
         return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
-    if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ"]):
-        return "Nếu bạn muốn tránh giờ đông, nên ưu tiên thời gian ngoài khung cao điểm của bãi. Nếu bạn cho mình biết ngày hoặc khung giờ bạn định đến, mình có thể hướng dẫn dựa trên dữ liệu vận hành hiện có."
+    if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ", "tầm ", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h", "21h", "22h"]):
+        # Fallback remains conversational even when the LLM is temporarily unavailable.
+        rows = db.query(ParkingRecord.time_in).filter(ParkingRecord.time_in >= now_vn()-timedelta(days=14)).all()
+        counts = {}
+        for (dtv,) in rows:
+            if dtv:
+                counts[dtv.hour] = counts.get(dtv.hour, 0) + 1
+        peak = max(counts, key=counts.get) if counts else None
+        hour_match = re.search(r"(?:tầm|khoảng|lúc|vào|đến)\s*(\d{1,2})(?:[:h]|\s*giờ)?", q)
+        if hour_match:
+            hour = int(hour_match.group(1)) % 24
+            if peak is None:
+                return f"Khoảng {hour:02d}:00 hiện chưa có đủ dữ liệu lịch sử để đánh giá mức độ đông. Hiện bãi còn {empty} vị trí trống."
+            distance = min((hour-peak)%24, (peak-hour)%24)
+            verdict = "khá gần giờ cao điểm" if distance <= 2 else "không nằm trong vùng giờ cao điểm"
+            return f"Khoảng {hour:02d}:00 {verdict} theo dữ liệu 14 ngày gần đây. Giờ cao điểm gần nhất là khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. Hiện bãi còn {empty} vị trí trống."
+        return (f"Theo dữ liệu 14 ngày gần đây, giờ cao điểm của bãi khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. " if peak is not None else "") + f"Hiện bãi còn {empty} vị trí trống. Nếu bạn nói rõ giờ dự định đến, mình có thể đánh giá cụ thể."
     if any(k in q for k in ["xin chào", "hello", "chào bạn", "chào anh", "chào em"]):
         return "Xin chào! 👋 Mình có thể hỗ trợ bạn kiểm tra chỗ trống, khu A/B, vị trí đỗ, xe đang gửi, giá và hướng dẫn sử dụng bãi xe."
     return "Mình có thể hỗ trợ bạn về bãi xe. Bạn có thể hỏi tự nhiên như: 'Bãi còn chỗ không?', 'Khu A còn bao nhiêu chỗ?', 'Xe nào đỗ lâu nhất?', hoặc 'Bãi có những mức phí nào?'"
@@ -1209,7 +1224,7 @@ def _responses_tool_specs():
 def _call_openai_responses(api_key: str, model: str, instructions: str, input_items, db, user):
     """Reliable OpenAI Responses API loop with custom database tools."""
     from openai import OpenAI
-    client = OpenAI(api_key=api_key, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    client = OpenAI(api_key=api_key, max_retries=0, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
     current_input = list(input_items)
     tools = _responses_tool_specs()
 
@@ -1220,8 +1235,8 @@ def _call_openai_responses(api_key: str, model: str, instructions: str, input_it
             input=current_input,
             tools=tools,
             tool_choice="auto",
-            reasoning={"effort":"low"},
-            text={"verbosity":"medium"},
+            reasoning={"effort":"none"},
+            text={"verbosity":"low"},
             max_output_tokens=900,
             store=False,
         )
@@ -1271,7 +1286,7 @@ def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
         return _call_openai_responses(api_key, model, instructions, input_items, db, user)
 
     from openai import OpenAI
-    client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, max_retries=1, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, max_retries=0, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
     tool_messages=list(messages)
     for _ in range(4):
         resp=client.chat.completions.create(
@@ -1304,6 +1319,7 @@ def ai_support_status(user: User = Depends(current_user)):
         "openai_model": OPENAI_MODEL,
         "deepseek_configured": bool(DEEPSEEK_API_KEY),
         "ready": bool(OPENAI_API_KEY or DEEPSEEK_API_KEY),
+        "timeout_seconds": AI_SUPPORT_TIMEOUT_SECONDS,
     }
 
 
@@ -1324,7 +1340,8 @@ def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: Use
                 try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
                 except Exception as deepseek_error:
                     print(f"[AI] DeepSeek fallback error: {type(deepseek_error).__name__}: {deepseek_error}")
-            return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history)}
+            fallback_question = "\n".join([m["content"] for m in history[-3:] if m.get("content")]) + "\n" + question
+            return {"answer":local_ai_support(db,fallback_question,user),"mode":"fallback","provider":"local","history_used":bool(history),"fallback":True}
     if DEEPSEEK_API_KEY:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
         except Exception: pass
