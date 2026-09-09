@@ -575,6 +575,30 @@ def users(db: Session = Depends(get_db), user: User = Depends(manager_only)):
     return [{"id": u.id, "username": u.username, "role": u.role, "full_name": u.full_name}
             for u in db.query(User).order_by(User.id).all()]
 
+class AdminPasswordReset(BaseModel):
+    new_password: str
+
+@app.post("/api/users/{user_id}/password")
+def admin_change_user_password(user_id: int, data: AdminPasswordReset, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    if len(data.new_password) < 8:
+        raise HTTPException(400, "Mật khẩu mới phải có ít nhất 8 ký tự")
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Tài khoản không tồn tại")
+    target.password_hash = hash_password(data.new_password)
+    audit(db, user, "ADMIN_CHANGE_PASSWORD", f"Quản lý đổi mật khẩu tài khoản {target.username}")
+    db.commit()
+    return {"message": f"Đã đổi mật khẩu cho tài khoản {target.username}"}
+
+@app.post("/api/users/{user_id}/login-as")
+def admin_login_as_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Tài khoản không tồn tại")
+    audit(db, user, "LOGIN_AS", f"Đăng nhập nhanh với tài khoản {target.username} ({target.role})")
+    db.commit()
+    return {"access_token": token_for(target), "token_type": "bearer", "user": {"id": target.id, "username": target.username, "role": target.role, "full_name": target.full_name}}
+
 @app.post("/api/users")
 def create_user(data: UserCreate, db: Session = Depends(get_db), user: User = Depends(manager_only)):
     username = data.username.strip()
@@ -1091,6 +1115,15 @@ def local_ai_support(db: Session, question: str, user: User):
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
     company = db.query(CompanySetting).first()
 
+    # Find the vehicle that has been parked the longest. This is intentionally
+    # handled locally so the answer works even when no external AI key exists.
+    oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot)
+              .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
+              .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id)
+              .filter(ParkingRecord.time_out.is_(None))
+              .order_by(ParkingRecord.time_in.asc())
+              .first())
+
     # Area-specific availability is useful even without an external AI key.
     m = re.search(r"(?:khu|khu vực)\s*([a-z])", q)
     if m and any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ"]):
@@ -1102,6 +1135,17 @@ def local_ai_support(db: Session, question: str, user: User):
 
     if any(k in q for k in ["chỗ trống", "vị trí trống", "còn chỗ", "bao nhiêu chỗ"]):
         return f"Hiện bãi còn {empty} vị trí trống trên tổng {total} vị trí." if total else "Hiện chưa có dữ liệu vị trí đỗ."
+    if any(k in q for k in ["đỗ lâu nhất", "đậu lâu nhất", "ở lâu nhất", "gửi lâu nhất", "vào lâu nhất", "xe nào lâu nhất", "xe đỗ lâu", "xe đậu lâu"]):
+        if not oldest:
+            return "Hiện chưa có xe nào đang ở trong bãi."
+        record, vehicle, slot = oldest
+        elapsed = max(now_vn() - record.time_in, timedelta(0)) if record.time_in else timedelta(0)
+        total_minutes = int(elapsed.total_seconds() // 60)
+        hours, minutes = divmod(total_minutes, 60)
+        duration_text = f"{hours} giờ {minutes} phút" if hours else f"{minutes} phút"
+        if user.role == "guest":
+            return f"Xe đang ở trong bãi lâu nhất đã ở tại vị trí {slot.name} khoảng {duration_text}. Vì quyền riêng tư, tôi không cung cấp biển số của xe khác cho tài khoản khách."
+        return f"Xe đỗ lâu nhất hiện tại là biển số {vehicle.license_plate}, tại vị trí {slot.name}, đã ở trong bãi khoảng {duration_text} (từ {record.time_in.strftime('%d/%m/%Y %H:%M')})."
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]):
         return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]):
@@ -1148,7 +1192,24 @@ def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: Use
         active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
         company = db.query(CompanySetting).first()
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
-        public_context = f"Tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, địa chỉ={company.address if company else ''}, điện thoại={company.phone if company else ''}."
+        oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot)
+                  .join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
+                  .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id)
+                  .filter(ParkingRecord.time_out.is_(None))
+                  .order_by(ParkingRecord.time_in.asc())
+                  .first())
+        oldest_context = "chưa có xe đang đỗ"
+        if oldest:
+            old_record, old_vehicle, old_slot = oldest
+            elapsed = max(now_vn() - old_record.time_in, timedelta(0)) if old_record.time_in else timedelta(0)
+            total_minutes = int(elapsed.total_seconds() // 60)
+            oh, om = divmod(total_minutes, 60)
+            duration_text = f"{oh} giờ {om} phút" if oh else f"{om} phút"
+            if user.role == "guest":
+                oldest_context = f"xe đỗ lâu nhất ở vị trí {old_slot.name}, khoảng {duration_text}; không cung cấp biển số cho khách"
+            else:
+                oldest_context = f"biển số {old_vehicle.license_plate}, vị trí {old_slot.name}, khoảng {duration_text}, từ {old_record.time_in.strftime('%d/%m/%Y %H:%M')}"
+        public_context = f"Tổng vị trí={total}, đang dùng={occupied}, còn trống={empty}, xe đang gửi={active}, xe đỗ lâu nhất={oldest_context}, địa chỉ={company.address if company else ''}, điện thoại={company.phone if company else ''}."
         if user.role == "guest":
             context = public_context + " Tài khoản khách tuyệt đối không được cung cấp doanh thu, nhật ký, dữ liệu tài khoản hoặc thông tin quản trị."
         else:
