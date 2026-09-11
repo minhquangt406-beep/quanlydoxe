@@ -5,7 +5,7 @@ from typing import Optional
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, Depends, HTTPException, status, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -1140,7 +1140,6 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
     if any(k in q for k in ["giá", "phí", "bao nhiêu tiền", "bảng giá"]):
-        if user.role == "guest": return "Bạn có thể hỏi nhân viên/quản lý để biết mức phí hiện hành."
         prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
         return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
@@ -1199,8 +1198,8 @@ def _ai_tool_result(db: Session, name: str, args: dict, user: User):
         rows=(db.query(ParkingRecord,Vehicle,ParkingSlot).join(Vehicle,ParkingRecord.vehicle_id==Vehicle.id).join(ParkingSlot,ParkingRecord.slot_id==ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.asc()).limit(100).all())
         return {"vehicles":[{"license_plate":v.license_plate,"type":v.vehicle_type,"slot":slot.name,"time_in":r.time_in.strftime('%d/%m/%Y %H:%M')} for r,v,slot in rows]}
     if name == "get_pricing":
-        if user.role == "guest": return {"error":"Khách không được xem dữ liệu quản trị; hãy liên hệ nhân viên để biết mức phí hiện hành."}
-        rows=db.query(Pricing).order_by(Pricing.vehicle_type).all(); return {"pricing":[{"vehicle_type":x.vehicle_type,"price_per_hour":float(x.price_per_hour)} for x in rows]}
+        rows=db.query(Pricing).order_by(Pricing.vehicle_type).all()
+        return {"pricing":[{"vehicle_type":x.vehicle_type,"price_per_hour":float(x.price_per_hour)} for x in rows]}
     if name == "get_business_info":
         c=db.query(CompanySetting).first(); return {"address":c.address if c else "","phone":c.phone if c else ""}
     return {"error":"Tool không tồn tại."}
@@ -1313,7 +1312,7 @@ def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
 
 
 @app.get("/api/ai/status")
-def ai_support_status(user: User = Depends(current_user)):
+def ai_support_status():
     return {
         "openai_configured": bool(OPENAI_API_KEY),
         "openai_model": OPENAI_MODEL,
@@ -1323,8 +1322,31 @@ def ai_support_status(user: User = Depends(current_user)):
     }
 
 
+def ai_support_user(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Return the logged-in user when available; otherwise use a privacy-safe guest identity.
+
+    The public customer-support chat intentionally does not require an account.
+    Guest conversations are restricted by the same tool-level privacy rules as the
+    existing guest role.
+    """
+    if credentials:
+        try:
+            payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
+            user = db.get(User, int(payload["sub"]))
+            if user:
+                return user
+        except Exception:
+            pass
+    # Keep a separate in-memory rate-limit bucket per client without storing IPs.
+    client_host = request.client.host if request.client else "anonymous"
+    guest = type("GuestAIUser", (), {})()
+    guest.role = "guest"
+    guest.id = -1000000 - (abs(hash(client_host)) % 900000000)
+    return guest
+
+
 @app.post("/api/ai/support")
-def ai_support(data: AISupportQuestion, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def ai_support(data: AISupportQuestion, request: Request, db: Session = Depends(get_db), user = Depends(ai_support_user)):
     question=(data.question or "").strip()
     if not question: raise HTTPException(400,"Vui lòng nhập câu hỏi")
     if len(question)>500: raise HTTPException(400,"Câu hỏi tối đa 500 ký tự")

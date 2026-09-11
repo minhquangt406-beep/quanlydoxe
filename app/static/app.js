@@ -76,7 +76,7 @@ function renderAISupportHistory(){
   const box=$("#aiSupportMessages"); if(!box) return;
   box.innerHTML="";
   if(!aiSupportHistory.length){
-    addAISupportMessage("Xin chào! 👋 Tôi là trợ lý AI của Parking AI Pro. Tôi có thể hỗ trợ về chỗ trống, vị trí đỗ, hướng dẫn sử dụng, thông tin liên hệ và các câu hỏi về bãi xe.","bot",false);
+    addAISupportMessage("Xin chào! 👋 Tôi là trợ lý AI hỗ trợ khách hàng của Parking AI Pro. Bạn có thể hỏi về chỗ trống, khu A/B, giá gửi xe, vị trí đỗ, cách sử dụng hoặc thông tin liên hệ.","bot",false);
     return;
   }
   aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
@@ -95,7 +95,7 @@ function initAISupport(){
   close?.addEventListener("click",shut);
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
-    e.preventDefault(); const q=input.value.trim(); if(!q||!token||form.dataset.busy==="1")return;
+    e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
     form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
