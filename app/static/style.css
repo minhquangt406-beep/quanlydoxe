@@ -3122,3 +3122,77 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
   .hit-start{left:4%;top:46.8%;width:10.8%;height:6.6%}.hit-learn{left:15.3%;top:46.8%;width:10.6%;height:6.6%}
 }
 @media (max-width:1050px){.reference-actions{display:none!important}}
+
+/* ===== V19 FIX: reference fit + functional controls ===== */
+@media (min-width: 801px){
+  #loginView.login-page{
+    display:block!important;
+    position:relative!important;
+    width:100vw!important;
+    height:100svh!important;
+    min-height:100svh!important;
+    max-height:100svh!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#05090f url('/static/images/landing-reference.png?v=20260911v19') center center / 100% 100% no-repeat!important;
+  }
+  #loginView .login-showcase{display:none!important}
+  #loginView .login-card{
+    position:absolute!important;
+    left:71.75%!important; top:10.30%!important;
+    width:23.75%!important; height:72.50%!important;
+    right:auto!important; margin:0!important; padding:0!important;
+    background:transparent!important; border:0!important; box-shadow:none!important;
+    border-radius:0!important; z-index:40!important; overflow:visible!important;
+  }
+  #loginView .login-card:before,#loginView .login-card:after{display:none!important}
+  #loginView .login-card > .login-head,
+  #loginView .login-card > .eyebrow,
+  #loginView .login-card > h1,
+  #loginView .login-card > p,
+  #loginView .login-card > .login-security{display:none!important}
+  #loginView form#loginForm{
+    position:absolute!important; left:6.5%!important; right:6.5%!important; top:30.3%!important;
+    margin:0!important; z-index:45!important;
+  }
+  #loginView #loginForm label{font-size:0!important;color:transparent!important;margin:0 0 10px!important}
+  #loginView #loginForm input{
+    height:49px!important; margin:0!important; padding:0 16px!important;
+    border-radius:11px!important; background:rgba(25,32,42,.94)!important;
+    border:1px solid rgba(255,255,255,.12)!important; color:#fff!important;
+  }
+  #loginView #loginForm input::placeholder{color:#8995a7!important;opacity:1!important}
+  #loginView #loginForm .forgot-link{height:18px!important;margin:0 0 17px!important}
+  #loginView #loginForm .forgot-link .link-btn{font-size:11px!important;color:#f4cf58!important}
+  #loginView #loginForm .primary{height:56px!important;margin:0!important;border-radius:12px!important;background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important;font-size:14px!important;font-weight:950!important}
+  #loginView .guest-register-link{position:absolute!important;left:5%!important;right:5%!important;top:87.0%!important;margin:0!important;text-align:center!important;font-size:10px!important;white-space:nowrap!important;z-index:45!important}
+  #loginView .guest-register-link .link-btn{font-size:10px!important;color:#f4cf58!important}
+  #loginView #registerForm,#loginView #forgotForm{
+    position:absolute!important;left:4%!important;right:4%!important;top:19%!important;
+    padding:24px!important;border-radius:18px!important;background:rgba(9,14,21,.98)!important;
+    border:1px solid rgba(255,255,255,.16)!important;box-shadow:0 24px 60px rgba(0,0,0,.5)!important;z-index:60!important;
+  }
+  #loginView #registerForm label,#loginView #forgotForm label{font-size:11px!important;color:#dbe2ea!important}
+  #loginView #registerForm input,#loginView #forgotForm input{height:45px!important;background:#18212c!important;color:#fff!important;border-color:#303b4b!important}
+  #loginView #registerForm .primary,#loginView #forgotForm .primary{background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important}
+  #loginView .reference-actions{position:absolute!important;inset:0!important;z-index:100!important;pointer-events:none!important}
+  #loginView .reference-hit{position:absolute!important;display:block!important;border:0!important;background:transparent!important;cursor:pointer!important;pointer-events:auto!important;padding:0!important;border-radius:10px!important}
+  #loginView .reference-hit:hover{background:rgba(255,215,80,.045)!important}
+  #loginView .hit-home{left:25.5%;top:1.2%;width:5.5%;height:7%!important}
+  #loginView .hit-about{left:32.0%;top:1.2%;width:5.7%;height:7%!important}
+  #loginView .hit-features{left:38.4%;top:1.2%;width:6.4%;height:7%!important}
+  #loginView .hit-pricing{left:44.8%;top:1.2%;width:6.4%;height:7%!important}
+  #loginView .hit-contact{left:51.1%;top:1.2%;width:6.0%;height:7%!important}
+  #loginView .hit-theme{right:13.5%;top:1.0%;width:4.2%;height:8%!important}
+  #loginView .hit-start{left:3.7%;top:46.7%;width:10.8%;height:6.7%!important}
+  #loginView .hit-learn{left:15.2%;top:46.7%;width:10.8%;height:6.7%!important}
+  #loginView .hit-google{left:73.55%;top:63.6%;width:6.9%;height:6.2%!important}
+  #loginView .hit-zalo{left:80.65%;top:63.6%;width:6.0%;height:6.2%!important}
+  #loginView .hit-microsoft{left:86.9%;top:63.6%;width:7.0%;height:6.2%!important}
+  #loginView .hit-ai{right:3.3%;bottom:4.0%;width:4.8%;height:8%!important}
+}
+@media (max-width:800px){
+  #loginView.login-page{min-height:100svh!important;height:auto!important;overflow:auto!important}
+  #loginView .reference-actions{display:none!important}
+}

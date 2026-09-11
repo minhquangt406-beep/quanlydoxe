@@ -811,7 +811,7 @@ document.addEventListener("submit", function(e){
       localStorage.setItem('parking_theme',document.body.classList.contains('dark-mode')?'dark':'light');
       return;
     }
-    const messages={home:'Bạn đang ở trang chủ.',about:'Parking AI Pro — nền tảng quản lý bãi xe thông minh.',features:'Các tính năng: quản lý xe, vị trí, doanh thu, tài khoản, báo cáo và AI.',pricing:'Bảng giá dịch vụ Parking AI Pro.',contact:'Liên hệ quản trị viên để được hỗ trợ.'};
-    if(typeof toast==='function') toast(messages[action]||'');
+    const messages={home:'Bạn đang ở trang chủ.',about:'Parking AI Pro — nền tảng quản lý bãi xe thông minh.',features:'Các tính năng: quản lý xe, vị trí, doanh thu, tài khoản, báo cáo và AI.',pricing:'Bảng giá dịch vụ Parking AI Pro.',contact:'Liên hệ quản trị viên để được hỗ trợ.',google:'Đăng nhập Google chưa được cấu hình OAuth. Bạn có thể dùng tài khoản hệ thống để đăng nhập.',zalo:'Đăng nhập Zalo chưa được cấu hình OAuth. Bạn có thể dùng tài khoản hệ thống để đăng nhập.',microsoft:'Đăng nhập Microsoft chưa được cấu hình OAuth. Bạn có thể dùng tài khoản hệ thống để đăng nhập.'};
+    if(action==='ai'){ document.getElementById('aiSupportToggle')?.click(); return; } if(typeof toast==='function') toast(messages[action]||'');
   }));
 })();
