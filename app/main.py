@@ -1403,10 +1403,7 @@ def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
 
 @app.get("/api/activity")
 def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
-    q = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id)
-    if user.role != "manager":
-        q = q.filter(AuditLog.user_id == user.id)
-    rows = q.order_by(AuditLog.id.desc()).limit(limit).all()
+    rows = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.id.desc()).limit(limit).all()
     return [{"id": a.id, "username": u.username if u else "system", "action": a.action, "detail": a.detail, "created_at": a.created_at.isoformat()} for a,u in rows]
 
 @app.get("/api/analytics")

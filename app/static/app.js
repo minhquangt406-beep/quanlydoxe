@@ -637,7 +637,7 @@ boot();
   const focusBtn=document.getElementById('focusBtn');
   const mobileMenu=document.getElementById('mobileMenu');
   const savedTheme=localStorage.getItem('parking_theme');
-  if(savedTheme !== 'light') body.classList.add('dark-mode');
+  if(savedTheme==='dark') body.classList.add('dark-mode');
   function syncTheme(){ if(themeBtn) themeBtn.textContent=body.classList.contains('dark-mode')?'☀':'☾'; }
   syncTheme();
   themeBtn?.addEventListener('click',()=>{
