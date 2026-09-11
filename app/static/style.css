@@ -3456,3 +3456,364 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
   border-color:#e8c348!important;
   box-shadow:0 0 0 3px rgba(232,195,72,.10)!important;
 }
+
+
+/* =========================================================
+   V28 - LOGIN ONLY OPENS AFTER "BẮT ĐẦU NGAY"
+   No screenshot overlays, no absolute-positioned duplicate UI.
+   ========================================================= */
+#loginView.login-v21.new-login .nl-auth {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(36px, 18px, 0) scale(.97);
+  transition:
+    opacity .38s ease,
+    transform .45s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear .45s;
+  z-index: 30;
+}
+
+#loginView.login-v21.new-login.v28-auth-open .nl-auth {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0,0,0) scale(1);
+  transition:
+    opacity .35s ease,
+    transform .5s cubic-bezier(.22,1,.36,1),
+    visibility 0s;
+}
+
+#loginView.login-v21.new-login.v28-auth-open .nl-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 9, 18, .34);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  pointer-events: none;
+  z-index: 20;
+  animation: v28-dim-in .35s ease both;
+}
+
+#loginView.login-v21.new-login .nl-auth-card {
+  position: relative;
+  overflow: visible;
+}
+
+.v28-auth-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 214, 80, .28);
+  border-radius: 50%;
+  background: rgba(7, 16, 28, .82);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 10;
+  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+.v28-auth-close:hover {
+  transform: rotate(90deg) scale(1.06);
+  background: rgba(245, 190, 35, .16);
+  border-color: rgba(255, 214, 80, .75);
+}
+
+#loginView.login-v21.new-login:not(.v28-auth-open) #v21Auth {
+  box-shadow: none;
+}
+
+#loginView.login-v21.new-login:not(.v28-auth-open) #v21Start {
+  animation: v28-start-pulse 2.6s ease-in-out infinite;
+}
+
+#loginView.login-v21.new-login.v28-auth-open #v21Start {
+  animation: none;
+}
+
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card {
+  animation: v28-card-in .55s cubic-bezier(.16,1,.3,1) both;
+}
+
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-auth-head,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-eyebrow,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card h1,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card > p,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-tabs,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-form,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-social-title,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-socials,
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-security {
+  animation: v28-item-in .42s ease both;
+}
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-eyebrow { animation-delay: .04s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card h1 { animation-delay: .08s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card > p { animation-delay: .12s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-tabs { animation-delay: .16s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-form { animation-delay: .20s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-social-title { animation-delay: .24s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-socials { animation-delay: .28s; }
+#loginView.login-v21.new-login.v28-auth-open .nl-auth-card .nl-security { animation-delay: .32s; }
+
+@keyframes v28-card-in {
+  from { opacity: 0; transform: translate3d(28px, 26px, 0) scale(.94); filter: blur(5px); }
+  to   { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
+}
+@keyframes v28-item-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes v28-dim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes v28-start-pulse {
+  0%,100% { box-shadow: 0 0 0 rgba(244,194,58,0); transform: translateY(0); }
+  50% { box-shadow: 0 0 28px rgba(244,194,58,.22); transform: translateY(-1px); }
+}
+
+@media (max-width: 900px) {
+  #loginView.login-v21.new-login .nl-auth {
+    transform: translateY(24px) scale(.97);
+  }
+  #loginView.login-v21.new-login.v28-auth-open .nl-auth {
+    transform: translateY(0) scale(1);
+  }
+  .v28-auth-close {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loginView.login-v21.new-login .nl-auth,
+  #loginView.login-v21.new-login.v28-auth-open .nl-auth-card,
+  #loginView.login-v21.new-login.v28-auth-open .nl-auth-card * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =========================================================
+   V29 FINAL: FULL-SCREEN LANDING + LOGIN OPENS ON START
+   ========================================================= */
+#loginView.login-page.new-login .nl-shell{
+  width:100vw!important;
+  max-width:none!important;
+  min-height:calc(100svh - 52px)!important;
+  grid-template-columns:1fr!important;
+  margin:0!important;
+  background:#07111d!important;
+}
+
+#loginView.login-page.new-login .nl-visual{
+  width:100%!important;
+  min-height:calc(100svh - 52px)!important;
+  height:calc(100svh - 52px)!important;
+  background:
+    linear-gradient(90deg,rgba(3,10,18,.93) 0%,rgba(3,10,18,.72) 34%,rgba(3,10,18,.28) 68%,rgba(3,10,18,.62) 100%),
+    url('/static/images/garage-clean-v29.jpg') center/cover no-repeat!important;
+}
+
+/* Closed state: login takes zero layout space. */
+#loginView.login-page.new-login:not(.v28-auth-open) .nl-auth{
+  display:none!important;
+}
+
+/* Open state: restore a proper desktop split without overlap. */
+#loginView.login-page.new-login.v28-auth-open .nl-shell{
+  grid-template-columns:minmax(0,1.55fr) minmax(390px,.72fr)!important;
+}
+#loginView.login-page.new-login.v28-auth-open .nl-visual{
+  width:auto!important;
+  height:auto!important;
+  min-height:calc(100svh - 52px)!important;
+}
+#loginView.login-page.new-login.v28-auth-open .nl-auth{
+  display:flex!important;
+  min-height:calc(100svh - 52px)!important;
+}
+
+/* Make the desktop hero use the available full width elegantly. */
+@media (min-width:1200px){
+  #loginView.login-page.new-login:not(.v28-auth-open) .nl-content{
+    max-width:900px!important;
+    padding-left:6vw!important;
+    padding-top:clamp(70px,11vh,120px)!important;
+  }
+  #loginView.login-page.new-login:not(.v28-auth-open) .nl-content h2{
+    max-width:850px!important;
+    font-size:clamp(54px,5.1vw,84px)!important;
+  }
+  #loginView.login-page.new-login:not(.v28-auth-open) .nl-content p{
+    max-width:720px!important;
+    font-size:16px!important;
+  }
+  #loginView.login-page.new-login:not(.v28-auth-open) .nl-stats{
+    max-width:900px!important;
+    margin-left:6vw!important;
+    margin-right:6vw!important;
+  }
+}
+
+@media (max-width:980px){
+  #loginView.login-page.new-login.v28-auth-open .nl-shell{
+    grid-template-columns:1fr!important;
+  }
+  #loginView.login-page.new-login.v28-auth-open .nl-auth{
+    min-height:auto!important;
+  }
+}
+
+/* =========================================================
+   V30 DASHBOARD REDESIGN — full viewport, dark navy + gold
+   Removes the washed-out white dashboard look and prevents
+   vertical clipping/empty top space caused by legacy rules.
+   ========================================================= */
+#appView.app{
+  min-height:100svh!important;
+  width:100%!important;
+  display:flex!important;
+  background:
+    radial-gradient(circle at 82% 0%,rgba(240,184,55,.10),transparent 28%),
+    radial-gradient(circle at 42% 100%,rgba(31,116,255,.08),transparent 30%),
+    #07101c!important;
+  color:#e9eef6!important;
+}
+#appView.app.hidden{display:none!important}
+#appView .sidebar{
+  width:252px!important; flex:0 0 252px!important;
+  background:linear-gradient(180deg,#091321 0%,#0b1727 52%,#07101c 100%)!important;
+  border-right:1px solid rgba(255,210,83,.12)!important;
+  box-shadow:18px 0 50px rgba(0,0,0,.24)!important;
+}
+#appView .logo>span{
+  background:linear-gradient(145deg,#f7d15b,#b87b16)!important;
+  color:#16130a!important;
+  box-shadow:0 10px 30px rgba(224,169,43,.24)!important;
+}
+#appView .logo b{color:#f8fafc!important}
+#appView .logo small{color:#d9b95d!important}
+#appView .sidebar nav button{color:#9eacc0!important}
+#appView .sidebar nav button:hover{background:rgba(255,255,255,.055)!important;color:#fff!important}
+#appView .sidebar nav button.active{
+  color:#fff!important;
+  background:linear-gradient(90deg,rgba(231,184,59,.19),rgba(231,184,59,.045))!important;
+  box-shadow:inset 0 0 0 1px rgba(231,184,59,.17),0 8px 22px rgba(0,0,0,.12)!important;
+}
+#appView .sidebar nav button.active:before{background:#f2c94c!important}
+#appView .storage{background:rgba(255,255,255,.045)!important;border-color:rgba(255,255,255,.08)!important;color:#dce4ee!important}
+#appView .storage small{color:#8190a6!important}
+#appView .logout{background:rgba(255,255,255,.025)!important;color:#b7c2d1!important;border-color:rgba(255,255,255,.10)!important}
+
+#appView .main{
+  margin-left:0!important;
+  width:calc(100% - 252px)!important;
+  min-width:0!important;
+  padding:0 28px 44px!important;
+  background:transparent!important;
+  position:relative!important;
+  isolation:isolate;
+}
+#appView .topbar{
+  height:82px!important;
+  margin:0 -28px 24px!important;
+  padding:0 28px!important;
+  background:rgba(7,16,28,.86)!important;
+  border-bottom:1px solid rgba(255,255,255,.07)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.14)!important;
+}
+#appView .topbar h2{color:#f7f9fc!important;font-size:27px!important}
+#appView .topbar-title .eyebrow,.topbar .eyebrow{color:#d1aa3e!important}
+#appView .live-line{background:rgba(20,32,47,.9)!important;color:#9fb0c4!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:999px;padding:8px 12px}
+#appView .icon-btn,#appView .userbox,#appView .btn{
+  background:rgba(16,29,45,.92)!important;
+  border-color:rgba(255,255,255,.09)!important;
+  color:#dce5ef!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
+}
+#appView .icon-btn:hover,#appView .btn:hover{background:#17263a!important;border-color:rgba(240,194,72,.32)!important;color:#fff!important}
+#appView .userbox{border-radius:14px!important}
+#appView .userbox small{color:#8494a9!important}
+#appView .avatar{background:linear-gradient(145deg,#f6df8b,#c69127)!important;color:#15120b!important}
+
+#appView #content{margin:0!important;padding:0!important;min-height:0!important;position:relative!important}
+#appView .cards{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;margin:0!important}
+#appView .card,#appView .panel{
+  background:linear-gradient(145deg,rgba(17,31,47,.96),rgba(9,19,31,.96))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  color:#e8edf4!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.025)!important;
+}
+#appView .card{min-height:122px!important;padding:18px!important;border-radius:18px!important}
+#appView .card:hover{border-color:rgba(239,194,69,.26)!important;transform:translateY(-2px)!important}
+#appView .card .label{color:#8495aa!important}
+#appView .metric{color:#fff!important;font-size:30px!important}
+#appView .trend{color:#34d399!important}
+#appView .card:nth-child(2) .metric{color:#f5d05b!important}
+#appView .card:nth-child(3) .metric{color:#62b4ff!important}
+#appView .card:nth-child(4) .metric{color:#62e3b0!important}
+#appView .card:nth-child(5) .metric{color:#ffd86b!important}
+
+#appView .panel{border-radius:20px!important;padding:20px!important}
+#appView .panel-head{margin-bottom:16px!important}
+#appView .panel h3{color:#f5f7fa!important}
+#appView .muted{color:#8596aa!important}
+#appView .pill.green{background:rgba(20,190,124,.12)!important;color:#4de1a5!important;border:1px solid rgba(20,190,124,.16)!important}
+#appView .pill.red{background:rgba(239,83,97,.12)!important;color:#ff8b96!important}
+
+#appView .area-overview{margin-top:18px!important}
+#appView .parking-map{
+  background:linear-gradient(145deg,#0a1623,#0e1c2c)!important;
+  border-color:rgba(255,255,255,.08)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.04)!important;
+}
+#appView .map-zone{background:linear-gradient(145deg,rgba(18,36,51,.94),rgba(9,24,36,.94))!important;border-color:rgba(255,255,255,.08)!important}
+#appView .zone-title h3{color:#f3f6fa!important}
+#appView .zone-chip{background:rgba(241,194,66,.11)!important;color:#f2cb58!important;border-color:rgba(241,194,66,.25)!important}
+#appView .real-slot.empty{background:rgba(16,185,129,.065)!important;border-color:rgba(16,185,129,.32)!important;color:#45e3a4!important}
+#appView .real-slot.occupied{background:rgba(241,194,66,.09)!important;border-color:rgba(241,194,66,.40)!important;color:#ffd866!important}
+#appView .real-slot{box-shadow:inset 0 1px rgba(255,255,255,.025)!important}
+#appView .slot-status{color:inherit!important}
+#appView .map-legend{color:#a7b5c6!important}
+
+#appView .active-panel{margin-top:18px!important}
+#appView .active-row{background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.07)!important;color:#e7edf5!important}
+#appView .active-row:hover{background:rgba(241,194,66,.055)!important;border-color:rgba(241,194,66,.18)!important}
+#appView .table{color:#e7edf5!important}
+#appView .table th{color:#7f90a5!important;border-color:rgba(255,255,255,.08)!important}
+#appView .table td{border-color:rgba(255,255,255,.06)!important}
+#appView .table tbody tr:hover{background:rgba(255,255,255,.035)!important}
+#appView input,#appView select,#appView textarea{background:#0e1a29!important;color:#edf2f7!important;border-color:rgba(255,255,255,.10)!important}
+#appView input::placeholder,#appView textarea::placeholder{color:#687a90!important}
+#appView input:focus,#appView select:focus,#appView textarea:focus{border-color:#e9c451!important;box-shadow:0 0 0 3px rgba(233,196,81,.10)!important}
+#appView .primary{background:linear-gradient(135deg,#ffe477,#dcae35)!important;color:#16130a!important;box-shadow:0 10px 24px rgba(224,176,54,.18)!important}
+#appView .primary:hover{filter:brightness(1.05)!important}
+#appView .notice{background:rgba(236,194,67,.08)!important;border-color:rgba(236,194,67,.18)!important;color:#e9ce79!important}
+#appView .ai-box{background:linear-gradient(145deg,#091525,#11243a)!important;border-color:rgba(255,255,255,.08)!important}
+#appView .empty-state{color:#8292a7!important}
+
+/* Dashboard intro strip so the first row never starts far below the viewport. */
+#appView #content>.cards:first-child{margin-top:0!important}
+#appView #content>.cards:first-child:before{content:"PARKING OPERATIONS  •  LIVE CONTROL";display:block;grid-column:1/-1;color:#d7b84f;font-size:10px;font-weight:900;letter-spacing:.18em;margin:0 0 -2px 2px}
+
+@media(max-width:1200px){
+  #appView .cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+  #appView .main{width:100%!important;margin-left:0!important;padding:0 14px 80px!important}
+  #appView .topbar{margin:0 -14px 18px!important;padding:0 14px!important}
+  #appView .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:600px){
+  #appView .cards{grid-template-columns:1fr!important}
+  #appView .topbar{height:74px!important}
+  #appView .topbar h2{font-size:22px!important}
+}
