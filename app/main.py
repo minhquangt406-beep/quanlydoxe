@@ -1381,8 +1381,12 @@ QUY TẮC HIỂN THỊ:
                 try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
                 except Exception as deepseek_error:
                     print(f"[AI] DeepSeek fallback error: {type(deepseek_error).__name__}: {deepseek_error}")
-            fallback_question = "\n".join([m["content"] for m in history[-3:] if m.get("content")]) + "\n" + question
-            return {"answer":local_ai_support(db,fallback_question,user),"mode":"fallback","provider":"local","history_used":bool(history),"fallback":True}
+            # IMPORTANT: fallback must answer the CURRENT question only.
+            # Including previous turns here can cause an old intent (for example
+            # "Khu A") to override a new question (for example "phí xe"), making
+            # the chatbot repeat the same answer over and over when the LLM is
+            # unavailable. Conversation history is still sent to the real LLM.
+            return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history),"fallback":True}
     if DEEPSEEK_API_KEY:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
         except Exception: pass
