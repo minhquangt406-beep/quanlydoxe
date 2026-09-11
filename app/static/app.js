@@ -76,7 +76,7 @@ function renderAISupportHistory(){
   const box=$("#aiSupportMessages"); if(!box) return;
   box.innerHTML="";
   if(!aiSupportHistory.length){
-    addAISupportMessage("Xin chào! 👋 Tôi là trợ lý AI hỗ trợ khách hàng của Parking AI Pro. Bạn có thể hỏi về chỗ trống, khu A/B, giá gửi xe, vị trí đỗ, cách sử dụng hoặc thông tin liên hệ.","bot",false);
+    addAISupportMessage("Xin chào! 👋 Tôi có thể hỗ trợ bạn về chỗ trống, khu A/B, vị trí đỗ, mức phí, cách sử dụng và thông tin liên hệ. Bạn cứ hỏi như đang trò chuyện với nhân viên nhé.","bot",false);
     return;
   }
   aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
@@ -85,10 +85,6 @@ function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
-  api("/api/ai/status").then(st=>{
-    const sub=panel.querySelector(".ai-support-head small");
-    if(sub){ sub.textContent = st.openai_configured ? `GPT AI · ${st.openai_model} · dữ liệu thời gian thực` : (st.deepseek_configured ? "AI dự phòng · dữ liệu thời gian thực" : "AI nội bộ · cần cấu hình API để chat tự nhiên"); }
-  }).catch(()=>{});
   const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");setTimeout(()=>input.focus(),80)};
   const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open")};
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
@@ -104,12 +100,6 @@ function initAISupport(){
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
       finally{clearTimeout(timer)}
       const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
-      const sub=panel.querySelector(".ai-support-head small");
-      if(sub){
-        if(d.mode==="openai") sub.textContent=`GPT AI · ${d.provider||"OpenAI"} · dữ liệu thời gian thực`;
-        else if(d.mode==="deepseek-fallback"||d.mode==="deepseek") sub.textContent=`AI dự phòng · ${d.provider||"DeepSeek"} · dữ liệu thời gian thực`;
-        else sub.textContent="AI nội bộ dự phòng · dữ liệu bãi xe thời gian thực";
-      }
       addAISupportMessage(answer,"bot");
     }catch(err){
       const msg=err.name==="AbortError"?"Trợ lý đang xử lý lâu hơn bình thường. Bạn thử lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");

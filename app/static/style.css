@@ -2827,3 +2827,27 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
 .return-admin-btn{position:fixed;right:22px;bottom:22px;z-index:90;border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:11px 15px;background:linear-gradient(135deg,#17213a,#293b67);color:#fff;font-weight:850;font-size:11px;box-shadow:0 14px 35px rgba(15,23,42,.24);cursor:pointer;backdrop-filter:blur(10px)}.return-admin-btn:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(15,23,42,.28)}
 @media(max-width:900px){.quick-login-grid{grid-template-columns:1fr}.quick-account{align-items:flex-start;flex-direction:column}.quick-account-actions{width:100%;justify-content:flex-start}.return-admin-btn{right:12px;bottom:76px}}
 @media(max-width:520px){.quick-account{padding:11px}.quick-account-actions .btn{flex:1}.return-admin-btn{font-size:10px;padding:10px 12px}}
+
+/* AI CUSTOMER SUPPORT — polished customer-facing presentation */
+.ai-support-head{padding:15px 16px!important;background:linear-gradient(135deg,#111827 0%,#312e81 58%,#0e7490 100%)!important}
+.ai-support-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.ai-support-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.ai-support-head strong{font-size:15px!important;letter-spacing:-.01em}
+.ai-support-head small{margin-top:3px!important;color:#dbeafe!important;font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.ai-support-head-actions{display:flex;align-items:center;gap:8px}
+.ai-online{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;color:#dcfce7;white-space:nowrap;padding:6px 8px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(134,239,172,.18)}
+.ai-online i{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.13)}
+.ai-support-close{width:34px!important;height:34px!important;border-radius:11px!important;background:rgba(255,255,255,.12)!important}
+.ai-support-close:hover{background:rgba(255,255,255,.2)!important}
+.ai-support-messages{padding:18px 14px 12px!important}
+.ai-msg{margin-bottom:13px!important}
+.ai-msg span{font-size:12px!important;line-height:1.6!important}
+.ai-msg-user span{box-shadow:0 5px 14px rgba(79,70,229,.14)}
+.ai-msg-bot span{box-shadow:0 3px 12px rgba(15,23,42,.04)}
+.ai-support-suggestions{padding:10px 12px!important;gap:7px!important}
+.ai-support-suggestions button{font-size:10px!important;padding:7px 10px!important;transition:.18s ease}
+.ai-support-suggestions button:hover{transform:translateY(-1px)}
+.ai-support-form{padding:10px 11px 11px!important}
+.ai-support-form input{height:46px!important;border-radius:14px!important;background:#f8fafc!important}
+.ai-support-form button{width:46px!important;height:46px;border-radius:14px!important;box-shadow:0 7px 16px rgba(79,70,229,.22)}
+@media(max-width:600px){.ai-online{display:none}.ai-support-head small{max-width:205px}.ai-support-panel{width:calc(100vw - 22px)!important}}
