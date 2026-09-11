@@ -815,3 +815,20 @@ document.addEventListener("submit", function(e){
     if(action==='ai'){ document.getElementById('aiSupportToggle')?.click(); return; } if(typeof toast==='function') toast(messages[action]||'');
   }));
 })();
+
+
+// ===== V20: landing controls are real, never dead =====
+(function(){
+  const toastMsg=(m)=>{ if(typeof toast==='function') toast(m); else alert(m); };
+  document.querySelectorAll('#loginView .showcase-nav a').forEach((a,i)=>{
+    a.addEventListener('click',e=>{
+      e.preventDefault();
+      const msgs=['Bạn đang ở trang chủ.','Parking AI Pro là nền tảng quản lý bãi xe thông minh.','Quản lý xe, vị trí, doanh thu, tài khoản, báo cáo và AI.','Bảng giá và các gói dịch vụ của Parking AI Pro.','Liên hệ quản trị viên để được hỗ trợ.'];
+      toastMsg(msgs[i]||'');
+    });
+  });
+  document.querySelector('#loginView .showcase-theme')?.addEventListener('click',e=>{
+    e.preventDefault(); document.body.classList.toggle('dark-mode');
+    localStorage.setItem('parking_theme',document.body.classList.contains('dark-mode')?'dark':'light');
+  });
+})();

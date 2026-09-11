@@ -3196,3 +3196,65 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
   #loginView.login-page{min-height:100svh!important;height:auto!important;overflow:auto!important}
   #loginView .reference-actions{display:none!important}
 }
+
+/* ===== V20: functional overlay without duplicate controls =====
+   The reference artwork already contains the visual login card. Real DOM controls
+   are positioned over it, but their chrome is transparent so they never double-render. */
+@media (min-width:801px){
+  #loginView.login-page{
+    background-position:center center!important;
+    background-size:100% 100%!important;
+  }
+  #loginView .login-card{
+    left:72.05%!important;
+    top:9.85%!important;
+    width:23.15%!important;
+    height:73.6%!important;
+  }
+  #loginView form#loginForm{
+    left:7.1%!important;
+    right:7.1%!important;
+    top:30.0%!important;
+  }
+  #loginView #loginForm label{margin:0 0 9px!important;display:block!important;height:49px!important}
+  #loginView #loginForm input{
+    display:block!important;width:100%!important;height:49px!important;
+    box-sizing:border-box!important;padding:0 16px!important;
+    background:transparent!important;border:1px solid transparent!important;
+    box-shadow:none!important;color:#f8fafc!important;outline:none!important;
+    border-radius:11px!important;
+  }
+  #loginView #loginForm input:focus{
+    background:rgba(255,255,255,.035)!important;
+    border-color:rgba(255,216,92,.55)!important;
+    box-shadow:0 0 0 3px rgba(255,211,72,.10)!important;
+  }
+  #loginView #loginForm .forgot-link{
+    height:18px!important;margin:0 0 17px!important;
+  }
+  #loginView #loginForm .primary{
+    width:100%!important;height:56px!important;margin:0!important;
+    background:transparent!important;border:0!important;box-shadow:none!important;
+    color:transparent!important;text-shadow:none!important;cursor:pointer!important;
+  }
+  #loginView #loginForm .primary:hover{transform:none!important;background:rgba(255,220,100,.04)!important}
+  #loginView #loginForm .error{position:absolute!important;left:0;right:0;top:calc(100% + 3px);font-size:10px!important;color:#ff8b8b!important}
+  #loginView .guest-register-link{left:7%!important;right:7%!important;top:87.1%!important}
+  #loginView .reference-actions{z-index:30!important}
+  #loginView .login-card{z-index:40!important}
+  #loginView #loginForm{z-index:50!important}
+  /* Do not let the decorative hotspot layer intercept the real form. */
+  #loginView .hit-ai{z-index:2!important}
+  #loginView .hit-google,#loginView .hit-zalo,#loginView .hit-microsoft{z-index:2!important}
+}
+
+/* ===== V20: real actions for the visual navigation ===== */
+.reference-hit{touch-action:manipulation}
+
+@media (min-width:801px){
+  #loginView #loginForm input::placeholder{color:transparent!important;opacity:0!important}
+  #loginView #loginForm .forgot-link .link-btn{color:transparent!important;text-shadow:none!important}
+  #loginView .guest-register-link,
+  #loginView .guest-register-link .link-btn{color:transparent!important;text-shadow:none!important}
+  #loginView .guest-register-link{pointer-events:auto!important}
+}
