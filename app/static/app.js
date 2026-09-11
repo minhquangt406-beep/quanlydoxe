@@ -858,3 +858,33 @@ document.addEventListener("submit", function(e){
   q('#rememberLogin')?.addEventListener('change',e=>{if(!e.target.checked)localStorage.removeItem('parking_saved_username');else if(q('#username')?.value)localStorage.setItem('parking_saved_username',q('#username').value);});
   const saved=localStorage.getItem('parking_saved_username');if(saved&&q('#username')){q('#username').value=saved;q('#rememberLogin').checked=true;}
 })();
+
+// ===== V22 AUTH TABS =====
+(function(){
+  const root=document.getElementById('loginView'); if(!root) return;
+  const loginTab=document.getElementById('v22LoginTab');
+  const regTab=document.getElementById('v22RegisterTab');
+  const showRegister=document.getElementById('showRegister');
+  const loginForm=document.getElementById('loginForm');
+  const registerForm=document.getElementById('registerForm');
+  const forgotForm=document.getElementById('forgotForm');
+  const setTab=(mode)=>{
+    if(mode==='register'){
+      loginForm?.classList.add('hidden'); forgotForm?.classList.add('hidden'); registerForm?.classList.remove('hidden');
+      loginTab?.classList.remove('active'); regTab?.classList.add('active');
+      document.getElementById('registerName')?.focus();
+    } else {
+      registerForm?.classList.add('hidden'); forgotForm?.classList.add('hidden'); loginForm?.classList.remove('hidden');
+      regTab?.classList.remove('active'); loginTab?.classList.add('active');
+      document.getElementById('username')?.focus();
+    }
+  };
+  loginTab?.addEventListener('click',()=>setTab('login'));
+  regTab?.addEventListener('click',()=>setTab('register'));
+  showRegister?.addEventListener('click',()=>setTimeout(()=>{regTab?.classList.add('active');loginTab?.classList.remove('active')},0));
+  root.querySelectorAll('[data-social]').forEach(btn=>btn.addEventListener('click',()=>{
+    const names={google:'Google',zalo:'Zalo',microsoft:'Microsoft'};
+    const name=names[btn.dataset.social]||'mạng xã hội';
+    if(typeof toast==='function') toast(`Đăng nhập ${name} chưa được cấu hình OAuth. Hãy dùng tài khoản hệ thống để đăng nhập.`); else alert(`Đăng nhập ${name} chưa được cấu hình OAuth.`);
+  }));
+})();
