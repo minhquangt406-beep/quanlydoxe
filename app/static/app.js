@@ -832,3 +832,29 @@ document.addEventListener("submit", function(e){
     localStorage.setItem('parking_theme',document.body.classList.contains('dark-mode')?'dark':'light');
   });
 })();
+
+// ===== V21: clean login interface actions =====
+(function(){
+  const root=document.getElementById('loginView');
+  if(!root || !root.classList.contains('login-v21')) return;
+  const q=s=>root.querySelector(s);
+  const scrollToEl=(id)=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'center'});
+  const msg=(text)=>{if(typeof toast==='function') toast(text); else alert(text)};
+  q('#v21Brand')?.addEventListener('click',e=>{e.preventDefault();scrollToEl('v21Home');});
+  root.querySelectorAll('[data-v21-nav]').forEach(btn=>btn.addEventListener('click',()=>{
+    root.querySelectorAll('[data-v21-nav]').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+    const a=btn.dataset.v21Nav;
+    if(a==='home') scrollToEl('v21Home');
+    else if(a==='features') scrollToEl('v21Features');
+    else if(a==='about') scrollToEl('v21About');
+    else if(a==='pricing') msg('Bảng giá: liên hệ quản trị viên để nhận gói dịch vụ phù hợp.');
+    else if(a==='contact') msg('Liên hệ: bạn có thể dùng tài khoản hệ thống hoặc liên hệ quản trị viên để được hỗ trợ.');
+  }));
+  q('#v21Start')?.addEventListener('click',()=>{scrollToEl('v21Auth');setTimeout(()=>q('#username')?.focus(),250);});
+  q('#v21Learn')?.addEventListener('click',()=>msg('Parking AI Pro hỗ trợ quản lý vị trí đỗ, xe vào/ra, doanh thu, tài khoản, báo cáo và AI theo thời gian thực.'));
+  q('#v21Theme')?.addEventListener('click',()=>{root.classList.toggle('light-login');localStorage.setItem('parking_login_theme',root.classList.contains('light-login')?'light':'dark');});
+  if(localStorage.getItem('parking_login_theme')==='light') root.classList.add('light-login');
+  q('#v21TogglePassword')?.addEventListener('click',()=>{const input=q('#password');if(!input)return;input.type=input.type==='password'?'text':'password';q('#v21TogglePassword').textContent=input.type==='password'?'◉':'◉';});
+  q('#rememberLogin')?.addEventListener('change',e=>{if(!e.target.checked)localStorage.removeItem('parking_saved_username');else if(q('#username')?.value)localStorage.setItem('parking_saved_username',q('#username').value);});
+  const saved=localStorage.getItem('parking_saved_username');if(saved&&q('#username')){q('#username').value=saved;q('#rememberLogin').checked=true;}
+})();
