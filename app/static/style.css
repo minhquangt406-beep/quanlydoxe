@@ -3123,141 +3123,12 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
 }
 @media (max-width:1050px){.reference-actions{display:none!important}}
 
-/* ===== V19 FIX: reference fit + functional controls ===== */
-@media (min-width: 801px){
-  #loginView.login-page{
-    display:block!important;
-    position:relative!important;
-    width:100vw!important;
-    height:100svh!important;
-    min-height:100svh!important;
-    max-height:100svh!important;
-    margin:0!important;
-    padding:0!important;
-    overflow:hidden!important;
-    background:#05090f url('/static/images/landing-reference.png?v=20260911v19') center center / 100% 100% no-repeat!important;
-  }
-  #loginView .login-showcase{display:none!important}
-  #loginView .login-card{
-    position:absolute!important;
-    left:71.75%!important; top:10.30%!important;
-    width:23.75%!important; height:72.50%!important;
-    right:auto!important; margin:0!important; padding:0!important;
-    background:transparent!important; border:0!important; box-shadow:none!important;
-    border-radius:0!important; z-index:40!important; overflow:visible!important;
-  }
-  #loginView .login-card:before,#loginView .login-card:after{display:none!important}
-  #loginView .login-card > .login-head,
-  #loginView .login-card > .eyebrow,
-  #loginView .login-card > h1,
-  #loginView .login-card > p,
-  #loginView .login-card > .login-security{display:none!important}
-  #loginView form#loginForm{
-    position:absolute!important; left:6.5%!important; right:6.5%!important; top:30.3%!important;
-    margin:0!important; z-index:45!important;
-  }
-  #loginView #loginForm label{font-size:0!important;color:transparent!important;margin:0 0 10px!important}
-  #loginView #loginForm input{
-    height:49px!important; margin:0!important; padding:0 16px!important;
-    border-radius:11px!important; background:rgba(25,32,42,.94)!important;
-    border:1px solid rgba(255,255,255,.12)!important; color:#fff!important;
-  }
-  #loginView #loginForm input::placeholder{color:#8995a7!important;opacity:1!important}
-  #loginView #loginForm .forgot-link{height:18px!important;margin:0 0 17px!important}
-  #loginView #loginForm .forgot-link .link-btn{font-size:11px!important;color:#f4cf58!important}
-  #loginView #loginForm .primary{height:56px!important;margin:0!important;border-radius:12px!important;background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important;font-size:14px!important;font-weight:950!important}
-  #loginView .guest-register-link{position:absolute!important;left:5%!important;right:5%!important;top:87.0%!important;margin:0!important;text-align:center!important;font-size:10px!important;white-space:nowrap!important;z-index:45!important}
-  #loginView .guest-register-link .link-btn{font-size:10px!important;color:#f4cf58!important}
-  #loginView #registerForm,#loginView #forgotForm{
-    position:absolute!important;left:4%!important;right:4%!important;top:19%!important;
-    padding:24px!important;border-radius:18px!important;background:rgba(9,14,21,.98)!important;
-    border:1px solid rgba(255,255,255,.16)!important;box-shadow:0 24px 60px rgba(0,0,0,.5)!important;z-index:60!important;
-  }
-  #loginView #registerForm label,#loginView #forgotForm label{font-size:11px!important;color:#dbe2ea!important}
-  #loginView #registerForm input,#loginView #forgotForm input{height:45px!important;background:#18212c!important;color:#fff!important;border-color:#303b4b!important}
-  #loginView #registerForm .primary,#loginView #forgotForm .primary{background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important}
-  #loginView .reference-actions{position:absolute!important;inset:0!important;z-index:100!important;pointer-events:none!important}
-  #loginView .reference-hit{position:absolute!important;display:block!important;border:0!important;background:transparent!important;cursor:pointer!important;pointer-events:auto!important;padding:0!important;border-radius:10px!important}
-  #loginView .reference-hit:hover{background:rgba(255,215,80,.045)!important}
-  #loginView .hit-home{left:25.5%;top:1.2%;width:5.5%;height:7%!important}
-  #loginView .hit-about{left:32.0%;top:1.2%;width:5.7%;height:7%!important}
-  #loginView .hit-features{left:38.4%;top:1.2%;width:6.4%;height:7%!important}
-  #loginView .hit-pricing{left:44.8%;top:1.2%;width:6.4%;height:7%!important}
-  #loginView .hit-contact{left:51.1%;top:1.2%;width:6.0%;height:7%!important}
-  #loginView .hit-theme{right:13.5%;top:1.0%;width:4.2%;height:8%!important}
-  #loginView .hit-start{left:3.7%;top:46.7%;width:10.8%;height:6.7%!important}
-  #loginView .hit-learn{left:15.2%;top:46.7%;width:10.8%;height:6.7%!important}
-  #loginView .hit-google{left:73.55%;top:63.6%;width:6.9%;height:6.2%!important}
-  #loginView .hit-zalo{left:80.65%;top:63.6%;width:6.0%;height:6.2%!important}
-  #loginView .hit-microsoft{left:86.9%;top:63.6%;width:7.0%;height:6.2%!important}
-  #loginView .hit-ai{right:3.3%;bottom:4.0%;width:4.8%;height:8%!important}
-}
-@media (max-width:800px){
-  #loginView.login-page{min-height:100svh!important;height:auto!important;overflow:auto!important}
-  #loginView .reference-actions{display:none!important}
-}
+/* ===== V19/V20 legacy reference-image login overlay removed 2026-09-11 =====
+   (dead code: targeted #loginForm/#registerForm/#forgotForm from the old
+   image-overlay login design; it was hijacking the current .new-login
+   layout at min-width:801px — invisible inputs + absolute-positioned form
+   overlapping later content. See V26 fix block at end of file.) */
 
-/* ===== V20: functional overlay without duplicate controls =====
-   The reference artwork already contains the visual login card. Real DOM controls
-   are positioned over it, but their chrome is transparent so they never double-render. */
-@media (min-width:801px){
-  #loginView.login-page{
-    background-position:center center!important;
-    background-size:100% 100%!important;
-  }
-  #loginView .login-card{
-    left:72.05%!important;
-    top:9.85%!important;
-    width:23.15%!important;
-    height:73.6%!important;
-  }
-  #loginView form#loginForm{
-    left:7.1%!important;
-    right:7.1%!important;
-    top:30.0%!important;
-  }
-  #loginView #loginForm label{margin:0 0 9px!important;display:block!important;height:49px!important}
-  #loginView #loginForm input{
-    display:block!important;width:100%!important;height:49px!important;
-    box-sizing:border-box!important;padding:0 16px!important;
-    background:transparent!important;border:1px solid transparent!important;
-    box-shadow:none!important;color:#f8fafc!important;outline:none!important;
-    border-radius:11px!important;
-  }
-  #loginView #loginForm input:focus{
-    background:rgba(255,255,255,.035)!important;
-    border-color:rgba(255,216,92,.55)!important;
-    box-shadow:0 0 0 3px rgba(255,211,72,.10)!important;
-  }
-  #loginView #loginForm .forgot-link{
-    height:18px!important;margin:0 0 17px!important;
-  }
-  #loginView #loginForm .primary{
-    width:100%!important;height:56px!important;margin:0!important;
-    background:transparent!important;border:0!important;box-shadow:none!important;
-    color:transparent!important;text-shadow:none!important;cursor:pointer!important;
-  }
-  #loginView #loginForm .primary:hover{transform:none!important;background:rgba(255,220,100,.04)!important}
-  #loginView #loginForm .error{position:absolute!important;left:0;right:0;top:calc(100% + 3px);font-size:10px!important;color:#ff8b8b!important}
-  #loginView .guest-register-link{left:7%!important;right:7%!important;top:87.1%!important}
-  #loginView .reference-actions{z-index:30!important}
-  #loginView .login-card{z-index:40!important}
-  #loginView #loginForm{z-index:50!important}
-  /* Do not let the decorative hotspot layer intercept the real form. */
-  #loginView .hit-ai{z-index:2!important}
-  #loginView .hit-google,#loginView .hit-zalo,#loginView .hit-microsoft{z-index:2!important}
-}
-
-/* ===== V20: real actions for the visual navigation ===== */
-.reference-hit{touch-action:manipulation}
-
-@media (min-width:801px){
-  #loginView #loginForm input::placeholder{color:transparent!important;opacity:0!important}
-  #loginView #loginForm .forgot-link .link-btn{color:transparent!important;text-shadow:none!important}
-  #loginView .guest-register-link,
-  #loginView .guest-register-link .link-btn{color:transparent!important;text-shadow:none!important}
-  #loginView .guest-register-link{pointer-events:auto!important}
-}
 
 /* ===== V21 CLEAN LOGIN: replace old reference/overlay landing completely ===== */
 .login-v21{position:relative;min-height:100vh;box-sizing:border-box;overflow:auto;background:#07101b;color:#f8fafc;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:0 5.2vw 26px;isolation:isolate}
@@ -3513,7 +3384,8 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
 #loginView.login-page.new-login .nl-form{position:relative!important;display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important}
 #loginView.login-page.new-login .nl-form.hidden{display:none!important}
 #loginView.login-page.new-login .nl-form label{position:relative!important;display:block!important;width:100%!important;height:auto!important;margin:0 0 14px!important;font-size:11px!important}
-#loginView.login-page.new-login .nl-form label input{position:relative!important;display:block!important;width:100%!important;height:48px!important;margin:7px 0 0!important}
+#loginView.login-page.new-login .nl-form label input:not([type=checkbox]){position:relative!important;display:block!important;width:100%!important;height:48px!important;margin:7px 0 0!important}
+#loginView.login-page.new-login .nl-row input[type=checkbox]{width:14px!important;height:14px!important;min-height:0!important;display:inline-block!important;margin:0!important;flex:0 0 auto!important}
 #loginView.login-page.new-login .nl-password{position:relative!important;width:100%!important}
 #loginView.login-page.new-login .nl-password input{padding-right:48px!important}
 #loginView.login-page.new-login .nl-password button{position:absolute!important;right:6px!important;bottom:6px!important;width:36px!important;height:36px!important;z-index:3!important}
@@ -3562,4 +3434,25 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
   #loginView.login-page.new-login .nl-benefits{grid-template-columns:1fr!important}
   #loginView.login-page.new-login .nl-stats{grid-template-columns:1fr 1fr!important}
   #loginView.login-page.new-login .nl-socials{grid-template-columns:1fr!important}
+}
+
+/* ===== V26: restore intended dark input styling on the login form =====
+   A generic `input,select,textarea{background:...!important}` rule used
+   elsewhere in the app (dashboard theme) was, by accident of matching any
+   input/select/textarea site-wide, also winning over the login form's own
+   (non-!important) dark input style. Re-asserted here with a selector
+   specific enough to beat it without touching that other rule. */
+#loginView.login-page.new-login .nl-form input:not([type=checkbox]){
+  background:#121e2b!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+#loginView.login-page.new-login .nl-form input:not([type=checkbox])::placeholder{
+  color:#697685!important;
+  opacity:1!important;
+}
+#loginView.login-page.new-login .nl-form input:not([type=checkbox]):focus{
+  background:rgba(255,255,255,.035)!important;
+  border-color:#e8c348!important;
+  box-shadow:0 0 0 3px rgba(232,195,72,.10)!important;
 }
