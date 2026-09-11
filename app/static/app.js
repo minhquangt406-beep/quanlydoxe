@@ -850,7 +850,23 @@ document.addEventListener("submit", function(e){
     else if(a==='pricing') msg('Bảng giá: liên hệ quản trị viên để nhận gói dịch vụ phù hợp.');
     else if(a==='contact') msg('Liên hệ: bạn có thể dùng tài khoản hệ thống hoặc liên hệ quản trị viên để được hỗ trợ.');
   }));
-  q('#v21Start')?.addEventListener('click',()=>{scrollToEl('v21Auth');setTimeout(()=>q('#username')?.focus(),250);});
+  q('#v21Start')?.addEventListener('click',()=>{
+    const loginRoot=q('#loginView');
+    const auth=q('#v21Auth');
+    if(!loginRoot||!auth) return;
+    loginRoot.classList.add('v28-auth-open');
+    auth.setAttribute('aria-hidden','false');
+    setTimeout(()=>q('#username')?.focus(),420);
+  });
+  q('#v28CloseAuth')?.addEventListener('click',()=>{
+    const loginRoot=q('#loginView');
+    const auth=q('#v21Auth');
+    if(!loginRoot||!auth) return;
+    loginRoot.classList.remove('v28-auth-open');
+    auth.setAttribute('aria-hidden','true');
+    setTimeout(()=>q('#v21Start')?.focus(),120);
+  });
+  q('#v21Auth')?.setAttribute('aria-hidden','true');
   q('#v21Learn')?.addEventListener('click',()=>msg('Parking AI Pro hỗ trợ quản lý vị trí đỗ, xe vào/ra, doanh thu, tài khoản, báo cáo và AI theo thời gian thực.'));
   q('#v21Theme')?.addEventListener('click',()=>{root.classList.toggle('light-login');localStorage.setItem('parking_login_theme',root.classList.contains('light-login')?'light':'dark');});
   if(localStorage.getItem('parking_login_theme')==='light') root.classList.add('light-login');
