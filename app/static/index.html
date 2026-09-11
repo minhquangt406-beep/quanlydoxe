@@ -7,113 +7,107 @@
 <link rel="stylesheet" href="/static/style.css?v=v23-final-clean-login-20260911">
 </head>
 <body>
-<div id="loginView" class="login-page login-v21">
-  <div class="v21-bg-orb v21-orb-1"></div>
-  <div class="v21-bg-orb v21-orb-2"></div>
-  <header class="v21-header">
-    <a href="#" class="v21-brand" id="v21Brand" aria-label="Trang chủ">
-      <span class="v21-logo">P</span>
-      <span class="v21-brand-text"><b>Parking AI Pro</b><small>SMART PARKING CONTROL</small></span>
-    </a>
-    <nav class="v21-nav" aria-label="Điều hướng">
-      <button type="button" class="active" data-v21-nav="home">Trang chủ</button>
-      <button type="button" data-v21-nav="about">Giới thiệu</button>
-      <button type="button" data-v21-nav="features">Tính năng</button>
-      <button type="button" data-v21-nav="pricing">Bảng giá</button>
-      <button type="button" data-v21-nav="contact">Liên hệ</button>
-    </nav>
-    <div class="v21-header-actions">
-      <button type="button" id="v21Theme" class="v21-icon-btn" title="Đổi giao diện" aria-label="Đổi giao diện">☼</button>
-      <span class="v21-online"><i></i> HỆ THỐNG AN TOÀN</span>
-    </div>
-  </header>
+<div id="loginView" class="login-page login-v21 new-login">
+  <div class="nl-shell">
+    <section class="nl-visual" id="v21Home">
+      <div class="nl-overlay"></div>
+      <header class="nl-header">
+        <a href="#" class="nl-brand" id="v21Brand">
+          <span class="nl-logo">P</span>
+          <span><b>Parking AI Pro</b><small>SMART PARKING SOLUTION</small></span>
+        </a>
+        <nav class="nl-nav">
+          <button type="button" class="active" data-v21-nav="home">Trang chủ</button>
+          <button type="button" data-v21-nav="about">Giới thiệu</button>
+          <button type="button" data-v21-nav="features">Tính năng</button>
+          <button type="button" data-v21-nav="pricing">Bảng giá</button>
+          <button type="button" data-v21-nav="contact">Liên hệ</button>
+        </nav>
+        <button type="button" id="v21Theme" class="nl-theme" title="Đổi giao diện">☼</button>
+      </header>
 
-  <main class="v21-main">
-    <section class="v21-hero" id="v21Home">
-      <div class="v21-kicker"><span>✦</span> NỀN TẢNG QUẢN LÝ BÃI XE THÔNG MINH</div>
-      <h2>Quản lý bãi xe<br><strong>thông minh hơn<br>mỗi ngày.</strong></h2>
-      <p class="v21-hero-desc">Kiểm soát vị trí đỗ, phương tiện, doanh thu và vận hành trong một nền tảng duy nhất — nhanh chóng, trực quan và an toàn.</p>
-      <div class="v21-hero-actions">
-        <button type="button" class="v21-btn v21-btn-gold" id="v21Start">Bắt đầu ngay <span>→</span></button>
-        <button type="button" class="v21-btn v21-btn-outline" id="v21Learn"><span class="play">▶</span> Tìm hiểu thêm</button>
-      </div>
-      <div class="v21-benefits">
-        <div><span>ϟ</span><div><b>Nhanh chóng</b><small>Xử lý trong vài giây</small></div></div>
-        <div><span>◇</span><div><b>An toàn</b><small>Dữ liệu được bảo mật</small></div></div>
-        <div><span>▥</span><div><b>Hiệu quả</b><small>Tối ưu chi phí vận hành</small></div></div>
+      <div class="nl-content">
+        <div class="nl-kicker">✦ NỀN TẢNG QUẢN LÝ BÃI XE THÔNG MINH</div>
+        <h2>Quản lý bãi xe<br><span>thông minh hơn.</span><br><span>Đơn giản hơn.</span></h2>
+        <p>Parking AI Pro ứng dụng trí tuệ nhân tạo giúp kiểm soát bãi xe hiệu quả, an toàn và tiện lợi. Tối ưu vận hành, tiết kiệm thời gian và nâng cao trải nghiệm.</p>
+        <div class="nl-actions">
+          <button type="button" class="nl-primary" id="v21Start">Bắt đầu ngay <b>→</b></button>
+          <button type="button" class="nl-secondary" id="v21Learn">ⓘ &nbsp; Tìm hiểu thêm</button>
+        </div>
+        <div class="nl-benefits">
+          <div><i>ϟ</i><span><b>Nhanh chóng</b><small>Xử lý trong vài giây</small></span></div>
+          <div><i>✚</i><span><b>An toàn</b><small>Bảo vệ dữ liệu 24/7</small></span></div>
+          <div><i>▥</i><span><b>Hiệu quả</b><small>Tối ưu chi phí</small></span></div>
+          <div><i>◈</i><span><b>Thân thiện</b><small>Dễ sử dụng</small></span></div>
+        </div>
       </div>
 
-      <div class="v21-info-card" id="v21Features">
-        <div class="v21-info-head"><div><i></i><b>SƠ ĐỒ BÃI XE TRỰC TUYẾN</b><small>Cập nhật theo thời gian thực</small></div><span>KHU A · KHU B</span></div>
-        <div class="v21-slot-map">
-          <div class="v21-slot free">A01</div><div class="v21-slot busy">A02</div><div class="v21-slot free">A03</div><div class="v21-slot free">A04</div><div class="v21-slot busy">A05</div><div class="v21-slot free">A06</div>
-          <div class="v21-slot free">B01</div><div class="v21-slot free">B02</div><div class="v21-slot free">B03</div><div class="v21-slot busy">B04</div><div class="v21-slot free">B05</div><div class="v21-slot free">B06</div>
-        </div>
-        <div class="v21-stats-row">
-          <div><b>12</b><small>Tổng vị trí</small></div><div><b>8</b><small>Đang trống</small></div><div><b>4</b><small>Đang sử dụng</small></div>
-        </div>
+      <div class="nl-stats" id="v21Features">
+        <div><strong>128</strong><small>Tổng vị trí</small></div>
+        <div><strong>86</strong><small>Đang sử dụng</small></div>
+        <div><strong>42</strong><small>Còn trống</small></div>
+        <div><strong>1,250</strong><small>Lượt xe hôm nay</small></div>
       </div>
     </section>
 
-    <aside class="v21-auth-shell" id="v21Auth">
-      <div class="v21-auth-card">
-        <div class="v21-auth-top"><span class="v21-auth-logo">P</span><span class="v21-secure"><i></i> BẢO MẬT 24/7</span></div>
-        <div class="v21-eyebrow">SMART PARKING PLATFORM</div>
-        <h1 id="v21AuthTitle">Đăng nhập hệ thống</h1>
-        <p class="v21-auth-sub" id="v21AuthSub">Quản lý bãi đỗ xe thông minh · Dữ liệu lưu bền vững</p>
+    <aside class="nl-auth" id="v21Auth">
+      <div class="nl-auth-card">
+        <div class="nl-auth-head">
+          <div class="nl-auth-logo">P</div>
+          <span class="nl-secure"><i></i> BẢO MẬT 24/7</span>
+        </div>
+        <div class="nl-eyebrow">SMART PARKING PLATFORM</div>
+        <h1 id="v21AuthTitle">Chào mừng trở lại 👋</h1>
+        <p id="v21AuthSub">Đăng nhập để tiếp tục sử dụng Parking AI Pro</p>
 
-        <form id="loginForm" class="v21-form" autocomplete="off">
-          <label>Tài khoản<input id="username" name="login_username" autocomplete="username" placeholder="Nhập tài khoản"></label>
-          <label>Mật khẩu<div class="v21-password"><input id="password" name="login_password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu"><button type="button" id="v21TogglePassword" title="Hiện/ẩn mật khẩu" aria-label="Hiện/ẩn mật khẩu">◉</button></div></label>
-          <div class="v21-form-row"><label class="v21-check"><input type="checkbox" id="rememberLogin"> <span>Ghi nhớ đăng nhập</span></label><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
-          <button type="submit" class="v21-submit">Đăng nhập <span>→</span></button>
-          <div id="loginError" class="error"></div>
-        </form>
-
-        <div class="v22-auth-tabs">
+        <div class="nl-tabs">
           <button type="button" class="active" id="v22LoginTab">Đăng nhập</button>
           <button type="button" id="v22RegisterTab">Tạo tài khoản</button>
         </div>
-        <div class="v21-register-prompt"><span>Chưa có tài khoản?</span><button type="button" id="showRegister" class="link-btn">Tạo tài khoản khách</button></div>
 
-        <form id="registerForm" class="v21-form hidden" autocomplete="off">
+        <form id="loginForm" class="v21-form nl-form" autocomplete="off">
+          <label>Tài khoản<input id="username" name="login_username" autocomplete="username" placeholder="Nhập tài khoản hoặc email"></label>
+          <label>Mật khẩu<div class="nl-password"><input id="password" name="login_password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu"><button type="button" id="v21TogglePassword" aria-label="Hiện hoặc ẩn mật khẩu">◉</button></div></label>
+          <div class="nl-row"><label class="v21-check"><input type="checkbox" id="rememberLogin"><span>Ghi nhớ đăng nhập</span></label><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
+          <button type="submit" class="nl-submit">Đăng nhập <span>→</span></button>
+          <div id="loginError" class="error"></div>
+          <div class="nl-guest">Chưa có tài khoản? <button type="button" id="showRegister" class="link-btn">Tạo tài khoản khách</button></div>
+        </form>
+
+        <form id="registerForm" class="v21-form nl-form hidden" autocomplete="off">
           <label>Họ tên<input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></label>
           <label>Tài khoản<input id="registerUsername" autocomplete="username" placeholder="khach01"></label>
           <label>Số điện thoại<input id="registerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
           <label>Mật khẩu<input id="registerPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
-          <button type="submit" class="v21-submit">Tạo tài khoản <span>→</span></button>
+          <button type="submit" class="nl-submit">Tạo tài khoản <span>→</span></button>
           <div id="registerError" class="error"></div>
-          <button type="button" id="cancelRegister" class="v21-secondary">← Quay lại đăng nhập</button>
+          <button type="button" id="cancelRegister" class="nl-back">← Quay lại đăng nhập</button>
         </form>
 
-        <form id="forgotForm" class="v21-form hidden" autocomplete="off">
-          <div class="v21-note">Nhập tài khoản và số điện thoại đã đăng ký để nhận mã OTP 6 số.</div>
+        <form id="forgotForm" class="v21-form nl-form hidden" autocomplete="off">
+          <div class="nl-note">Nhập tài khoản và số điện thoại đã đăng ký để nhận mã OTP 6 số.</div>
           <label>Tài khoản<input id="forgotUsername" autocomplete="username" placeholder="Tài khoản khách"></label>
           <label>Số điện thoại<input id="forgotPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
-          <button type="button" class="v21-submit" id="sendOtp">Gửi mã OTP <span>→</span></button>
+          <button type="button" class="nl-submit" id="sendOtp">Gửi mã OTP <span>→</span></button>
           <label>Mã OTP<input id="resetOtp" inputmode="numeric" maxlength="6" placeholder="6 chữ số"></label>
           <label>Mật khẩu mới<input id="resetPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
-          <button type="submit" class="v21-submit">Đặt lại mật khẩu <span>→</span></button>
+          <button type="submit" class="nl-submit">Đặt lại mật khẩu <span>→</span></button>
           <div id="forgotError" class="error"></div>
-          <button type="button" id="cancelForgot" class="v21-secondary">← Quay lại đăng nhập</button>
+          <button type="button" id="cancelForgot" class="nl-back">← Quay lại đăng nhập</button>
         </form>
 
-        <div class="v22-social-title"><span></span>Hoặc đăng nhập bằng<span></span></div>
-        <div class="v22-socials">
+        <div class="nl-social-title"><span></span>Hoặc đăng nhập bằng<span></span></div>
+        <div class="nl-socials">
           <button type="button" data-social="google"><b>G</b> Google</button>
           <button type="button" data-social="zalo"><b>Z</b> Zalo</button>
           <button type="button" data-social="microsoft"><b>⊞</b> Microsoft</button>
         </div>
-        <div class="v21-auth-foot"><span>🛡</span><div><b>Dữ liệu được bảo vệ 24/7</b><small>Thông tin tài khoản và phiên đăng nhập được bảo mật.</small></div></div>
+        <div class="nl-security"><span>🛡</span><div><b>Dữ liệu của bạn được bảo vệ</b><small>Thông tin tài khoản và phiên đăng nhập luôn được bảo mật.</small></div></div>
       </div>
     </aside>
-  </main>
-
-  <section class="v21-bottom-info" id="v21About">
-    <div><b>AI hỗ trợ 24/7</b><small>Giải đáp nhanh mọi thắc mắc</small></div>
-    <div><b>Dữ liệu thời gian thực</b><small>Cập nhật liên tục</small></div>
-    <div><b>Phân quyền thông minh</b><small>Quản lý linh hoạt</small></div>
-    <div><b>Báo cáo chi tiết</b><small>Thống kê minh bạch</small></div>
+  </div>
+  <section class="nl-footer" id="v21About">
+    <span>© 2026 Parking AI Pro</span><span>AI hỗ trợ 24/7</span><span>Dữ liệu thời gian thực</span><span>Phân quyền thông minh</span><span>Báo cáo chi tiết</span>
   </section>
 </div>
 
