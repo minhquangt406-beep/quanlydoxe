@@ -1403,7 +1403,13 @@ def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
 
 @app.get("/api/activity")
 def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
-    rows = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.id.desc()).limit(limit).all()
+    # Security: only Quản lý/administrator may view the complete audit log.
+    # Other staff accounts can see only their own activity, so they can never
+    # inspect actions performed by the administrator or another account.
+    query = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id)
+    if user.role not in ("manager", "admin"):
+        query = query.filter(AuditLog.user_id == user.id)
+    rows = query.order_by(AuditLog.id.desc()).limit(limit).all()
     return [{"id": a.id, "username": u.username if u else "system", "action": a.action, "detail": a.detail, "created_at": a.created_at.isoformat()} for a,u in rows]
 
 @app.get("/api/analytics")
