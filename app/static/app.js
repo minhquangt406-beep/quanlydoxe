@@ -836,7 +836,7 @@ document.addEventListener("submit", function(e){
 // ===== V21: clean login interface actions =====
 (function(){
   const root=document.getElementById('loginView');
-  if(!root || !root.classList.contains('login-v21')) return;
+  if(!root || !root.classList.contains('clean-login-v26')) return;
   const q=s=>root.querySelector(s);
   const scrollToEl=(id)=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'center'});
   const msg=(text)=>{if(typeof toast==='function') toast(text); else alert(text)};
@@ -857,6 +857,62 @@ document.addEventListener("submit", function(e){
   q('#v21TogglePassword')?.addEventListener('click',()=>{const input=q('#password');if(!input)return;input.type=input.type==='password'?'text':'password';q('#v21TogglePassword').textContent=input.type==='password'?'◉':'◉';});
   q('#rememberLogin')?.addEventListener('change',e=>{if(!e.target.checked)localStorage.removeItem('parking_saved_username');else if(q('#username')?.value)localStorage.setItem('parking_saved_username',q('#username').value);});
   const saved=localStorage.getItem('parking_saved_username');if(saved&&q('#username')){q('#username').value=saved;q('#rememberLogin').checked=true;}
+})();
+
+// ===== V27: public live parking data on login screen =====
+(function(){
+  const root=document.getElementById('loginView');
+  if(!root || !root.classList.contains('clean-login-v26')) return;
+
+  const set=(id,v)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=String(v ?? '—');
+  };
+
+  let timer=null;
+  let busy=false;
+
+  async function refreshPublicParking(){
+    if(busy || document.hidden) return;
+    busy=true;
+    try{
+      const r=await fetch('/api/public/parking-summary?ts='+Date.now(),{
+        cache:'no-store',
+        headers:{'Accept':'application/json'}
+      });
+      if(!r.ok) return;
+      const d=await r.json();
+
+      // Safe aggregate data only; no account, plate or private activity data.
+      set('publicTotal',d.total_slots);
+      set('publicOccupied',d.occupied);
+      set('publicEmpty',d.empty);
+      set('publicCheckins',d.today_checkins);
+
+      // Optional live-status indicator if present in the current UI.
+      const status=document.getElementById('publicLiveStatus');
+      if(status){
+        status.textContent='Đang cập nhật';
+        status.classList.add('online');
+        status.title=d.updated_at ? ('Cập nhật: '+new Date(d.updated_at).toLocaleTimeString('vi-VN')) : 'Dữ liệu thời gian thực';
+      }
+    }catch(_){
+      const status=document.getElementById('publicLiveStatus');
+      if(status){status.textContent='Tạm thời gián đoạn';status.classList.remove('online');}
+    }finally{
+      busy=false;
+    }
+  }
+
+  // Load immediately, then keep the landing statistics fresh every 15 seconds.
+  refreshPublicParking();
+  timer=setInterval(refreshPublicParking,15000);
+
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) refreshPublicParking();
+  });
+
+  window.addEventListener('beforeunload',()=>{if(timer) clearInterval(timer);},{once:true});
 })();
 
 // ===== V22 AUTH TABS =====
