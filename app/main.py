@@ -753,28 +753,6 @@ def backup(db: Session = Depends(get_db), user: User = Depends(manager_only)):
         raise HTTPException(404, "Chưa có file database để sao lưu")
     return FileResponse(path, media_type="application/octet-stream", filename=f"parking-backup-{now_vn().strftime('%Y%m%d-%H%M%S')}.db")
 
-@app.get("/api/public/parking-summary")
-def public_parking_summary(db: Session = Depends(get_db)):
-    """Safe public aggregate data for the login/landing screen. No auth, plates, users or private logs."""
-    total = db.query(ParkingSlot).count()
-    occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
-    empty = max(total - occupied, 0)
-    active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
-    today = now_vn().date()
-    start = datetime.combine(today, datetime.min.time())
-    end = start + timedelta(days=1)
-    today_checkins = db.query(ParkingRecord).filter(ParkingRecord.time_in >= start, ParkingRecord.time_in < end).count()
-    areas_out = []
-    for a in db.query(Area).order_by(Area.id).all():
-        occ = db.query(ParkingSlot).filter(ParkingSlot.area_id == a.id, ParkingSlot.status == "occupied").count()
-        areas_out.append({"name": a.name, "capacity": a.capacity, "occupied": occ, "empty": max(a.capacity-occ, 0)})
-    return {
-        "total_slots": total, "occupied": occupied, "empty": empty,
-        "active_vehicles": active, "today_checkins": today_checkins,
-        "occupancy_rate": round((occupied/total*100) if total else 0, 1),
-        "areas": areas_out, "updated_at": now_vn().isoformat()
-    }
-
 @app.get("/api/dashboard")
 def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user)):
     total = db.query(ParkingSlot).count()

@@ -3123,141 +3123,12 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
 }
 @media (max-width:1050px){.reference-actions{display:none!important}}
 
-/* ===== V19 FIX: reference fit + functional controls ===== */
-@media (min-width: 801px){
-  #loginView.login-page{
-    display:block!important;
-    position:relative!important;
-    width:100vw!important;
-    height:100svh!important;
-    min-height:100svh!important;
-    max-height:100svh!important;
-    margin:0!important;
-    padding:0!important;
-    overflow:hidden!important;
-    background:#05090f url('/static/images/landing-reference.png?v=20260911v19') center center / 100% 100% no-repeat!important;
-  }
-  #loginView .login-showcase{display:none!important}
-  #loginView .login-card{
-    position:absolute!important;
-    left:71.75%!important; top:10.30%!important;
-    width:23.75%!important; height:72.50%!important;
-    right:auto!important; margin:0!important; padding:0!important;
-    background:transparent!important; border:0!important; box-shadow:none!important;
-    border-radius:0!important; z-index:40!important; overflow:visible!important;
-  }
-  #loginView .login-card:before,#loginView .login-card:after{display:none!important}
-  #loginView .login-card > .login-head,
-  #loginView .login-card > .eyebrow,
-  #loginView .login-card > h1,
-  #loginView .login-card > p,
-  #loginView .login-card > .login-security{display:none!important}
-  #loginView form#loginForm{
-    position:absolute!important; left:6.5%!important; right:6.5%!important; top:30.3%!important;
-    margin:0!important; z-index:45!important;
-  }
-  #loginView #loginForm label{font-size:0!important;color:transparent!important;margin:0 0 10px!important}
-  #loginView #loginForm input{
-    height:49px!important; margin:0!important; padding:0 16px!important;
-    border-radius:11px!important; background:rgba(25,32,42,.94)!important;
-    border:1px solid rgba(255,255,255,.12)!important; color:#fff!important;
-  }
-  #loginView #loginForm input::placeholder{color:#8995a7!important;opacity:1!important}
-  #loginView #loginForm .forgot-link{height:18px!important;margin:0 0 17px!important}
-  #loginView #loginForm .forgot-link .link-btn{font-size:11px!important;color:#f4cf58!important}
-  #loginView #loginForm .primary{height:56px!important;margin:0!important;border-radius:12px!important;background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important;font-size:14px!important;font-weight:950!important}
-  #loginView .guest-register-link{position:absolute!important;left:5%!important;right:5%!important;top:87.0%!important;margin:0!important;text-align:center!important;font-size:10px!important;white-space:nowrap!important;z-index:45!important}
-  #loginView .guest-register-link .link-btn{font-size:10px!important;color:#f4cf58!important}
-  #loginView #registerForm,#loginView #forgotForm{
-    position:absolute!important;left:4%!important;right:4%!important;top:19%!important;
-    padding:24px!important;border-radius:18px!important;background:rgba(9,14,21,.98)!important;
-    border:1px solid rgba(255,255,255,.16)!important;box-shadow:0 24px 60px rgba(0,0,0,.5)!important;z-index:60!important;
-  }
-  #loginView #registerForm label,#loginView #forgotForm label{font-size:11px!important;color:#dbe2ea!important}
-  #loginView #registerForm input,#loginView #forgotForm input{height:45px!important;background:#18212c!important;color:#fff!important;border-color:#303b4b!important}
-  #loginView #registerForm .primary,#loginView #forgotForm .primary{background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important}
-  #loginView .reference-actions{position:absolute!important;inset:0!important;z-index:100!important;pointer-events:none!important}
-  #loginView .reference-hit{position:absolute!important;display:block!important;border:0!important;background:transparent!important;cursor:pointer!important;pointer-events:auto!important;padding:0!important;border-radius:10px!important}
-  #loginView .reference-hit:hover{background:rgba(255,215,80,.045)!important}
-  #loginView .hit-home{left:25.5%;top:1.2%;width:5.5%;height:7%!important}
-  #loginView .hit-about{left:32.0%;top:1.2%;width:5.7%;height:7%!important}
-  #loginView .hit-features{left:38.4%;top:1.2%;width:6.4%;height:7%!important}
-  #loginView .hit-pricing{left:44.8%;top:1.2%;width:6.4%;height:7%!important}
-  #loginView .hit-contact{left:51.1%;top:1.2%;width:6.0%;height:7%!important}
-  #loginView .hit-theme{right:13.5%;top:1.0%;width:4.2%;height:8%!important}
-  #loginView .hit-start{left:3.7%;top:46.7%;width:10.8%;height:6.7%!important}
-  #loginView .hit-learn{left:15.2%;top:46.7%;width:10.8%;height:6.7%!important}
-  #loginView .hit-google{left:73.55%;top:63.6%;width:6.9%;height:6.2%!important}
-  #loginView .hit-zalo{left:80.65%;top:63.6%;width:6.0%;height:6.2%!important}
-  #loginView .hit-microsoft{left:86.9%;top:63.6%;width:7.0%;height:6.2%!important}
-  #loginView .hit-ai{right:3.3%;bottom:4.0%;width:4.8%;height:8%!important}
-}
-@media (max-width:800px){
-  #loginView.login-page{min-height:100svh!important;height:auto!important;overflow:auto!important}
-  #loginView .reference-actions{display:none!important}
-}
+/* ===== V19/V20 legacy reference-image login overlay removed 2026-09-11 =====
+   (dead code: targeted #loginForm/#registerForm/#forgotForm from the old
+   image-overlay login design; it was hijacking the current .new-login
+   layout at min-width:801px — invisible inputs + absolute-positioned form
+   overlapping later content. See V26 fix block at end of file.) */
 
-/* ===== V20: functional overlay without duplicate controls =====
-   The reference artwork already contains the visual login card. Real DOM controls
-   are positioned over it, but their chrome is transparent so they never double-render. */
-@media (min-width:801px){
-  #loginView.login-page{
-    background-position:center center!important;
-    background-size:100% 100%!important;
-  }
-  #loginView .login-card{
-    left:72.05%!important;
-    top:9.85%!important;
-    width:23.15%!important;
-    height:73.6%!important;
-  }
-  #loginView form#loginForm{
-    left:7.1%!important;
-    right:7.1%!important;
-    top:30.0%!important;
-  }
-  #loginView #loginForm label{margin:0 0 9px!important;display:block!important;height:49px!important}
-  #loginView #loginForm input{
-    display:block!important;width:100%!important;height:49px!important;
-    box-sizing:border-box!important;padding:0 16px!important;
-    background:transparent!important;border:1px solid transparent!important;
-    box-shadow:none!important;color:#f8fafc!important;outline:none!important;
-    border-radius:11px!important;
-  }
-  #loginView #loginForm input:focus{
-    background:rgba(255,255,255,.035)!important;
-    border-color:rgba(255,216,92,.55)!important;
-    box-shadow:0 0 0 3px rgba(255,211,72,.10)!important;
-  }
-  #loginView #loginForm .forgot-link{
-    height:18px!important;margin:0 0 17px!important;
-  }
-  #loginView #loginForm .primary{
-    width:100%!important;height:56px!important;margin:0!important;
-    background:transparent!important;border:0!important;box-shadow:none!important;
-    color:transparent!important;text-shadow:none!important;cursor:pointer!important;
-  }
-  #loginView #loginForm .primary:hover{transform:none!important;background:rgba(255,220,100,.04)!important}
-  #loginView #loginForm .error{position:absolute!important;left:0;right:0;top:calc(100% + 3px);font-size:10px!important;color:#ff8b8b!important}
-  #loginView .guest-register-link{left:7%!important;right:7%!important;top:87.1%!important}
-  #loginView .reference-actions{z-index:30!important}
-  #loginView .login-card{z-index:40!important}
-  #loginView #loginForm{z-index:50!important}
-  /* Do not let the decorative hotspot layer intercept the real form. */
-  #loginView .hit-ai{z-index:2!important}
-  #loginView .hit-google,#loginView .hit-zalo,#loginView .hit-microsoft{z-index:2!important}
-}
-
-/* ===== V20: real actions for the visual navigation ===== */
-.reference-hit{touch-action:manipulation}
-
-@media (min-width:801px){
-  #loginView #loginForm input::placeholder{color:transparent!important;opacity:0!important}
-  #loginView #loginForm .forgot-link .link-btn{color:transparent!important;text-shadow:none!important}
-  #loginView .guest-register-link,
-  #loginView .guest-register-link .link-btn{color:transparent!important;text-shadow:none!important}
-  #loginView .guest-register-link{pointer-events:auto!important}
-}
 
 /* ===== V21 CLEAN LOGIN: replace old reference/overlay landing completely ===== */
 .login-v21{position:relative;min-height:100vh;box-sizing:border-box;overflow:auto;background:#07101b;color:#f8fafc;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:0 5.2vw 26px;isolation:isolate}
@@ -3513,7 +3384,8 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
 #loginView.login-page.new-login .nl-form{position:relative!important;display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important}
 #loginView.login-page.new-login .nl-form.hidden{display:none!important}
 #loginView.login-page.new-login .nl-form label{position:relative!important;display:block!important;width:100%!important;height:auto!important;margin:0 0 14px!important;font-size:11px!important}
-#loginView.login-page.new-login .nl-form label input{position:relative!important;display:block!important;width:100%!important;height:48px!important;margin:7px 0 0!important}
+#loginView.login-page.new-login .nl-form label input:not([type=checkbox]){position:relative!important;display:block!important;width:100%!important;height:48px!important;margin:7px 0 0!important}
+#loginView.login-page.new-login .nl-row input[type=checkbox]{width:14px!important;height:14px!important;min-height:0!important;display:inline-block!important;margin:0!important;flex:0 0 auto!important}
 #loginView.login-page.new-login .nl-password{position:relative!important;width:100%!important}
 #loginView.login-page.new-login .nl-password input{padding-right:48px!important}
 #loginView.login-page.new-login .nl-password button{position:absolute!important;right:6px!important;bottom:6px!important;width:36px!important;height:36px!important;z-index:3!important}
@@ -3563,4 +3435,24 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
   #loginView.login-page.new-login .nl-stats{grid-template-columns:1fr 1fr!important}
   #loginView.login-page.new-login .nl-socials{grid-template-columns:1fr!important}
 }
-\n\n/* V26 CLEAN LOGIN: unique namespace; no screenshot/UI layers. */\n#loginView.clean-login-v26{min-height:100svh;padding:0!important;display:block!important;background:#07111b!important;color:#fff!important;overflow-x:hidden!important;overflow-y:auto!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;isolation:isolate}\n#loginView.clean-login-v26 *{box-sizing:border-box}\n.clean-login-v26 .cl26-shell{width:100%;max-width:1600px;min-height:calc(100svh - 52px);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.48fr) minmax(390px,.72fr);background:#07111b}\n.clean-login-v26 .cl26-hero{position:relative;min-width:0;min-height:calc(100svh - 52px);overflow:hidden;padding-bottom:34px;background:#07111b}\n.clean-login-v26 .cl26-bg{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,12,20,.96) 0%,rgba(4,12,20,.78) 42%,rgba(4,12,20,.30) 76%,rgba(4,12,20,.58) 100%),url('/static/images/clean-garage.jpg') center/cover no-repeat;z-index:0}\n.clean-login-v26 .cl26-header{position:relative;z-index:2;height:76px;display:flex;align-items:center;gap:22px;padding:0 42px;border-bottom:1px solid rgba(255,255,255,.10)}\n.clean-login-v26 .cl26-brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none;flex:0 0 auto;min-width:210px}.clean-login-v26 .cl26-logo,.clean-login-v26 .cl26-auth-logo{display:grid;place-items:center;background:linear-gradient(145deg,#ffe477,#c98e19);color:#111820;font-weight:1000;box-shadow:0 10px 28px rgba(238,184,42,.24)}.clean-login-v26 .cl26-logo{width:48px;height:48px;border-radius:14px;font-size:24px}.clean-login-v26 .cl26-brand b{display:block;font-size:15px}.clean-login-v26 .cl26-brand small{display:block;margin-top:3px;font-size:8px;letter-spacing:.17em;color:#e2b943;font-weight:900}\n.clean-login-v26 .cl26-nav{display:flex;align-items:center;justify-content:center;gap:3px;flex:1;min-width:0}.clean-login-v26 .cl26-nav button{border:0;background:transparent;color:#d2d9e0;padding:11px 13px;border-radius:10px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}.clean-login-v26 .cl26-nav button:hover,.clean-login-v26 .cl26-nav button.active{background:rgba(255,211,79,.12);color:#ffd34f}.clean-login-v26 .cl26-theme{width:42px;height:42px;flex:0 0 42px;border-radius:50%;border:1px solid rgba(255,211,79,.5);background:rgba(5,12,19,.72);color:#ffd34f;cursor:pointer}\n.clean-login-v26 .cl26-copy{position:relative;z-index:2;max-width:720px;padding:clamp(55px,9vh,100px) 42px 24px}.clean-login-v26 .cl26-kicker{display:inline-flex;padding:9px 14px;border:1px solid rgba(255,211,79,.5);border-radius:999px;background:rgba(6,13,20,.68);color:#ffd34f;font-size:10px;font-weight:950;letter-spacing:.06em}.clean-login-v26 .cl26-copy h2{font-size:clamp(46px,4.7vw,76px);line-height:.98;letter-spacing:-.055em;margin:22px 0 20px;color:#fff;font-weight:950}.clean-login-v26 .cl26-copy h2 span{color:#ffd34f}.clean-login-v26 .cl26-copy p{max-width:620px;color:#d2dae2;font-size:15px;line-height:1.65;margin:0 0 26px}.clean-login-v26 .cl26-actions{display:flex;gap:12px;flex-wrap:wrap}.clean-login-v26 .cl26-primary,.clean-login-v26 .cl26-secondary{height:52px;padding:0 24px;border-radius:15px;font-weight:900;cursor:pointer;font-size:13px}.clean-login-v26 .cl26-primary{border:0;background:linear-gradient(135deg,#ffe477,#eab934);color:#111820;box-shadow:0 12px 30px rgba(238,186,48,.22)}.clean-login-v26 .cl26-secondary{border:1px solid rgba(255,211,79,.6);background:rgba(4,10,17,.58);color:#fff}.clean-login-v26 .cl26-benefits{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:30px}.clean-login-v26 .cl26-benefits>div{display:flex;gap:10px;align-items:center;min-width:0}.clean-login-v26 .cl26-benefits i{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border:1px solid rgba(255,211,79,.55);border-radius:50%;color:#ffd34f;font-style:normal;font-size:20px}.clean-login-v26 .cl26-benefits b{display:block;font-size:11px}.clean-login-v26 .cl26-benefits small{display:block;color:#aeb9c4;font-size:9px;margin-top:3px;line-height:1.3}.clean-login-v26 .cl26-live{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 42px}.clean-login-v26 .cl26-live>div{padding:15px 16px;border:1px solid rgba(255,255,255,.13);background:rgba(5,13,21,.72);border-radius:14px;backdrop-filter:blur(10px)}.clean-login-v26 .cl26-live strong{display:block;color:#ffd34f;font-size:20px}.clean-login-v26 .cl26-live small{color:#9aa8b6;font-size:9px}\n.clean-login-v26 .cl26-auth{min-width:0;display:flex;align-items:center;justify-content:center;padding:40px 34px;background:linear-gradient(180deg,#0a1622,#07101a)}.clean-login-v26 .cl26-card{width:min(440px,100%);padding:30px;border:1px solid rgba(255,255,255,.13);border-radius:24px;background:linear-gradient(145deg,rgba(24,35,48,.98),rgba(8,16,25,.99));box-shadow:0 30px 80px rgba(0,0,0,.46);position:relative;z-index:5}.clean-login-v26 .cl26-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.clean-login-v26 .cl26-auth-logo{width:52px;height:52px;border-radius:14px;font-size:24px}.clean-login-v26 .cl26-secure{font-size:8px;font-weight:900;color:#c3cdd7;padding:8px 10px;border:1px solid rgba(255,211,79,.3);border-radius:999px}.clean-login-v26 .cl26-secure i{display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;margin-right:5px}.clean-login-v26 .cl26-eyebrow{font-size:9px;letter-spacing:.16em;color:#d3aa32;font-weight:900}.clean-login-v26 .cl26-card h1{font-size:30px;line-height:1.1;margin:8px 0;color:#fff;letter-spacing:-.04em}.clean-login-v26 .cl26-sub{font-size:11px;color:#9ba8b5;margin:0 0 20px}.clean-login-v26 .cl26-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.035);border-radius:13px;margin-bottom:18px}.clean-login-v26 .cl26-tabs button{height:40px;border:0;border-radius:9px;background:transparent;color:#aeb8c4;font-weight:900;cursor:pointer}.clean-login-v26 .cl26-tabs button.active{background:linear-gradient(135deg,#ffe477,#e8bb3d);color:#12171d}.clean-login-v26 .cl26-form{display:block;width:100%;margin:0;padding:0}.clean-login-v26 .cl26-form.hidden{display:none!important}.clean-login-v26 .cl26-form>label{display:block;color:#cbd5df;font-size:10px;font-weight:800;margin:0 0 12px}.clean-login-v26 .cl26-form input:not([type=checkbox]){display:block;width:100%;height:46px;margin-top:7px;padding:0 13px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:#111c28;color:#fff;font-size:12px;outline:none}.clean-login-v26 .cl26-form input:not([type=checkbox]):focus{border-color:#e7bf45;box-shadow:0 0 0 3px rgba(231,191,69,.10)}.clean-login-v26 .cl26-password{position:relative}.clean-login-v26 .cl26-password input{padding-right:44px!important}.clean-login-v26 .cl26-password button{position:absolute;right:5px;bottom:5px;width:36px;height:36px;border:0;background:transparent;color:#8794a2;cursor:pointer}.clean-login-v26 .cl26-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}.clean-login-v26 .cl26-check{display:flex!important;align-items:center;gap:7px;margin:0!important;color:#9eabb8!important}.clean-login-v26 .cl26-check input{width:14px!important;height:14px!important;margin:0!important}.clean-login-v26 .cl26-link{border:0;background:transparent;color:#f0c744;font-weight:900;font-size:10px;cursor:pointer;padding:0}.clean-login-v26 .cl26-submit{display:block;width:100%;height:48px;border:0;border-radius:12px;background:linear-gradient(135deg,#ffe477,#e9bb3b);color:#12171c;font-weight:950;cursor:pointer;box-shadow:0 12px 25px rgba(229,185,54,.17)}.clean-login-v26 .cl26-submit span{float:right;margin-right:4px}.clean-login-v26 .cl26-submit:hover,.clean-login-v26 .cl26-primary:hover,.clean-login-v26 .cl26-secondary:hover{transform:translateY(-1px)}.clean-login-v26 .cl26-guest{text-align:center;color:#7f8d9c;font-size:9px;margin-top:13px}.clean-login-v26 .cl26-back{display:block;width:100%;height:38px;margin-top:10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:transparent;color:#b7c2cd;cursor:pointer}.clean-login-v26 .cl26-note{padding:10px;border-radius:10px;background:rgba(255,211,79,.06);color:#aeb9c4;font-size:10px;line-height:1.45;margin-bottom:10px}.clean-login-v26 .cl26-social-title{display:flex;align-items:center;gap:8px;color:#758294;font-size:8px;margin:20px 0 10px}.clean-login-v26 .cl26-social-title span{height:1px;background:rgba(255,255,255,.1);flex:1}.clean-login-v26 .cl26-socials{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.clean-login-v26 .cl26-socials button{height:40px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#101b27;color:#dce3ea;cursor:pointer;font-size:10px;font-weight:800}.clean-login-v26 .cl26-socials b{color:#ffd34f;margin-right:4px}.clean-login-v26 .cl26-security{display:flex;gap:9px;margin-top:16px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.03)}.clean-login-v26 .cl26-security>span{font-size:17px}.clean-login-v26 .cl26-security b{display:block;color:#dce3ea;font-size:9px}.clean-login-v26 .cl26-security small{display:block;color:#778595;font-size:8px;line-height:1.35;margin-top:2px}.clean-login-v26 .cl26-footer{min-height:52px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;padding:10px 20px;background:#050c14;border-top:1px solid rgba(255,255,255,.08);color:#718096;font-size:8px}.clean-login-v26 .cl26-footer span:not(:first-child){color:#aeb8c6}\n@media(max-width:1050px){.clean-login-v26 .cl26-shell{grid-template-columns:1fr}.clean-login-v26 .cl26-hero{min-height:620px}.clean-login-v26 .cl26-auth{padding:34px 20px}.clean-login-v26 .cl26-card{width:min(480px,100%)}.clean-login-v26 .cl26-nav button{padding:9px 9px}}\n@media(max-width:700px){.clean-login-v26 .cl26-header{height:auto;min-height:70px;padding:12px 18px;flex-wrap:wrap}.clean-login-v26 .cl26-brand{min-width:0}.clean-login-v26 .cl26-nav{order:3;width:100%;overflow-x:auto;justify-content:flex-start}.clean-login-v26 .cl26-nav button{flex:0 0 auto}.clean-login-v26 .cl26-copy{padding:42px 20px 28px}.clean-login-v26 .cl26-copy h2{font-size:clamp(40px,11vw,56px)}.clean-login-v26 .cl26-copy p{font-size:13px}.clean-login-v26 .cl26-benefits{grid-template-columns:1fr 1fr}.clean-login-v26 .cl26-live{grid-template-columns:1fr 1fr;margin:0 20px 28px}.clean-login-v26 .cl26-auth{padding:20px 16px}.clean-login-v26 .cl26-card{padding:24px 20px}.clean-login-v26 .cl26-footer{gap:12px}}\n@media(max-width:420px){.clean-login-v26 .cl26-benefits{grid-template-columns:1fr}.clean-login-v26 .cl26-socials{grid-template-columns:1fr}.clean-login-v26 .cl26-live{grid-template-columns:1fr 1fr}}\n
+
+/* ===== V26: restore intended dark input styling on the login form =====
+   A generic `input,select,textarea{background:...!important}` rule used
+   elsewhere in the app (dashboard theme) was, by accident of matching any
+   input/select/textarea site-wide, also winning over the login form's own
+   (non-!important) dark input style. Re-asserted here with a selector
+   specific enough to beat it without touching that other rule. */
+#loginView.login-page.new-login .nl-form input:not([type=checkbox]){
+  background:#121e2b!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+#loginView.login-page.new-login .nl-form input:not([type=checkbox])::placeholder{
+  color:#697685!important;
+  opacity:1!important;
+}
+#loginView.login-page.new-login .nl-form input:not([type=checkbox]):focus{
+  background:rgba(255,255,255,.035)!important;
+  border-color:#e8c348!important;
+  box-shadow:0 0 0 3px rgba(232,195,72,.10)!important;
+}
