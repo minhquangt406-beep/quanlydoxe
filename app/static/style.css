@@ -2851,3 +2851,61 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
 .ai-support-form input{height:46px!important;border-radius:14px!important;background:#f8fafc!important}
 .ai-support-form button{width:46px!important;height:46px;border-radius:14px!important;box-shadow:0 7px 16px rgba(79,70,229,.22)}
 @media(max-width:600px){.ai-online{display:none}.ai-support-head small{max-width:205px}.ai-support-panel{width:calc(100vw - 22px)!important}}
+
+
+/* =========================================================
+   V32 — PC LOGIN SIZE / SPACING OPTIMIZATION
+   Keep existing functionality; only refine desktop proportions.
+   ========================================================= */
+@media (min-width: 1100px){
+  .login-page{
+    min-height:100svh!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+    padding:28px clamp(28px,4.5vw,72px)!important;
+    grid-template-columns:minmax(0,1fr) 430px!important;
+    gap:clamp(38px,5vw,86px)!important;
+    align-items:center!important;
+    justify-content:stretch!important;
+  }
+  .login-showcase{
+    width:100%!important;
+    max-width:900px!important;
+    min-height:680px!important;
+    justify-self:center!important;
+  }
+  .showcase-copy{
+    max-width:760px!important;
+    margin-top:clamp(42px,7vh,78px)!important;
+  }
+  .showcase-copy h2{
+    max-width:760px!important;
+    font-size:clamp(48px,4.25vw,70px)!important;
+  }
+  .showcase-copy p{max-width:650px!important;font-size:14px!important}
+  .parking-visual{height:210px!important}
+  .login-card{
+    width:430px!important;
+    max-width:430px!important;
+    box-sizing:border-box!important;
+    padding:32px!important;
+    justify-self:center!important;
+    align-self:center!important;
+    border-radius:24px!important;
+  }
+  .login-card h1{font-size:32px!important}
+  .login-card input{height:48px!important}
+  .login-card .primary{height:48px!important}
+}
+
+@media (min-width: 1500px){
+  .login-page{grid-template-columns:minmax(0,920px) 440px!important;gap:clamp(50px,5vw,100px)!important}
+  .login-showcase{max-width:920px!important}
+  .login-card{width:440px!important;max-width:440px!important;padding:34px!important}
+}
+
+@media (max-width: 1099px) and (min-width: 821px){
+  .login-page{grid-template-columns:minmax(0,1fr) 400px!important;gap:28px!important;padding:24px!important}
+  .login-card{width:400px!important;max-width:400px!important;padding:28px!important}
+  .showcase-copy h2{font-size:clamp(38px,4.8vw,56px)!important}
+}
