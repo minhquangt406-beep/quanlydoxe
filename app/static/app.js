@@ -788,3 +788,30 @@ document.addEventListener("submit", function(e){
   },true);
   document.addEventListener("keydown",e=>{if(e.key==="Escape") close();});
 })();
+
+
+// ===== Landing reference actions: keep every visible control functional =====
+(function(){
+  const actions=document.querySelectorAll('.reference-hit[data-ref-action]');
+  actions.forEach(btn=>btn.addEventListener('click',function(e){
+    e.preventDefault();
+    const action=this.dataset.refAction;
+    if(action==='start'){
+      document.getElementById('username')?.focus();
+      document.getElementById('loginForm')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    if(action==='learn'){
+      const msg='Parking AI Pro quản lý vị trí đỗ, phương tiện, doanh thu, phân quyền và hỗ trợ AI theo thời gian thực.';
+      if(typeof toast==='function') toast(msg); else alert(msg);
+      return;
+    }
+    if(action==='theme'){
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('parking_theme',document.body.classList.contains('dark-mode')?'dark':'light');
+      return;
+    }
+    const messages={home:'Bạn đang ở trang chủ.',about:'Parking AI Pro — nền tảng quản lý bãi xe thông minh.',features:'Các tính năng: quản lý xe, vị trí, doanh thu, tài khoản, báo cáo và AI.',pricing:'Bảng giá dịch vụ Parking AI Pro.',contact:'Liên hệ quản trị viên để được hỗ trợ.'};
+    if(typeof toast==='function') toast(messages[action]||'');
+  }));
+})();

@@ -3084,49 +3084,41 @@ input:focus,select:focus,textarea:focus{border-color:#d3ad52!important;box-shado
 @media(max-width:600px){.login-page{padding:14px!important}.login-showcase{display:none!important}.login-card{padding:30px 22px!important;border-radius:22px!important}.login-card h1{font-size:31px!important}.login-card:before{left:20px;right:20px}}
 
 /* =========================================================
-   REFERENCE MATCH — Gold Smart Parking Landing (2026-09-11)
-   Recreates the supplied reference composition while preserving app logic.
+   REFERENCE MATCH — exact visual composition + real controls
+   The supplied design artwork is used only as the visual shell.
+   Authentication/forms remain live DOM elements.
    ========================================================= */
-:root{--gold:#f4c542;--gold2:#ffd95c;--gold3:#c8951d;--gold-soft:#ffe8a0}
-.login-page{
-  grid-template-columns:minmax(0,1.45fr) minmax(380px,.72fr)!important;
-  gap:clamp(28px,4vw,72px)!important;
-  padding:0 clamp(36px,5vw,68px)!important;
-  background:
-    radial-gradient(700px 600px at 62% 40%,rgba(245,158,11,.10),transparent 62%),
-    linear-gradient(100deg,#05070b 0%,#09111a 46%,#07111b 100%)!important;
-  overflow:hidden!important;
+@media (min-width:1051px){
+  .login-page{
+    display:block!important;position:relative!important;min-height:100vh!important;height:100vh!important;
+    padding:0!important;overflow:hidden!important;background:#05090f url('/static/images/landing-reference.png?v=20260911r1') center center/cover no-repeat!important;
+  }
+  .login-page:before,.login-page:after{display:none!important}
+  .login-showcase{display:none!important}
+  .login-card{
+    position:absolute!important;right:4.35%!important;top:10.25%!important;width:24.1%!important;height:72.5%!important;
+    padding:0!important;margin:0!important;justify-self:auto!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important;animation:none!important;z-index:20!important;
+  }
+  .login-card > .login-head,.login-card > .eyebrow,.login-card > h1,.login-card > p,.login-card > .login-security{display:none!important}
+  .login-card form#loginForm{position:absolute!important;left:7.2%!important;right:7.2%!important;top:30.8%!important;margin:0!important}
+  .login-card #loginForm label{font-size:0!important;color:transparent!important;margin:0 0 10px!important;display:block!important}
+  .login-card #loginForm label input{height:48px!important;margin:0!important;padding:0 16px!important;border-radius:11px!important;background:rgba(28,35,45,.88)!important;border:1px solid rgba(255,255,255,.12)!important;color:#f8fafc!important;box-shadow:inset 0 1px rgba(255,255,255,.03)!important}
+  .login-card #loginForm label input::placeholder{color:#8d99aa!important;opacity:1!important}
+  .login-card #loginForm .forgot-link{margin:0 0 18px!important;height:18px!important}
+  .login-card #loginForm .forgot-link .link-btn{font-size:11px!important;color:#f4cf58!important;text-shadow:0 1px 8px rgba(0,0,0,.25)!important}
+  .login-card #loginForm .primary{height:56px!important;margin:0!important;border-radius:12px!important;background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important;box-shadow:0 12px 28px rgba(245,194,54,.22)!important;font-size:14px!important;font-weight:950!important}
+  .login-card #loginForm .primary:hover{transform:translateY(-1px)!important}
+  .login-card .guest-register-link{position:absolute!important;left:7%;right:7%;top:87.4%!important;margin:0!important;font-size:10px!important;color:#7f8a99!important;white-space:nowrap;text-align:center!important}
+  .login-card .guest-register-link .link-btn{color:#f4cf58!important;font-size:10px!important}
+  .login-card #registerForm,.login-card #forgotForm{position:absolute!important;left:5%!important;right:5%!important;top:24%!important;padding:20px!important;border-radius:18px!important;background:rgba(11,17,25,.97)!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 24px 60px rgba(0,0,0,.35)!important;color:#fff!important}
+  .login-card #registerForm label,.login-card #forgotForm label{color:#d9e0ea!important;font-size:11px!important}
+  .login-card #registerForm input,.login-card #forgotForm input{background:#18202b!important;color:#fff!important;border-color:#2d3746!important}
+  .login-card #registerForm .primary,.login-card #forgotForm .primary{background:linear-gradient(180deg,#ffe887,#f2c63d)!important;color:#111!important}
+  .reference-actions{position:absolute;inset:0;z-index:30;pointer-events:none}
+  .reference-hit{position:absolute;display:block;border:0;background:transparent;cursor:pointer;pointer-events:auto;padding:0;border-radius:10px}
+  .reference-hit:focus-visible{outline:2px solid #ffd95c;outline-offset:3px;background:rgba(255,215,80,.08)}
+  .hit-home{left:25.8%;top:0;width:5.2%;height:8%}.hit-about{left:32.2%;top:0;width:5.2%;height:8%}.hit-features{left:38.5%;top:0;width:6.3%;height:8%}.hit-pricing{left:44.9%;top:0;width:6.2%;height:8%}.hit-contact{left:51.2%;top:0;width:5.6%;height:8%}
+  .hit-theme{right:14.4%;top:0;width:4.2%;height:9%}
+  .hit-start{left:4%;top:46.8%;width:10.8%;height:6.6%}.hit-learn{left:15.3%;top:46.8%;width:10.6%;height:6.6%}
 }
-.login-page:before{display:none!important}
-.login-page:after{display:none!important}
-.login-showcase{
-  height:100vh!important;min-height:0!important;padding:14px 0 28px!important;
-  justify-content:flex-start!important;position:relative!important;
-}
-.login-showcase:before{
-  content:"";position:absolute;z-index:-1;left:18%;right:-8%;top:0;bottom:0;
-  background:linear-gradient(90deg,rgba(5,7,11,.98) 0%,rgba(5,7,11,.72) 28%,rgba(5,7,11,.12) 65%,rgba(5,7,11,.35) 100%),url('/static/images/parking-garage-reference.png') center/cover no-repeat;
-  opacity:.92;filter:saturate(.9) contrast(1.06);
-}
-.showcase-top{height:62px!important;padding:0 0 13px!important;border-bottom:1px solid rgba(255,255,255,.28)!important;align-items:center!important}
-.showcase-logo{width:42px!important;height:42px!important;border-radius:13px!important;background:linear-gradient(145deg,#ffe17a,#c99520)!important;color:#fff!important;box-shadow:0 8px 22px rgba(218,166,45,.25)!important}
-.showcase-brand b{font-size:14px!important}.showcase-brand small{color:#e6b83f!important;font-size:7px!important}
-.showcase-nav{display:flex!important;gap:36px!important;align-items:center!important;margin-left:auto!important;margin-right:18px!important}
-.showcase-nav a{color:#d9dde5!important;text-decoration:none!important;font-size:12px!important;font-weight:700!important;padding:20px 0 17px!important;position:relative!important}
-.showcase-nav a.active{color:#f8cf54!important}.showcase-nav a.active:after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:3px;background:#f4c542;border-radius:99px;box-shadow:0 0 12px rgba(244,197,66,.5)}
-.showcase-top-right{display:flex!important;gap:18px!important;align-items:center!important}.showcase-theme{width:38px!important;height:38px!important;border:1px solid #8f6a20!important;border-radius:50%!important;background:#0b1016!important;color:#f4c542!important}.live-badge{padding:8px 12px!important;border:1px solid #76571c!important;background:#0b1016!important;color:#f2d476!important;font-size:9px!important;letter-spacing:.03em!important}.live-badge i{background:#16d879!important;box-shadow:0 0 0 4px rgba(22,216,121,.1),0 0 10px rgba(22,216,121,.55)!important}
-.showcase-copy{max-width:560px!important;margin-top:54px!important}.showcase-kicker{color:#e7bb42!important;font-size:9px!important;letter-spacing:.15em!important}.showcase-kicker:before{background:#c8951d!important;width:24px!important}
-.showcase-copy h2{font-size:clamp(44px,4.4vw,67px)!important;line-height:.95!important;letter-spacing:-.06em!important;margin:14px 0 18px!important;color:#f4f5f7!important}.showcase-copy h2 span{background:linear-gradient(90deg,#f4c542,#ffd965,#e8b52f)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
-.showcase-copy p{max-width:560px!important;color:#8d96a5!important;font-size:13px!important;line-height:1.65!important}
-.showcase-cta{display:flex!important;gap:14px!important;margin-top:22px!important}.showcase-start,.showcase-learn{height:46px!important;border-radius:24px!important;padding:0 25px!important;font-weight:900!important;cursor:pointer!important}.showcase-start{border:0!important;background:linear-gradient(135deg,#ffe078,#efbd36)!important;color:#17120a!important;box-shadow:0 12px 30px rgba(239,189,54,.22)!important}.showcase-start b{margin-left:10px!important;font-size:18px!important}.showcase-learn{border:1px solid #9a711f!important;background:rgba(10,14,19,.55)!important;color:#fff!important}.showcase-learn span{display:inline-grid;place-items:center;width:20px;height:20px;margin-right:7px;border-radius:50%;background:#f0bf3f;color:#17120a;font-size:9px}
-.showcase-features{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:24px!important;margin-top:22px!important}.showcase-features>div{display:flex!important;gap:10px!important;align-items:center!important}.showcase-features i{width:39px;height:39px;border:1px solid #b18424;border-radius:50%;display:grid;place-items:center;color:#f6c845;font-style:normal;font-size:18px;background:rgba(10,14,18,.6)}.showcase-features b{display:block;color:#e8ebef;font-size:11px}.showcase-features small{display:block;color:#727b89;font-size:8px;margin-top:3px}
-.parking-visual{height:205px!important;margin:22px 0 18px!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:18px!important;background:rgba(12,18,23,.72)!important;backdrop-filter:blur(8px)!important;box-shadow:0 20px 60px rgba(0,0,0,.28)!important}
-.visual-head{top:13px!important;left:18px!important;right:18px!important;color:#dbe0e8!important}.visual-head span{color:#e9edf4!important}.visual-head i{background:#16d879!important}.visual-head b{color:#d2a735!important}
-.parking-visual:before{inset:46px 18px 17px!important;border-color:rgba(255,255,255,.08)!important}.road-main{background:rgba(255,255,255,.025)!important}.slot{width:54px!important;height:38px!important;border-radius:8px!important}.slot.free{border-color:rgba(25,221,120,.45)!important;background:rgba(25,221,120,.10)!important;color:#28e38a!important}.slot.busy{border-color:rgba(241,189,53,.5)!important;background:rgba(241,189,53,.12)!important;color:#ffd75e!important}.visual-car{font-size:24px!important}.car-one,.car-two{left:49%!important}
-.showcase-stats{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important}.showcase-stats div{padding:10px 14px!important;border-radius:11px!important;border:1px solid rgba(255,255,255,.08)!important;background:rgba(13,19,26,.72)!important}.showcase-stats b{color:#f3c33f!important;font-size:16px!important}.showcase-stats span{font-size:8px!important;color:#747e8c!important}
-.login-card{width:min(430px,100%)!important;justify-self:end!important;padding:30px 28px 26px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(25,31,39,.96),rgba(12,17,23,.97))!important;box-shadow:0 35px 100px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06)!important;color:#fff!important}
-.login-card:before{content:"● Hệ thống an toàn";right:22px!important;top:22px!important;color:#f1d174!important;background:rgba(244,197,66,.05)!important;border-color:rgba(244,197,66,.25)!important}
-.login-card .brand-mark{width:56px!important;height:56px!important;border-radius:16px!important;background:linear-gradient(145deg,#ffe17a,#c99520)!important;box-shadow:0 10px 24px rgba(218,166,45,.18)!important;color:#fff!important}.login-card .eyebrow{color:#9aa3ae!important}.login-card h1{font-size:30px!important;color:#f7f8fa!important}.login-card p{color:#8d96a2!important;font-size:12px!important}.login-card label{color:#cbd1d8!important}.login-card input{height:48px!important;background:#1b222a!important;border-color:#303943!important;color:#fff!important}.login-card input::placeholder{color:#7c8793!important}.login-card input:focus{border-color:#d7ad38!important;box-shadow:0 0 0 3px rgba(215,173,56,.1)!important;background:#1c232b!important}.login-card .primary{height:48px!important;background:linear-gradient(135deg,#ffe27b,#eebd38)!important;color:#17120a!important;box-shadow:0 12px 25px rgba(238,189,56,.18)!important}.login-card .link-btn{color:#e8c451!important}.guest-register-link{color:#87909b!important}.login-security{background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.08)!important;color:#7f8995!important}.login-security>span{background:rgba(244,197,66,.08)!important}.login-security b{color:#d5dae0!important}.login-security small{color:#7e8792!important}
-@media(max-width:1200px){.showcase-nav{gap:20px!important}.showcase-copy h2{font-size:52px!important}.login-page{gap:35px!important}}
-@media(max-width:1050px){.login-page{grid-template-columns:1fr!important;padding:30px!important}.login-showcase{display:none!important}.login-card{justify-self:center!important}}
-@media(max-width:700px){.login-card{width:94vw!important}.showcase-features{grid-template-columns:1fr!important}}
+@media (max-width:1050px){.reference-actions{display:none!important}}
