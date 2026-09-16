@@ -847,6 +847,40 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user))
             "occupancy_rate": round((occupied / total * 100) if total else 0, 1),
             "peak_hour": peak or "Chưa đủ dữ liệu"}
 
+@app.get("/api/dashboard/chart-data")
+def dashboard_chart_data(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
+    """Live dashboard chart dataset: today by hour + last 7 calendar days."""
+    now = now_vn()
+    today = now.date()
+    start_today = datetime.combine(today, datetime.min.time())
+    tomorrow = start_today + timedelta(days=1)
+    hourly_in = [0] * 24
+    hourly_out = [0] * 24
+    hourly_revenue = [0.0] * 24
+    for dt, out, fee in db.query(ParkingRecord.time_in, ParkingRecord.time_out, ParkingRecord.fee).filter(
+        ParkingRecord.time_in >= start_today, ParkingRecord.time_in < tomorrow
+    ).all():
+        if dt:
+            hourly_in[dt.hour] += 1
+            if fee and out:
+                hourly_revenue[out.hour] += float(fee or 0)
+        if out and start_today <= out < tomorrow:
+            hourly_out[out.hour] += 1
+    days=[]
+    for i in range(6,-1,-1):
+        d=today-timedelta(days=i)
+        a=datetime.combine(d, datetime.min.time()); b=a+timedelta(days=1)
+        parking=float(db.query(func.coalesce(func.sum(ParkingRecord.fee),0)).filter(ParkingRecord.time_out>=a,ParkingRecord.time_out<b).scalar() or 0)
+        monthly=float(db.query(func.coalesce(func.sum(MonthlyPass.price),0)).filter(MonthlyPass.started_at>=a,MonthlyPass.started_at<b).scalar() or 0)
+        cin=db.query(ParkingRecord).filter(ParkingRecord.time_in>=a,ParkingRecord.time_in<b).count()
+        cout=db.query(ParkingRecord).filter(ParkingRecord.time_out>=a,ParkingRecord.time_out<b).count()
+        days.append({"date":d.strftime("%d/%m"),"revenue":parking+monthly,"checkins":cin,"checkouts":cout})
+    types={}
+    for typ,count in db.query(Vehicle.vehicle_type,func.count(ParkingRecord.id)).join(ParkingRecord,ParkingRecord.vehicle_id==Vehicle.id).group_by(Vehicle.vehicle_type).all():
+        types[typ]=count
+    total=db.query(ParkingSlot).count(); occupied=db.query(ParkingSlot).filter(ParkingSlot.status=="occupied").count()
+    return {"hourly":{"labels":[f"{h:02d}:00" for h in range(24)],"checkins":hourly_in,"checkouts":hourly_out,"revenue":hourly_revenue},"days":days,"vehicle_types":types,"occupancy":{"occupied":occupied,"empty":max(total-occupied,0),"total":total,"rate":round((occupied/total*100) if total else 0,1)},"server_time":now.isoformat()}
+
 @app.get("/api/areas")
 def areas(db: Session = Depends(get_db), user: User = Depends(current_user)):
     out = []

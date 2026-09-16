@@ -3070,3 +3070,11 @@ table tbody tr:hover{background:#f7f8fd!important}
 @media(max-width:1000px){
  aside,.sidebar,.sidenav,.side-bar{box-shadow:15px 0 40px rgba(0,0,0,.22)!important}
 }
+
+/* REAL-TIME DASHBOARD CHARTS */
+.dashboard-chart-grid{display:grid;grid-template-columns:1.35fr 1fr .72fr;gap:16px;margin:16px 0}
+.dashboard-chart-card{min-height:330px;overflow:hidden;position:relative}
+.chart-wrap{height:245px;position:relative;padding:2px 2px 0}.chart-wrap.mix{height:245px;display:flex;align-items:center;justify-content:center}.chart-wrap.mix canvas{max-width:250px}
+.live-chart-badge{font-size:9px!important;font-weight:800;color:#16a574!important;background:#eafaf3;padding:6px 9px;border-radius:999px;border:1px solid #c9efdf;white-space:nowrap}.live-chart-badge::first-letter{color:#20bd83}
+@media(max-width:1200px){.dashboard-chart-grid{grid-template-columns:1fr 1fr}.dashboard-chart-card:last-child{grid-column:1/-1}}
+@media(max-width:700px){.dashboard-chart-grid{grid-template-columns:1fr}.dashboard-chart-card:last-child{grid-column:auto}.chart-wrap{height:220px}.chart-wrap.mix{height:220px}}
