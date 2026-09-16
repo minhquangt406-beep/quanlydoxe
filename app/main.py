@@ -389,34 +389,55 @@ def seed():
 # Natural-language intent rules for Vietnamese parking questions.
 NATURAL_CHAT_INTENT_RULES = {
     "occupancy": [
-        "đông", "vắng", "chỗ trống", "còn chỗ", "hết chỗ",
-        "bãi xe", "bãi có đông", "giờ này"
+        "đông", "vắng", "chỗ trống", "chỗ nào trống", "còn chỗ", "còn slot",
+        "hết chỗ", "full", "kín chỗ", "bãi có đông", "giờ này", "hiện tại",
+        "bao nhiêu chỗ", "bao nhiêu vị trí", "còn vị trí", "trống không",
     ],
-    "zone": ["khu a", "khu b", "khu A", "khu B"],
-    "price": ["giá", "bao nhiêu tiền", "phí", "tính tiền", "mức phí"],
-    "vehicle": ["xe máy", "ô tô", "o to", "xe hơi", "xe đạp", "bicycle"],
+    "zone": ["khu a", "khu b", "khu vực a", "khu vực b"],
+    "price": [
+        "giá", "bao nhiêu tiền", "hết bao nhiêu", "phí", "tính tiền",
+        "mức phí", "bảng giá", "giá gửi", "phí gửi", "tiền gửi", "gửi xe",
+    ],
+    "vehicle": ["xe máy", "xe may", "ô tô", "o to", "oto", "xe hơi", "xe đạp", "xe dap", "bicycle"],
+    "contact": ["địa chỉ", "ở đâu", "địa điểm", "số điện thoại", "liên hệ", "hotline", "gọi"],
+    "active": ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại", "có bao nhiêu xe"],
+    "help": ["hướng dẫn", "sử dụng", "cách dùng", "làm thế nào", "thế nào", "giúp tôi"],
 }
 
+
 def normalize_vietnamese_question(text):
-    import re
     s = str(text or "").strip().lower()
     replacements = {
-        "ko": "không", "k": "không", "kh": "không",
-        "hong": "không", "hông": "không", "khum": "không",
-        "dc": "được", "đc": "được", "duoc": "được",
-        "j": "gì", "gi": "gì",
+        "ko": "không", "k": "không", "kh": "không", "hong": "không",
+        "hông": "không", "khum": "không", "khôngg": "không", "hok": "không",
+        "dc": "được", "đc": "được", "duoc": "được", "được": "được",
+        "j": "gì", "gi": "gì", "bn": "bao nhiêu", "nhiu": "nhiêu",
+        "bao nhieu": "bao nhiêu", "o to": "ô tô", "oto": "ô tô",
+        "xe may": "xe máy", "xe dap": "xe đạp", "slot": "chỗ",
+        "mik": "mình", "minh": "mình", "mk": "mình", "ad": "quản trị",
+        "phi": "phí", "gui": "gửi", "hoi": "hỏi", "cho": "chỗ",
+        "con": "còn", "trong": "trong", "bao": "bao", "nhieu": "nhiêu",
     }
     s = re.sub(r"\s+", " ", s)
     for a, b in replacements.items():
         s = re.sub(rf"(?<!\w){re.escape(a)}(?!\w)", b, s)
-    return s
+    # Normalize common unaccented Vietnamese words used in short chat messages.
+    accent = str.maketrans({
+        "a":"a", "e":"e", "i":"i", "o":"o", "u":"u",
+    })
+    return s.strip()
 
 def detect_parking_intent(text):
     s = normalize_vietnamese_question(text)
-    scores = {k: sum(1 for term in terms if term.lower() in s)
-              for k, terms in NATURAL_CHAT_INTENT_RULES.items()}
+    scores = {k: sum(1 for term in terms if term in s) for k, terms in NATURAL_CHAT_INTENT_RULES.items()}
+    # Vehicle type is context, not an intent by itself.
+    if scores["vehicle"] and (scores["price"] or any(x in s for x in ["giá", "phí", "bao nhiêu", "nhiêu", "gửi"])):
+        return "price"
+    if scores["zone"] and scores["occupancy"]:
+        return "occupancy"
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else "general"
+
 
 @app.post("/api/auth/login")
 def login(data: LoginIn, db: Session = Depends(get_db)):
@@ -1143,7 +1164,7 @@ def _clean_ai_history(history):
 
 def local_ai_support(db: Session, question: str, user: User):
     """Deterministic fallback. It answers common operational questions from live DB data."""
-    q = (question or "").strip().lower()
+    q = normalize_vietnamese_question(question)
     total = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
     empty = max(total - occupied, 0)
@@ -1159,6 +1180,19 @@ def local_ai_support(db: Session, question: str, user: User):
             slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
             free = sum(1 for slot in slots if slot.status != "occupied")
             return f"{area.name} hiện còn {free}/{len(slots)} vị trí trống."
+    if any(k in q for k in ["đông", "vắng", "giờ này", "hôm nay", "đang đông"]):
+        if not total:
+            return "Hiện chưa có dữ liệu vị trí đỗ để đánh giá mức độ đông của bãi."
+        rate = occupied / total * 100
+        if rate >= 85:
+            level = "đang khá đông"
+        elif rate >= 60:
+            level = "đang đông vừa"
+        elif rate >= 30:
+            level = "đang tương đối thoáng"
+        else:
+            level = "đang khá vắng"
+        return f"Hiện bãi {level}: đang sử dụng {occupied}/{total} vị trí ({rate:.0f}%), còn {empty} vị trí trống."
     if any(k in q for k in ["chỗ trống", "vị trí trống", "còn chỗ", "bao nhiêu chỗ"]):
         return f"Hiện bãi còn {empty} vị trí trống trên tổng {total} vị trí." if total else "Hiện chưa có dữ liệu vị trí đỗ."
     if any(k in q for k in ["đỗ lâu nhất", "đậu lâu nhất", "ở lâu nhất", "gửi lâu nhất", "vào lâu nhất", "xe nào lâu nhất"]):
@@ -1172,9 +1206,18 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
-    if any(k in q for k in ["giá", "phí", "bao nhiêu tiền", "bảng giá"]):
-        prices = db.query(Pricing).order_by(Pricing.vehicle_type).all()
-        return "Bảng giá: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
+    if any(k in q for k in ["giá", "phí", "bao nhiêu", "nhiêu", "bảng giá", "hết bao nhiêu", "giá gửi", "phí gửi"]):
+        prices = db.query(Pricing).order_by(Pricing.id).all()
+        wanted = None
+        if "xe máy" in q: wanted = "Xe máy"
+        elif "ô tô" in q or "xe hơi" in q: wanted = "Ô tô"
+        elif "xe đạp" in q: wanted = "Xe đạp"
+        if wanted:
+            row = next((x for x in prices if x.vehicle_type.lower() == wanted.lower()), None)
+            if row:
+                return f"Mức phí hiện tại cho {row.vehicle_type.lower()} là {float(row.price_per_hour):,.0f} VNĐ/giờ."
+            return f"Hiện chưa có mức phí được cấu hình cho {wanted.lower()}."
+        return "Bảng giá hiện tại: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
     if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ", "tầm ", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h", "21h", "22h"]):
         # Fallback remains conversational even when the LLM is temporarily unavailable.
@@ -1193,6 +1236,12 @@ def local_ai_support(db: Session, question: str, user: User):
             verdict = "khá gần giờ cao điểm" if distance <= 2 else "không nằm trong vùng giờ cao điểm"
             return f"Khoảng {hour:02d}:00 {verdict} theo dữ liệu 14 ngày gần đây. Giờ cao điểm gần nhất là khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. Hiện bãi còn {empty} vị trí trống."
         return (f"Theo dữ liệu 14 ngày gần đây, giờ cao điểm của bãi khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. " if peak is not None else "") + f"Hiện bãi còn {empty} vị trí trống. Nếu bạn nói rõ giờ dự định đến, mình có thể đánh giá cụ thể."
+    if any(k in q for k in ["vé tháng", "ve thang", "tháng", "monthly"]):
+        return "Bãi xe có hỗ trợ vé tháng. Nếu bạn muốn, mình có thể hướng dẫn cách đăng ký hoặc kiểm tra thông tin vé tháng."
+    if any(k in q for k in ["mở cửa", "đóng cửa", "giờ hoạt động", "giờ mở", "giờ đóng"]):
+        return "Bạn có thể xem giờ hoạt động được cấu hình trong thông tin doanh nghiệp của bãi xe. Nếu hệ thống chưa cấu hình, mình sẽ báo là chưa có dữ liệu thay vì đoán."
+    if any(k in q for k in ["thanh toán", "qr", "chuyển khoản", "tiền mặt"]):
+        return "Bãi xe hỗ trợ thanh toán theo các phương thức đã được cấu hình trên hệ thống. Bạn có thể hỏi cụ thể 'thanh toán QR thế nào?' hoặc 'có chuyển khoản không?' để mình hướng dẫn."
     if any(k in q for k in ["xin chào", "hello", "chào bạn", "chào anh", "chào em"]):
         return "Xin chào! 👋 Mình có thể hỗ trợ bạn kiểm tra chỗ trống, khu A/B, vị trí đỗ, xe đang gửi, giá và hướng dẫn sử dụng bãi xe."
     return "Mình có thể hỗ trợ bạn về bãi xe. Bạn có thể hỏi tự nhiên như: 'Bãi còn chỗ không?', 'Khu A còn bao nhiêu chỗ?', 'Xe nào đỗ lâu nhất?', hoặc 'Bãi có những mức phí nào?'"
@@ -1406,6 +1455,11 @@ QUY TẮC HIỂN THỊ:
 - Không nói rằng bạn đang kiểm tra "tool" hay "database"; chỉ trình bày kết quả cho khách.
 - Khi chưa chắc chắn, ưu tiên nói thật thay vì suy đoán."""
     messages=[{"role":"system","content":system}]+history+[{"role":"user","content":question}]
+    # For live operational questions, answer from the database first. This prevents
+    # an LLM from inventing or misunderstanding simple Vietnamese chat shorthand.
+    intent = detect_parking_intent(question)
+    if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalize_vietnamese_question(question)):
+        return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
     if OPENAI_API_KEY:
         try: return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
         except Exception as openai_error:
