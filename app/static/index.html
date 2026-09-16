@@ -4,66 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quản lý bãi đỗ xe · Parking AI Pro</title>
-<link rel="stylesheet" href="/static/style.css?v=v34-login-balance-20260916">
-<style>
-/* ===== PARKFLOW ELITE REALTIME DASHBOARD v3 ===== */
-.pf-elite-grid{display:grid;grid-template-columns:1.55fr .95fr;gap:18px;margin:18px 0}
-.pf-elite-card{background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(247,249,255,.96));border:1px solid #e5eaf3;border-radius:20px;padding:20px;box-shadow:0 12px 35px rgba(24,38,65,.07);position:relative;overflow:hidden}
-.pf-elite-card:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(91,109,245,.06);right:-70px;top:-80px}
-.pf-elite-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;position:relative;z-index:1}
-.pf-elite-title{font-size:15px;font-weight:800;color:#182236;margin:0}
-.pf-elite-sub{font-size:9px;color:#909bad;margin-top:5px}
-.pf-live{display:flex;align-items:center;gap:6px;background:#eafaf4;color:#1ba879;border:1px solid #d2f2e5;border-radius:999px;padding:6px 9px;font-size:8px;font-weight:800}
-.pf-live i{width:6px;height:6px;border-radius:50%;background:#27c78a;box-shadow:0 0 10px #27c78a;animation:pfPulse 1.6s infinite}
-@keyframes pfPulse{50%{opacity:.35;transform:scale(.75)}}
-.pf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
-.pf-kpi{background:#fff;border:1px solid #e8ecf3;border-radius:16px;padding:15px;box-shadow:0 7px 22px rgba(30,44,68,.05);position:relative;overflow:hidden}
-.pf-kpi:after{content:"";position:absolute;width:80px;height:80px;border-radius:50%;background:#5b6df50a;right:-25px;bottom:-30px}
-.pf-kpi-label{font-size:9px;color:#8a95a7}.pf-kpi-value{font-size:24px;font-weight:800;margin:9px 0 5px;color:#172033}.pf-kpi-meta{font-size:8px;color:#20aa78}.pf-kpi-meta.down{color:#e36b6b}
-.pf-chart{height:285px;position:relative}.pf-chart svg{width:100%;height:100%;overflow:visible}.pf-gridline{stroke:#edf0f5;stroke-width:1}.pf-line1{fill:none;stroke:#5b6df5;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 5px 7px rgba(91,109,245,.18))}.pf-line2{fill:none;stroke:#27b98a;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.pf-area{fill:url(#pfFade);opacity:.35}.pf-dot{fill:#fff;stroke:#5b6df5;stroke-width:3}.pf-axis{font-size:8px;fill:#9aa4b2}.pf-tooltip{position:absolute;display:none;pointer-events:none;background:#172033;color:#fff;border-radius:10px;padding:8px 10px;font-size:8px;box-shadow:0 12px 25px #17203333}
-.pf-donut-wrap{display:flex;align-items:center;justify-content:center;gap:30px;min-height:285px}.pf-donut{width:175px;height:175px;border-radius:50%;background:conic-gradient(#5b6df5 0 68%,#e9edf4 68% 96%,#f1a34a 96% 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 1px #fff,0 10px 30px #34445b10;animation:pfSpinIn .8s ease}.pf-donut:before{content:"";position:absolute;width:126px;height:126px;border-radius:50%;background:#fff}.pf-donut div{z-index:1;text-align:center}.pf-donut b{font-size:30px}.pf-donut span{display:block;font-size:9px;color:#929cab;margin-top:3px}@keyframes pfSpinIn{from{transform:scale(.75) rotate(-25deg);opacity:0}to{transform:none;opacity:1}}
-.pf-legend{min-width:145px}.pf-legend-row{display:flex;align-items:center;gap:8px;margin:14px 0;font-size:9px;color:#69758a}.pf-legend-row i{width:8px;height:8px;border-radius:3px}.pf-legend-row b{margin-left:auto;color:#243047}
-.pf-flow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pf-flow-card{border:1px solid #e9edf3;border-radius:14px;padding:14px;background:#fbfcfe}.pf-flow-top{display:flex;justify-content:space-between;font-size:9px;color:#8994a6}.pf-flow-value{font-size:22px;font-weight:800;margin-top:8px}.pf-flow-icon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#eef1ff;color:#586cf4}
-.pf-bars{height:95px;display:flex;align-items:end;gap:7px;margin-top:13px}.pf-bar{flex:1;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#6e7ef6,#586cf4);min-height:10px;animation:pfBar .7s ease backwards}.pf-bar:nth-child(2){animation-delay:.08s}.pf-bar:nth-child(3){animation-delay:.16s}.pf-bar:nth-child(4){animation-delay:.24s}.pf-bar:nth-child(5){animation-delay:.32s}.pf-bar:nth-child(6){animation-delay:.4s}.pf-bar:nth-child(7){animation-delay:.48s}@keyframes pfBar{from{height:0!important}}
-.pf-area-status{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.pf-zone{padding:14px;border:1px solid #e7ebf2;border-radius:14px;background:#fff}.pf-zone-head{display:flex;justify-content:space-between;font-size:9px}.pf-zone-head b{font-size:12px}.pf-zone-bar{height:7px;background:#edf0f5;border-radius:99px;margin-top:11px;overflow:hidden}.pf-zone-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#586cf4,#7564ee)}
-@media(max-width:1050px){.pf-elite-grid{grid-template-columns:1fr}.pf-kpis{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){.pf-kpis{grid-template-columns:1fr 1fr;gap:8px}.pf-kpi{padding:12px}.pf-kpi-value{font-size:19px}.pf-donut-wrap{flex-direction:column}.pf-area-status{grid-template-columns:1fr}.pf-elite-card{padding:15px}.pf-chart{height:230px}}
-</style></head>
+<link rel="stylesheet" href="/static/style.css?v=v35-dashboard-sidebar-20260916">
+</head>
 <body>
-<section id="pfEliteRealtime" style="margin-bottom:22px">
-  <div class="pf-kpis">
-    <div class="pf-kpi"><div class="pf-kpi-label">DOANH THU HÔM NAY</div><div class="pf-kpi-value" id="pfRevenue">8.450.000 ₫</div><div class="pf-kpi-meta">↗ +12,8% so với hôm qua</div></div>
-    <div class="pf-kpi"><div class="pf-kpi-label">XE ĐANG GỬI</div><div class="pf-kpi-value" id="pfOccupancy">128</div><div class="pf-kpi-meta">● 68% công suất</div></div>
-    <div class="pf-kpi"><div class="pf-kpi-label">XE VÀO HÔM NAY</div><div class="pf-kpi-value" id="pfIn">214</div><div class="pf-kpi-meta">↗ +8,2%</div></div>
-    <div class="pf-kpi"><div class="pf-kpi-label">XE RA HÔM NAY</div><div class="pf-kpi-value" id="pfOut">186</div><div class="pf-kpi-meta down">↘ -3,4%</div></div>
-  </div>
-  <div class="pf-elite-grid">
-    <div class="pf-elite-card">
-      <div class="pf-elite-head"><div><h3 class="pf-elite-title">Lưu lượng xe theo thời gian</h3><div class="pf-elite-sub">Theo dõi xe vào / xe ra theo thời gian thực</div></div><div class="pf-live"><i></i> LIVE · <span id="pfClock">--:--:--</span></div></div>
-      <div class="pf-chart" id="pfTrafficChart">
-        <svg viewBox="0 0 760 285" preserveAspectRatio="none">
-          <defs><linearGradient id="pfFade" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5b6df5" stop-opacity=".28"/><stop offset="1" stop-color="#5b6df5" stop-opacity="0"/></linearGradient></defs>
-          <g><line class="pf-gridline" x1="35" y1="35" x2="740" y2="35"/><line class="pf-gridline" x1="35" y1="95" x2="740" y2="95"/><line class="pf-gridline" x1="35" y1="155" x2="740" y2="155"/><line class="pf-gridline" x1="35" y1="215" x2="740" y2="215"/></g>
-          <polyline class="pf-area" points="35,215 90,185 145,205 200,150 255,165 310,110 365,130 420,80 475,105 530,65 585,95 640,50 695,75 740,55 740,215"/>
-          <polyline class="pf-line1" points="35,215 90,185 145,205 200,150 255,165 310,110 365,130 420,80 475,105 530,65 585,95 640,50 695,75 740,55"/>
-          <polyline class="pf-line2" points="35,225 90,210 145,218 200,185 255,195 310,155 365,170 420,125 475,145 530,110 585,130 640,95 695,115 740,100"/>
-          <g class="pf-axis"><text x="32" y="245">06h</text><text x="145" y="245">09h</text><text x="260" y="245">12h</text><text x="375" y="245">15h</text><text x="490" y="245">18h</text><text x="605" y="245">21h</text><text x="710" y="245">24h</text></g>
-        </svg>
-        <div class="pf-tooltip" id="pfTip"></div>
-      </div>
-      <div style="display:flex;gap:16px;font-size:8px;color:#8792a4;margin-top:3px"><span><i style="display:inline-block;width:8px;height:8px;background:#5b6df5;border-radius:50%;margin-right:5px"></i>Xe vào</span><span><i style="display:inline-block;width:8px;height:8px;background:#27b98a;border-radius:50%;margin-right:5px"></i>Xe ra</span></div>
-    </div>
-    <div class="pf-elite-card">
-      <div class="pf-elite-head"><div><h3 class="pf-elite-title">Tình trạng bãi xe</h3><div class="pf-elite-sub">Cập nhật tức thời</div></div><span style="font-size:9px;color:#7f8a9d">188 vị trí</span></div>
-      <div class="pf-donut-wrap"><div class="pf-donut"><div><b id="pfDonutValue">68%</b><span>đang sử dụng</span></div></div><div class="pf-legend"><div class="pf-legend-row"><i style="background:#5b6df5"></i>Đang sử dụng <b id="pfBusy">128</b></div><div class="pf-legend-row"><i style="background:#e2e6ed"></i>Còn trống <b id="pfFree">60</b></div><div class="pf-legend-row"><i style="background:#f1a34a"></i>Bảo trì <b>4</b></div></div></div>
-    </div>
-  </div>
-  <div class="pf-elite-grid">
-    <div class="pf-elite-card"><div class="pf-elite-head"><div><h3 class="pf-elite-title">Hoạt động hôm nay</h3><div class="pf-elite-sub">Dữ liệu được cập nhật liên tục</div></div></div><div class="pf-flow"><div class="pf-flow-card"><div class="pf-flow-top"><span>Xe vào</span><span class="pf-flow-icon">↗</span></div><div class="pf-flow-value" id="pfIn2">214</div><div class="pf-bars" id="pfBarsIn"></div></div><div class="pf-flow-card"><div class="pf-flow-top"><span>Xe ra</span><span class="pf-flow-icon">↘</span></div><div class="pf-flow-value" id="pfOut2">186</div><div class="pf-bars" id="pfBarsOut"></div></div></div></div>
-    <div class="pf-elite-card"><div class="pf-elite-head"><div><h3 class="pf-elite-title">Công suất theo khu vực</h3><div class="pf-elite-sub">Phân bổ vị trí đang sử dụng</div></div></div><div class="pf-area-status"><div class="pf-zone"><div class="pf-zone-head"><b>Khu A</b><span>75%</span></div><div class="pf-zone-bar"><i style="width:75%"></i></div><div style="font-size:8px;color:#909aaa;margin-top:7px">72 / 96 vị trí</div></div><div class="pf-zone"><div class="pf-zone-head"><b>Khu B</b><span>61%</span></div><div class="pf-zone-bar"><i style="width:61%"></i></div><div style="font-size:8px;color:#909aaa;margin-top:7px">56 / 92 vị trí</div></div></div></div>
-  </div>
-</section>
-
 <div id="loginView" class="login-page">
   <section class="login-showcase" aria-hidden="true">
     <div class="showcase-orb orb-one"></div><div class="showcase-orb orb-two"></div>
@@ -149,7 +92,7 @@
   <main class="main">
     <header class="topbar">
       <div><div class="eyebrow">PARKING OPERATIONS</div><h2 id="pageTitle">Tổng quan</h2></div>
-      <div class="topbar-actions"><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
+      <div class="topbar-actions"><button id="sidebarToggle" class="icon-btn sidebar-toggle" title="Thu gọn thanh bên" aria-label="Thu gọn thanh bên" aria-expanded="true">☰</button><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
     </header>
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
@@ -164,32 +107,7 @@
     </section>
   </div>
 
-<script src="/static/app.js?v=ai-support-customer-v16-natural-20260916"></script>
+<script src="/static/app.js?v=v35-dashboard-sidebar-20260916"></script>
 
-<script>
-(function(){
- const $=id=>document.getElementById(id);
- const rand=(n)=>Math.max(0,Math.round(n+(Math.random()*12-6)));
- let inN=214,outN=186,occ=128,rev=8450000;
- function fmt(n){return new Intl.NumberFormat('vi-VN').format(n)}
- function bars(id,base){const e=$(id);if(!e)return;e.innerHTML='';[.55,.7,.5,.8,.66,.92,.76].forEach((m)=>{const b=document.createElement('i');b.className='pf-bar';b.style.height=(m*75)+'px';e.appendChild(b)})}
- function tick(){
-   const now=new Date(); if($('pfClock'))$('pfClock').textContent=now.toLocaleTimeString('vi-VN');
-   inN=rand(inN+1);outN=rand(outN+1);occ=Math.min(188,Math.max(0,occ+Math.round(Math.random()*4-1.5)));
-   rev+=Math.round((Math.random()*3+1)*5000);
-   if($('pfIn'))$('pfIn').textContent=fmt(inN);if($('pfIn2'))$('pfIn2').textContent=fmt(inN);
-   if($('pfOut'))$('pfOut').textContent=fmt(outN);if($('pfOut2'))$('pfOut2').textContent=fmt(outN);
-   if($('pfOccupancy'))$('pfOccupancy').textContent=fmt(occ);
-   if($('pfBusy'))$('pfBusy').textContent=fmt(occ);if($('pfFree'))$('pfFree').textContent=fmt(188-occ);
-   if($('pfRevenue'))$('pfRevenue').textContent=fmt(rev)+' ₫';
-   const pct=Math.round(occ/188*100);if($('pfDonutValue'))$('pfDonutValue').textContent=pct+'%';
-   const d=document.querySelector('.pf-donut');if(d)d.style.background='conic-gradient(#5b6df5 0 '+pct+'%,#e9edf4 '+pct+'% 98%,#f1a34a 98% 100%)';
-   bars('pfBarsIn',inN);bars('pfBarsOut',outN);
- }
- bars('pfBarsIn',inN);bars('pfBarsOut',outN);tick();setInterval(tick,10000);
- const panel=$('pfEliteRealtime');
- function route(){const t=(document.body.innerText||'').toLowerCase(); const dash=location.hash===''||location.hash.includes('dashboard')||document.querySelector('[data-page="dashboard"].active')||document.querySelector('.nav.active')?.textContent?.toLowerCase().includes('tổng quan'); if(panel)panel.style.display=dash?'block':'none'}
- setTimeout(route,500);window.addEventListener('hashchange',route);
-})();
-</script></body>
+</body>
 </html>

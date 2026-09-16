@@ -3025,3 +3025,40 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
 .pf-area-status{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.pf-zone{padding:14px;border:1px solid #e7ebf2;border-radius:14px;background:#fff}.pf-zone-head{display:flex;justify-content:space-between;font-size:9px}.pf-zone-head b{font-size:12px}.pf-zone-bar{height:7px;background:#edf0f5;border-radius:99px;margin-top:11px;overflow:hidden}.pf-zone-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#586cf4,#7564ee)}
 @media(max-width:1050px){.pf-elite-grid{grid-template-columns:1fr}.pf-kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.pf-kpis{grid-template-columns:1fr 1fr;gap:8px}.pf-kpi{padding:12px}.pf-kpi-value{font-size:19px}.pf-donut-wrap{flex-direction:column}.pf-area-status{grid-template-columns:1fr}.pf-elite-card{padding:15px}.pf-chart{height:230px}}
+
+
+/* =========================================================
+   DASHBOARD DATA + SIDEBAR TOGGLE FINAL PATCH v35
+   ========================================================= */
+.sidebar{transition:width .26s ease,transform .28s ease,padding .26s ease;}
+.sidebar.sidebar-collapsed{width:78px;padding-left:9px;padding-right:9px;overflow-x:hidden;}
+.sidebar.sidebar-collapsed .logo{justify-content:center;padding-left:0;padding-right:0;}
+.sidebar.sidebar-collapsed .logo div,
+.sidebar.sidebar-collapsed nav button span,
+.sidebar.sidebar-collapsed .sidebar-bottom .storage span{display:none;}
+.sidebar.sidebar-collapsed .logo>span{margin:0;}
+.sidebar.sidebar-collapsed nav button{justify-content:center;padding-left:10px;padding-right:10px;}
+.sidebar.sidebar-collapsed nav button.active:before{left:-9px;}
+.sidebar.sidebar-collapsed .storage{justify-content:center;padding:12px 8px;}
+.sidebar.sidebar-collapsed .logout{font-size:0;padding:12px 8px;}
+.sidebar.sidebar-collapsed .logout:first-letter{font-size:16px;}
+body.sidebar-collapsed .main{margin-left:78px;width:calc(100% - 78px);}
+body.sidebar-collapsed .main:before{left:78px;}
+.sidebar-toggle{font-size:18px!important;font-weight:900;line-height:1;}
+.sidebar-toggle:hover{transform:scale(1.04)!important;}
+
+/* Dashboard figures are database-driven; never show hard-coded demo KPI values. */
+.dashboard-kpis .metric{font-variant-numeric:tabular-nums;}
+.realtime-badge{white-space:nowrap;}
+
+@media(max-width:760px){
+  body.sidebar-collapsed .main{margin-left:0!important;width:100%!important;}
+  body.sidebar-collapsed .main:before{left:0!important;}
+  .sidebar.sidebar-collapsed{width:min(86vw,300px);padding:18px 12px;}
+  .sidebar.sidebar-collapsed .logo{justify-content:flex-start;padding:4px 8px 24px;}
+  .sidebar.sidebar-collapsed .logo div,
+  .sidebar.sidebar-collapsed nav button span,
+  .sidebar.sidebar-collapsed .sidebar-bottom .storage span{display:block;}
+  .sidebar.sidebar-collapsed nav button{justify-content:flex-start;padding:13px 14px;}
+  .sidebar-toggle{width:38px;height:38px;}
+}

@@ -831,6 +831,16 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user))
     empty = total - occupied
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
     revenue, _rev_marker = current_revenue(db)
+    today = now_vn().date()
+    day_start = datetime.combine(today, datetime.min.time())
+    day_end = day_start + timedelta(days=1)
+    parking_today = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+        ParkingRecord.time_out >= day_start, ParkingRecord.time_out < day_end
+    ).scalar() or 0
+    monthly_today = db.query(func.coalesce(func.sum(MonthlyPass.price), 0)).filter(
+        MonthlyPass.started_at >= day_start, MonthlyPass.started_at < day_end
+    ).scalar() or 0
+    today_revenue = float(parking_today) + float(monthly_today)
     closed = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_not(None)).count()
     peak = None
     rows = db.query(ParkingRecord.time_in).all()
@@ -843,7 +853,7 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user))
             h = max(counts, key=counts.get)
             peak = f"{h:02d}:00–{(h+1)%24:02d}:00"
     return {"total_slots": total, "occupied": occupied, "empty": empty,
-            "active_vehicles": active, "revenue": float(revenue), "closed_records": closed,
+            "active_vehicles": active, "revenue": float(revenue), "today_revenue": today_revenue, "closed_records": closed,
             "occupancy_rate": round((occupied / total * 100) if total else 0, 1),
             "peak_hour": peak or "Chưa đủ dữ liệu"}
 
