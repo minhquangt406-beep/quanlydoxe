@@ -380,6 +380,21 @@ async function openPaymentModal(recordId){
     const cleanPlate=String(plate).replace(/[^A-Z0-9]/g,"");
     const transferContent=d.transfer_content || (d.vehicle_type === "Xe đạp" ? `VE-XEDAP-${recordId}` : `VE-${cleanPlate}`);
     const vietQrUrl=(value)=>`https://img.vietqr.io/image/TCB-998888056789-compact2.png?amount=${Math.max(0,Math.round(Number(value)||0))}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent("NONG MINH QUANG")}&t=${Date.now()}`;
+    const monthlyNotice = d.monthly_pass ? `<div class="monthly-free-banner" role="status" aria-live="polite">
+      <div class="monthly-free-icon">🎫</div>
+      <div class="monthly-free-content">
+        <strong>VÉ THÁNG CÒN HIỆU LỰC</strong>
+        <span>Xe này sử dụng vé tháng nên <b>KHÔNG PHẢI THANH TOÁN PHÍ GỬI XE</b>.</span>
+        ${d.monthly_pass_expires_at ? `<small>Vé có hiệu lực đến ${new Date(d.monthly_pass_expires_at).toLocaleDateString('vi-VN')}</small>` : ''}
+      </div>
+      <div class="monthly-free-amount">0 VNĐ</div>
+    </div>` : `<div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
+      <div class="pay-method-list">
+        <button type="button" class="pay-method active" data-method="Tiền mặt"><span class="pay-radio"></span><span class="pay-method-icon cash">💵</span><span class="pay-method-text"><b>Tiền mặt</b><small>Thanh toán bằng tiền mặt</small></span><span class="pay-method-side">💵</span></button>
+        <button type="button" class="pay-method" data-method="Chuyển khoản"><span class="pay-radio"></span><span class="pay-method-icon bank">🏦</span><span class="pay-method-text"><b>Chuyển khoản</b><small>Chuyển khoản ngân hàng</small></span><span class="pay-method-side">🏦</span></button>
+        <button type="button" class="pay-method" data-method="QR ngân hàng"><span class="pay-radio"></span><span class="pay-method-icon qr">▦</span><span class="pay-method-text"><b>Quét mã QR</b><small>Quét QR để thanh toán</small></span><span class="pay-method-badge">VIETQR<br><em>napas 247</em></span></button>
+        <button type="button" class="pay-method" data-method="Miễn phí"><span class="pay-radio"></span><span class="pay-method-icon free">🎁</span><span class="pay-method-text"><b>Miễn phí</b><small>Không thu phí</small></span><span class="pay-method-side">🎁</span></button>
+      </div>`;
     body.innerHTML=`
       <div class="pay-shell">
         <div class="pay-head">
@@ -408,30 +423,7 @@ async function openPaymentModal(recordId){
           <small id="paymentCalculation">${d.billing_text||`${d.billable_hours != null ? d.billable_hours.toFixed(2) : d.hours} giờ tính phí`}</small>
         </div>
 
-        <div class="pay-section-title">CHỌN PHƯƠNG THỨC THANH TOÁN</div>
-
-        <div class="pay-method-list">
-          <button type="button" class="pay-method active" data-method="Tiền mặt">
-            <span class="pay-radio"></span><span class="pay-method-icon cash">💵</span>
-            <span class="pay-method-text"><b>Tiền mặt</b><small>Thanh toán bằng tiền mặt</small></span>
-            <span class="pay-method-side">💵</span>
-          </button>
-          <button type="button" class="pay-method" data-method="Chuyển khoản">
-            <span class="pay-radio"></span><span class="pay-method-icon bank">🏦</span>
-            <span class="pay-method-text"><b>Chuyển khoản</b><small>Chuyển khoản ngân hàng</small></span>
-            <span class="pay-method-side">🏦</span>
-          </button>
-          <button type="button" class="pay-method" data-method="QR ngân hàng">
-            <span class="pay-radio"></span><span class="pay-method-icon qr">▦</span>
-            <span class="pay-method-text"><b>Quét mã QR</b><small>Quét QR để thanh toán</small></span>
-            <span class="pay-method-badge">VIETQR<br><em>napas 247</em></span>
-          </button>
-          <button type="button" class="pay-method" data-method="Miễn phí">
-            <span class="pay-radio"></span><span class="pay-method-icon free">🎁</span>
-            <span class="pay-method-text"><b>Miễn phí</b><small>Không thu phí</small></span>
-            <span class="pay-method-side">🎁</span>
-          </button>
-        </div>
+        ${monthlyNotice}
 
         <div id="paymentBank" class="pay-qr-panel hidden">
           <div class="pay-qr-title">THÔNG TIN CHUYỂN KHOẢN</div>
@@ -460,11 +452,11 @@ async function openPaymentModal(recordId){
           </div>
         </div>
 
-        <div class="pay-tip">ⓘ <span>Sau khi thanh toán, vui lòng nhấn <b>"Đã thanh toán"</b> để xác nhận. Hệ thống sẽ cho xe ra khỏi bãi.</span></div>
+        <div class="pay-tip ${d.monthly_pass ? 'monthly-free-tip' : ''}">ⓘ <span>${d.monthly_pass ? '<b>VÉ THÁNG CÒN HIỆU LỰC → MIỄN PHÍ.</b> Nhấn "Xác nhận xe ra" để hoàn tất, không cần chọn phương thức thanh toán.' : 'Sau khi thanh toán, vui lòng nhấn <b>"Đã thanh toán"</b> để xác nhận. Hệ thống sẽ cho xe ra khỏi bãi.'}</span></div>
 
         <div class="pay-actions">
           <button type="button" class="pay-cancel" id="paymentCancel">×&nbsp; Hủy bỏ</button>
-          <button type="button" class="pay-confirm" id="paymentConfirm">✓&nbsp; Đã thanh toán</button>
+          <button type="button" class="pay-confirm" id="paymentConfirm">${d.monthly_pass ? '✓&nbsp; Xác nhận xe ra' : '✓&nbsp; Đã thanh toán'}</button>
         </div>
         <div class="pay-security">🔒 Thông tin thanh toán được bảo mật tuyệt đối</div>
       </div>`;
@@ -483,7 +475,7 @@ async function openPaymentModal(recordId){
     document.querySelector("#paymentClose").onclick=close;
     document.querySelector("#paymentCancel").onclick=close;
 
-    let method="Tiền mặt";
+    let method=d.monthly_pass ? "Miễn phí" : "Tiền mặt";
     document.querySelectorAll(".pay-method").forEach(btn=>{
       btn.onclick=()=>{
         method=btn.dataset.method;
@@ -511,7 +503,7 @@ async function openPaymentModal(recordId){
       try{
         const result=await api("/api/checkout",{method:"POST",body:{record_id:recordId,payment_method:method}});
         close();
-        toast(`✓ Đã thanh toán ${money(result.fee)} · ${method}`);
+        toast(d.monthly_pass ? '✓ Vé tháng còn hiệu lực · Xe được ra miễn phí' : `✓ Đã thanh toán ${money(result.fee)} · ${method}`);
         await navigate("dashboard");
       }catch(e){
         toast(e.message,"error");

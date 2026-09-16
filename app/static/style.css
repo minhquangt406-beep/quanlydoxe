@@ -2990,3 +2990,10 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
   .login-showcase{min-height:0!important}
   .parking-visual{margin-top:18px!important;margin-bottom:14px!important}
 }
+.monthly-free-banner{display:flex;align-items:center;gap:14px;margin-top:18px;padding:18px 20px;border:2px solid #25a55b;border-radius:18px;background:linear-gradient(135deg,#effcf4,#f8fffb);box-shadow:0 8px 22px rgba(37,165,91,.12)}
+.monthly-free-icon{width:50px;height:50px;flex:0 0 50px;border-radius:15px;display:grid;place-items:center;background:#d9f7e5;font-size:27px}
+.monthly-free-content{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;color:#17683b}
+.monthly-free-content strong{font-size:16px;letter-spacing:.03em;color:#168047}
+.monthly-free-content span{font-size:13px;color:#315b43;line-height:1.4}.monthly-free-content span b{color:#087a3b}.monthly-free-content small{font-size:11px;color:#5e806b}
+.monthly-free-amount{font-size:20px;font-weight:950;color:#128342;white-space:nowrap}.monthly-free-tip{background:#e9faef!important;border:1px solid #bce9cb;color:#17683b!important}
+@media(max-width:700px){.monthly-free-banner{padding:14px;gap:10px}.monthly-free-icon{width:42px;height:42px;flex-basis:42px;font-size:22px}.monthly-free-content strong{font-size:13px}.monthly-free-content span{font-size:11px}.monthly-free-content small{font-size:9px}.monthly-free-amount{font-size:15px}}
