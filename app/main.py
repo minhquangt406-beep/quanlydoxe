@@ -385,6 +385,39 @@ def seed():
     finally:
         db.close()
 
+
+# Natural-language intent rules for Vietnamese parking questions.
+NATURAL_CHAT_INTENT_RULES = {
+    "occupancy": [
+        "đông", "vắng", "chỗ trống", "còn chỗ", "hết chỗ",
+        "bãi xe", "bãi có đông", "giờ này"
+    ],
+    "zone": ["khu a", "khu b", "khu A", "khu B"],
+    "price": ["giá", "bao nhiêu tiền", "phí", "tính tiền", "mức phí"],
+    "vehicle": ["xe máy", "ô tô", "o to", "xe hơi", "xe đạp", "bicycle"],
+}
+
+def normalize_vietnamese_question(text):
+    import re
+    s = str(text or "").strip().lower()
+    replacements = {
+        "ko": "không", "k": "không", "kh": "không",
+        "hong": "không", "hông": "không", "khum": "không",
+        "dc": "được", "đc": "được", "duoc": "được",
+        "j": "gì", "gi": "gì",
+    }
+    s = re.sub(r"\s+", " ", s)
+    for a, b in replacements.items():
+        s = re.sub(rf"(?<!\w){re.escape(a)}(?!\w)", b, s)
+    return s
+
+def detect_parking_intent(text):
+    s = normalize_vietnamese_question(text)
+    scores = {k: sum(1 for term in terms if term.lower() in s)
+              for k, terms in NATURAL_CHAT_INTENT_RULES.items()}
+    best = max(scores, key=scores.get)
+    return best if scores[best] > 0 else "general"
+
 @app.post("/api/auth/login")
 def login(data: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username.strip()).first()
