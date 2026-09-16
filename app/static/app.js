@@ -72,6 +72,14 @@ function setAISupportBusy(busy){
   if(input) input.disabled=busy;
   if(btn){btn.disabled=busy;btn.textContent=busy?"…":"➤";btn.setAttribute("aria-busy",busy?"true":"false");}
 }
+function showAITyping(){
+  const box=$("#aiSupportMessages"); if(!box) return null;
+  const row=document.createElement("div"); row.className="ai-msg ai-msg-bot ai-msg-typing";
+  const badge=document.createElement("b"); badge.textContent="AI";
+  const body=document.createElement("span"); body.innerHTML="<i></i><i></i><i></i>";
+  row.append(badge,body); box.appendChild(row); box.scrollTop=box.scrollHeight;
+  return row;
+}
 function renderAISupportHistory(){
   const box=$("#aiSupportMessages"); if(!box) return;
   box.innerHTML="";
@@ -93,6 +101,7 @@ function initAISupport(){
   form.addEventListener("submit",async e=>{
     e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
     form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
+    const typingEl=showAITyping();
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
       const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),35000);
@@ -100,8 +109,10 @@ function initAISupport(){
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
       finally{clearTimeout(timer)}
       const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
+      typingEl?.remove();
       addAISupportMessage(answer,"bot");
     }catch(err){
+      typingEl?.remove();
       const msg=err.name==="AbortError"?"Trợ lý đang xử lý lâu hơn bình thường. Bạn thử lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
       addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
@@ -519,18 +530,73 @@ function emptyIcon(){return '<svg class="empty-svg" viewBox="0 0 64 64" aria-lab
 
 async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");const isManager=me.role==="manager",isGuest=me.role==="guest";$("#userName").textContent=me.full_name;$("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");$("#avatar").textContent=(me.full_name||"K")[0];$("#sidebarUserName").textContent=me.full_name;$("#sidebarUserRole").textContent=isManager?"Quản trị viên":(isGuest?"Khách · Chỉ xem chỗ trống":"Nhân viên bãi xe");$("#sidebarUser")?.classList.toggle("manager-profile",isManager);$("#sidebarUser")?.classList.toggle("staff-profile",!isManager&&!isGuest);$("#sidebarUser")?.classList.toggle("guest-profile",isGuest);$$('.manager-only').forEach(x=>x.style.display=isManager?"flex":"none");$$('.sidebar nav button').forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});$("#mobileBottomNav")?.classList.toggle("manager",isManager);$("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});if(isGuest){await renderGuestDashboard()}else{await navigate("dashboard")};maybeReturnToAdmin()}catch(e){clearAuth()}}
 
-const showRegister=document.getElementById("showRegister"), registerForm=document.getElementById("registerForm"), loginFormEl=document.getElementById("loginForm"), cancelRegister=document.getElementById("cancelRegister"), showForgot=document.getElementById("showForgot"), forgotForm=document.getElementById("forgotForm"), cancelForgot=document.getElementById("cancelForgot");
-function showAuthForm(name){[loginFormEl,registerForm,forgotForm].forEach(x=>x?.classList.add("hidden"));document.querySelector(".guest-register-link")?.classList.toggle("hidden",name!=="login");document.getElementById(name+"Form")?.classList.remove("hidden");}
-showRegister?.addEventListener("click",()=>{showAuthForm("register");document.getElementById("registerError").textContent="";});
-cancelRegister?.addEventListener("click",()=>showAuthForm("login"));
-showForgot?.addEventListener("click",()=>{showAuthForm("forgot");document.getElementById("forgotError").textContent="";});
-cancelForgot?.addEventListener("click",()=>showAuthForm("login"));
-registerForm?.addEventListener("submit",async e=>{e.preventDefault();const err=document.getElementById("registerError");err.textContent="";try{await api("/api/auth/register",{method:"POST",body:{full_name:document.getElementById("registerName").value,username:document.getElementById("registerUsername").value,password:document.getElementById("registerPassword").value,phone:document.getElementById("registerPhone").value}});err.textContent="Đăng ký thành công. Hãy đăng nhập bằng tài khoản vừa tạo.";err.className="success";registerForm.reset();}catch(e){err.textContent=e.message;err.className="error";}});
-let otpCooldown=0;
-document.getElementById("sendOtp")?.addEventListener("click",async()=>{const err=document.getElementById("forgotError"),btn=document.getElementById("sendOtp");err.textContent="";if(otpCooldown>0)return;try{const d=await api("/api/auth/forgot-password/request",{method:"POST",body:{username:document.getElementById("forgotUsername").value,phone:document.getElementById("forgotPhone").value}});err.textContent=d.message;err.className="success";otpCooldown=60;btn.disabled=true;const timer=setInterval(()=>{otpCooldown--;btn.textContent=otpCooldown?`Gửi lại OTP (${otpCooldown}s)`:"Gửi lại OTP";if(!otpCooldown){clearInterval(timer);btn.disabled=false;}},1000);btn.textContent="Gửi lại OTP (60s)";}catch(e){err.textContent=e.message;err.className="error";}});
-forgotForm?.addEventListener("submit",async e=>{e.preventDefault();const err=document.getElementById("forgotError");err.textContent="";try{const d=await api("/api/auth/forgot-password/reset",{method:"POST",body:{username:document.getElementById("forgotUsername").value,phone:document.getElementById("forgotPhone").value,otp:document.getElementById("resetOtp").value,new_password:document.getElementById("resetPassword").value}});err.textContent=d.message;err.className="success";setTimeout(()=>showAuthForm("login"),1200);}catch(e){err.textContent=e.message;err.className="error";}});
+function setBtnBusy(btn,busy,busyText){
+  if(!btn) return;
+  if(busy){
+    if(btn.dataset.label===undefined) btn.dataset.label=btn.textContent;
+    btn.textContent=busyText||"Đang xử lý…"; btn.disabled=true; btn.classList.add("is-loading");
+  }else{
+    if(btn.dataset.label!==undefined) btn.textContent=btn.dataset.label;
+    btn.disabled=false; btn.classList.remove("is-loading");
+  }
+}
+$$(".pass-toggle").forEach(b=>b.addEventListener("click",()=>{
+  const t=document.getElementById(b.dataset.target); if(!t) return;
+  const show=t.type==="password";
+  t.type=show?"text":"password";
+  b.textContent=show?"🙈":"👁";
+  b.setAttribute("aria-label",show?"Ẩn mật khẩu":"Hiện mật khẩu");
+  b.classList.toggle("is-visible",show);
+}));
 
-$("#loginForm").onsubmit=async e=>{e.preventDefault();$("#loginError").textContent="";try{let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value,password:$("#password").value}});token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot()}catch(e){$("#loginError").textContent=e.message}};
+const showRegister=document.getElementById("showRegister"), registerForm=document.getElementById("registerForm"), loginFormEl=document.getElementById("loginForm"), cancelRegister=document.getElementById("cancelRegister"), showForgot=document.getElementById("showForgot"), forgotForm=document.getElementById("forgotForm"), cancelForgot=document.getElementById("cancelForgot");
+function showAuthForm(name){[loginFormEl,registerForm,forgotForm].forEach(x=>x?.classList.add("hidden"));document.querySelector(".guest-register-link")?.classList.toggle("hidden",name!=="login");const target=document.getElementById(name+"Form");target?.classList.remove("hidden");target?.querySelector("input")?.focus();}
+showRegister?.addEventListener("click",()=>{showAuthForm("register");document.getElementById("registerError").textContent="";document.getElementById("registerError").className="error";});
+cancelRegister?.addEventListener("click",()=>showAuthForm("login"));
+showForgot?.addEventListener("click",()=>{showAuthForm("forgot");document.getElementById("forgotError").textContent="";document.getElementById("forgotError").className="error";});
+cancelForgot?.addEventListener("click",()=>showAuthForm("login"));
+registerForm?.addEventListener("submit",async e=>{
+  e.preventDefault();const err=document.getElementById("registerError"),btn=document.getElementById("registerSubmit");
+  err.textContent="";err.className="error";setBtnBusy(btn,true,"Đang tạo tài khoản…");
+  try{
+    await api("/api/auth/register",{method:"POST",body:{full_name:document.getElementById("registerName").value.trim(),username:document.getElementById("registerUsername").value.trim(),password:document.getElementById("registerPassword").value,phone:document.getElementById("registerPhone").value.trim()}});
+    err.textContent="Đăng ký thành công. Đang chuyển sang màn hình đăng nhập…";err.className="success";registerForm.reset();
+    setTimeout(()=>{showAuthForm("login");document.getElementById("username").value=document.getElementById("registerUsername").value;},1100);
+  }catch(e){err.textContent=e.message;err.className="error";}
+  finally{setBtnBusy(btn,false);}
+});
+let otpCooldown=0;
+document.getElementById("sendOtp")?.addEventListener("click",async()=>{
+  const err=document.getElementById("forgotError"),btn=document.getElementById("sendOtp");
+  err.textContent="";err.className="error";if(otpCooldown>0)return;
+  setBtnBusy(btn,true,"Đang gửi…");
+  try{
+    const d=await api("/api/auth/forgot-password/request",{method:"POST",body:{username:document.getElementById("forgotUsername").value.trim(),phone:document.getElementById("forgotPhone").value.trim()}});
+    err.textContent=d.message;err.className="success";
+    setBtnBusy(btn,false);otpCooldown=60;btn.disabled=true;
+    const timer=setInterval(()=>{otpCooldown--;btn.textContent=otpCooldown?`Gửi lại OTP (${otpCooldown}s)`:"Gửi lại OTP";if(!otpCooldown){clearInterval(timer);btn.disabled=false;}},1000);
+    btn.textContent="Gửi lại OTP (60s)";btn.dataset.label="Gửi mã OTP";
+  }catch(e){setBtnBusy(btn,false);err.textContent=e.message;err.className="error";}
+});
+forgotForm?.addEventListener("submit",async e=>{
+  e.preventDefault();const err=document.getElementById("forgotError"),btn=document.getElementById("forgotSubmit");
+  err.textContent="";err.className="error";setBtnBusy(btn,true,"Đang đặt lại…");
+  try{
+    const d=await api("/api/auth/forgot-password/reset",{method:"POST",body:{username:document.getElementById("forgotUsername").value.trim(),phone:document.getElementById("forgotPhone").value.trim(),otp:document.getElementById("resetOtp").value.trim(),new_password:document.getElementById("resetPassword").value}});
+    err.textContent=d.message;err.className="success";setTimeout(()=>showAuthForm("login"),1200);
+  }catch(e){err.textContent=e.message;err.className="error";}
+  finally{setBtnBusy(btn,false);}
+});
+
+$("#loginForm").onsubmit=async e=>{
+  e.preventDefault();const err=$("#loginError"),btn=$("#loginSubmit");
+  err.textContent="";setBtnBusy(btn,true,"Đang đăng nhập…");
+  try{
+    let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value.trim(),password:$("#password").value}});
+    token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot();
+    if(!token){err.textContent="Không thể tải thông tin tài khoản. Vui lòng thử lại.";setBtnBusy(btn,false);}
+  }catch(e){err.textContent=e.message;setBtnBusy(btn,false);}
+};
 $("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
 async function navigate(page){if(me?.role==="guest" && page!=="dashboard"){toast("Tài khoản khách chỉ được xem tình trạng chỗ trống","error");return;}$$(["[data-page]"]).forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel"><b>Lỗi:</b> ${e.message}</div>`}}

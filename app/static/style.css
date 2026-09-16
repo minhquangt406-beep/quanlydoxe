@@ -2909,3 +2909,44 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
   .login-card{width:400px!important;max-width:400px!important;padding:28px!important}
   .showcase-copy h2{font-size:clamp(38px,4.8vw,56px)!important}
 }
+
+/* =========================================================
+   PARKING AI PRO — LOGIN UI REFRESH (v33)
+   Field icons, password visibility toggle, button loading
+   states and AI chat typing indicator. Placed last so it
+   safely takes precedence over earlier layout patches.
+   ========================================================= */
+.login-card .field-wrap{position:relative;display:flex;align-items:center;margin-top:7px}
+.login-card label{display:block}
+.login-card .field-wrap input{width:100%;margin-top:0!important;padding-left:40px!important}
+.login-card .field-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;line-height:1;opacity:.55;pointer-events:none;filter:grayscale(.15)}
+.login-card .field-wrap input.has-toggle{padding-right:42px!important}
+.login-card .pass-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;border-radius:9px;cursor:pointer;font-size:14px;color:#8b93a7;display:grid;place-items:center;transition:.18s}
+.login-card .pass-toggle:hover{background:#f1f2fb;color:#4f46e5}
+.login-card .pass-toggle.is-visible{color:#4f46e5}
+.login-card .field-wrap:focus-within .field-icon{opacity:.9;color:#5b55e9}
+.login-card .field-wrap:focus-within input{border-color:#7768ee!important;box-shadow:0 0 0 4px rgba(99,102,241,.10)!important;background:#fff!important}
+
+.login-card button.primary.is-loading{position:relative;cursor:wait;color:transparent!important;pointer-events:none}
+.login-card button.primary.is-loading:after{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:btnSpin .7s linear infinite}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+
+.login-card .error:empty,.login-card .success:empty{display:none;margin:0;padding:0;border:0}
+.login-card .error{display:flex;align-items:center;gap:7px}
+.login-card .error:not(:empty):before{content:"⚠";font-size:11px}
+.login-card .success{display:flex;align-items:center;gap:7px}
+.login-card .success:before{content:"✓";font-weight:900}
+
+.login-card input:-webkit-autofill{-webkit-text-fill-color:#172033;box-shadow:0 0 0 1000px #f8fafc inset!important;-webkit-box-shadow:0 0 0 1000px #f8fafc inset!important}
+
+/* Typing indicator inside the AI support widget */
+.ai-msg-typing span{display:inline-flex;align-items:center;gap:4px;padding:12px 14px!important}
+.ai-msg-typing span i{width:6px;height:6px;border-radius:50%;background:#9aa3c9;display:inline-block;animation:aiTypingBounce 1.1s ease-in-out infinite}
+.ai-msg-typing span i:nth-child(2){animation-delay:.15s}
+.ai-msg-typing span i:nth-child(3){animation-delay:.3s}
+@keyframes aiTypingBounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+
+@media(max-width:520px){
+  .login-card .field-icon{font-size:13px;left:12px}
+  .login-card .field-wrap input{padding-left:36px!important}
+}

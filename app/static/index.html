@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quản lý bãi đỗ xe · Parking AI Pro</title>
-<link rel="stylesheet" href="/static/style.css?v=v32-login-pc-optimized-20260911">
+<link rel="stylesheet" href="/static/style.css?v=v33-login-redesign-20260916">
 </head>
 <body>
 <div id="loginView" class="login-page">
@@ -35,30 +35,30 @@
     <h1>Parking AI Pro</h1>
     <p>Quản lý bãi đỗ xe thông minh · Dữ liệu lưu bền vững</p>
     <form id="loginForm" autocomplete="off">
-      <label>Tài khoản<input id="username" name="login_username" autocomplete="off" placeholder="Nhập tài khoản"></label>
-      <label>Mật khẩu<input id="password" name="login_password" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"></label>
+      <label>Tài khoản<div class="field-wrap"><span class="field-icon">👤</span><input id="username" name="login_username" autocomplete="off" placeholder="Nhập tài khoản"></div></label>
+      <label>Mật khẩu<div class="field-wrap"><span class="field-icon">🔒</span><input id="password" name="login_password" class="has-toggle" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"><button type="button" class="pass-toggle" data-target="password" aria-label="Hiện mật khẩu">👁</button></div></label>
       <div class="forgot-link"><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
-      <button class="primary wide">Đăng nhập hệ thống</button>
+      <button class="primary wide" id="loginSubmit">Đăng nhập hệ thống</button>
       <div id="loginError" class="error"></div>
     </form>
     <div class="guest-register-link"><span>Khách mới?</span> <button type="button" id="showRegister" class="link-btn">Tạo tài khoản chỉ để xem chỗ trống</button></div>
     <form id="registerForm" class="hidden" autocomplete="off">
-      <label>Họ tên<input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></label>
-      <label>Tài khoản<input id="registerUsername" autocomplete="username" placeholder="khach01"></label>
-      <label>Số điện thoại<input id="registerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
-      <label>Mật khẩu<input id="registerPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
-      <button class="primary wide">Đăng ký tài khoản khách</button>
+      <label>Họ tên<div class="field-wrap"><span class="field-icon">🧾</span><input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></div></label>
+      <label>Tài khoản<div class="field-wrap"><span class="field-icon">👤</span><input id="registerUsername" autocomplete="username" placeholder="khach01"></div></label>
+      <label>Số điện thoại<div class="field-wrap"><span class="field-icon">📱</span><input id="registerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></div></label>
+      <label>Mật khẩu<div class="field-wrap"><span class="field-icon">🔒</span><input id="registerPassword" class="has-toggle" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"><button type="button" class="pass-toggle" data-target="registerPassword" aria-label="Hiện mật khẩu">👁</button></div></label>
+      <button class="primary wide" id="registerSubmit">Đăng ký tài khoản khách</button>
       <div id="registerError" class="error"></div>
       <button type="button" id="cancelRegister" class="btn wide">Quay lại đăng nhập</button>
     </form>
     <form id="forgotForm" class="hidden" autocomplete="off">
       <div class="form-note">Nhập tài khoản và số điện thoại đã đăng ký. Hệ thống sẽ gửi mã OTP 6 số về điện thoại.</div>
-      <label>Tài khoản<input id="forgotUsername" autocomplete="username" placeholder="Tài khoản khách"></label>
-      <label>Số điện thoại<input id="forgotPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></label>
+      <label>Tài khoản<div class="field-wrap"><span class="field-icon">👤</span><input id="forgotUsername" autocomplete="username" placeholder="Tài khoản khách"></div></label>
+      <label>Số điện thoại<div class="field-wrap"><span class="field-icon">📱</span><input id="forgotPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></div></label>
       <button type="button" class="primary wide" id="sendOtp">Gửi mã OTP</button>
-      <label>Mã OTP<input id="resetOtp" inputmode="numeric" maxlength="6" placeholder="6 chữ số"></label>
-      <label>Mật khẩu mới<input id="resetPassword" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"></label>
-      <button type="submit" class="primary wide">Đặt lại mật khẩu</button>
+      <label>Mã OTP<div class="field-wrap"><span class="field-icon">🔑</span><input id="resetOtp" inputmode="numeric" maxlength="6" placeholder="6 chữ số"></div></label>
+      <label>Mật khẩu mới<div class="field-wrap"><span class="field-icon">🔒</span><input id="resetPassword" class="has-toggle" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"><button type="button" class="pass-toggle" data-target="resetPassword" aria-label="Hiện mật khẩu">👁</button></div></label>
+      <button type="submit" class="primary wide" id="forgotSubmit">Đặt lại mật khẩu</button>
       <div id="forgotError" class="error"></div>
       <button type="button" id="cancelForgot" class="btn wide">Quay lại đăng nhập</button>
     </form>
@@ -107,6 +107,6 @@
     </section>
   </div>
 
-<script src="/static/app.js?v=ai-support-customer-v14-20260911"></script>
+<script src="/static/app.js?v=ai-support-customer-v15-20260916"></script>
 </body>
 </html>
