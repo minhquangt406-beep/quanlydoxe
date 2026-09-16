@@ -2950,3 +2950,43 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
   .login-card .field-icon{font-size:13px;left:12px}
   .login-card .field-wrap input{padding-left:36px!important}
 }
+
+/* =========================================================
+   LOGIN LAYOUT BALANCE FIX (v34)
+   The previous grid (1fr + fixed card width) left a large,
+   lopsided empty gap on the right side on wide monitors.
+   Switch to a centered flex cluster with a max total width so
+   any leftover space becomes symmetric outer margin instead.
+   ========================================================= */
+@media (min-width:1100px){
+  .login-page{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:clamp(40px,5vw,90px)!important;
+    width:100%!important;
+    grid-template-columns:none!important;
+  }
+  .login-showcase{
+    flex:1 1 760px!important;
+    width:auto!important;
+    max-width:760px!important;
+    justify-self:unset!important;
+  }
+  .login-card{
+    flex:0 0 430px!important;
+    width:430px!important;
+    max-width:430px!important;
+    justify-self:unset!important;
+    align-self:center!important;
+  }
+}
+@media (min-width:1500px){
+  .login-showcase{flex-basis:840px!important;max-width:840px!important}
+  .login-card{flex-basis:440px!important;width:440px!important;max-width:440px!important}
+}
+@media (min-width:1100px) and (max-height:840px){
+  .login-showcase{min-height:0!important}
+  .parking-visual{margin-top:18px!important;margin-bottom:14px!important}
+}
