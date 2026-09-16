@@ -4,84 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quản lý bãi đỗ xe · Parking AI Pro</title>
-<link rel="stylesheet" href="/static/style.css?v=v34-login-balance-20260916">
-<style id="parkflow-premium-layer">
-/* PARKFLOW PREMIUM VISUAL LAYER */
-:root{
- --pf-primary:#5b6df5;--pf-primary2:#7567ee;--pf-ink:#172033;--pf-muted:#8995a7;
- --pf-line:#e6ebf2;--pf-bg:#f5f7fb;--pf-card:#ffffff;--pf-green:#20b47a;
-}
-html{scroll-behavior:smooth}
-body{
- background:
- radial-gradient(circle at 88% 0%,#edf1ff 0,transparent 28%),
- radial-gradient(circle at 4% 22%,#ecfaf6 0,transparent 22%),
- var(--pf-bg)!important;
- color:var(--pf-ink);
-}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,#fff3,transparent 42%);z-index:-1}
-button,.btn,.button{transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease}
-button:hover,.btn:hover,.button:hover{transform:translateY(-2px)}
-header,.topbar,.navbar,.header{
- backdrop-filter:blur(18px);
- box-shadow:0 5px 25px #17203310!important;
-}
-.sidebar,.side-nav,.sidebar-menu{
- box-shadow:12px 0 38px #17203314;
-}
-.card,.stat-card,.dashboard-card,.panel,.table-card,.box{
- border-color:var(--pf-line)!important;
- box-shadow:0 9px 28px #26364a0a!important;
- transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
-}
-.card:hover,.stat-card:hover,.dashboard-card:hover,.panel:hover,.box:hover{
- transform:translateY(-3px);
- box-shadow:0 16px 36px #26364a13!important;
- border-color:#dce2f1!important;
-}
-input,select,textarea{
- border-color:#e1e6ee!important;
- background:#fff!important;
- transition:border-color .2s,box-shadow .2s;
-}
-input:focus,select:focus,textarea:focus{
- border-color:#aeb9ff!important;
- box-shadow:0 0 0 4px #5b6df514!important;
- outline:0!important;
-}
-.primary,.btn-primary,.btn-success,.add-btn{
- background:linear-gradient(135deg,var(--pf-primary),var(--pf-primary2))!important;
- box-shadow:0 9px 20px #5b6df52b!important;
-}
-.primary:hover,.btn-primary:hover,.btn-success:hover,.add-btn:hover{
- box-shadow:0 14px 28px #5b6df540!important;
-}
-.badge,.pill,.status{
- border-radius:999px!important;
-}
-.progress,.progress-bar,.bar{
- border-radius:999px!important;
- overflow:hidden;
-}
-.modal,.modal-overlay,.overlay{
- backdrop-filter:blur(7px);
- background:#11182799!important;
-}
-.modal-content,.modal-box,.dialog{
- border:1px solid #ffffff66!important;
- box-shadow:0 30px 90px #07102055!important;
- animation:pfPop .25s ease;
-}
-@keyframes pfPop{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
-.toast,.notification{
- box-shadow:0 15px 35px #10182830!important;
-}
-table tbody tr{transition:background .18s}
-table tbody tr:hover{background:#f8f9fd!important}
-@media(max-width:1000px){
- .sidebar,.side-nav{transition:transform .3s ease}
-}
-</style></head>
+<link rel="stylesheet" href="/static/style.css?v=ULTRA-PREMIUM-V4-20260916">
+</head>
 <body>
 <div id="loginView" class="login-page">
   <section class="login-showcase" aria-hidden="true">
@@ -165,7 +89,7 @@ table tbody tr:hover{background:#f8f9fd!important}
     </div>
   </aside>
 
-  <main class="main"><div id="pf-status-strip" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 13px;border:1px solid #e7ebf2;border-radius:11px;background:#ffffffb8;color:#7e899b;font:600 9px Inter,system-ui,sans-serif;box-shadow:0 6px 20px #26364a08"><span style="color:#1eab78">● HỆ THỐNG TRỰC TUYẾN</span><span>↻ Đồng bộ dữ liệu theo thời gian thực</span><span>☁ Sao lưu tự động</span></div>
+  <main class="main">
     <header class="topbar">
       <div><div class="eyebrow">PARKING OPERATIONS</div><h2 id="pageTitle">Tổng quan</h2></div>
       <div class="topbar-actions"><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
