@@ -2997,3 +2997,28 @@ input:focus,select:focus,textarea:focus{border-color:#8a80ff!important;box-shado
 .monthly-free-content span{font-size:13px;color:#315b43;line-height:1.4}.monthly-free-content span b{color:#087a3b}.monthly-free-content small{font-size:11px;color:#5e806b}
 .monthly-free-amount{font-size:20px;font-weight:950;color:#128342;white-space:nowrap}.monthly-free-tip{background:#e9faef!important;border:1px solid #bce9cb;color:#17683b!important}
 @media(max-width:700px){.monthly-free-banner{padding:14px;gap:10px}.monthly-free-icon{width:42px;height:42px;flex-basis:42px;font-size:22px}.monthly-free-content strong{font-size:13px}.monthly-free-content span{font-size:11px}.monthly-free-content small{font-size:9px}.monthly-free-amount{font-size:15px}}
+
+/* Modern Smart Parking UI refresh */
+:root{--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#7d899d;--line:#e6ebf2;--primary:#4f46e5;--primary2:#7c3aed;--green:#10b981;--red:#ef4444;--nav:#101827}
+body{background:radial-gradient(circle at 80% -10%,#e9e9ff 0,transparent 32%),#f4f7fb;color:var(--ink)}
+.app{background:transparent}
+.sidebar{width:245px;background:linear-gradient(180deg,#101827,#0d1525);padding:20px 13px;border-right:0;box-shadow:8px 0 35px rgba(15,23,42,.08)}
+.sidebar .logo,.sidebar .brand{margin:0 8px 24px}
+.sidebar .nav-item,.sidebar a,.sidebar button{border-radius:11px;transition:.18s}
+.sidebar .nav-item.active,.sidebar a.active,.sidebar button.active{background:linear-gradient(90deg,rgba(99,102,241,.24),rgba(124,58,237,.12));color:#fff}
+.sidebar .nav-item:hover,.sidebar a:hover,.sidebar button:hover{background:rgba(255,255,255,.07);color:#fff}
+.main-content,.content{margin-left:245px;padding:28px;min-height:100vh}
+.topbar,.header,.page-header{background:transparent;border:0;box-shadow:none}
+.card,.stat-card,.panel,.section-card,.table-card,.dashboard-card{background:#fff;border:1px solid #e7ebf2;border-radius:18px;box-shadow:0 8px 30px rgba(15,23,42,.055)}
+.card:hover,.stat-card:hover{transform:translateY(-1px);box-shadow:0 14px 35px rgba(15,23,42,.08)}
+button.primary,.btn-primary,.action-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);border:0;border-radius:11px;color:#fff;box-shadow:0 8px 18px rgba(79,70,229,.2)}
+input,select,textarea{border-radius:11px;background:#f9fafc;border:1px solid #e2e7ef}
+table th{color:#7c8799;background:#fafbfc}table td,table th{border-bottom:1px solid #edf0f5}
+.badge,.status-badge{border-radius:999px}
+.parking-map,.parking-grid,.zone-card{border-radius:20px}
+.slot,.parking-slot{border-radius:13px;transition:.16s}
+.slot:hover,.parking-slot:hover{transform:translateY(-2px);filter:brightness(.99)}
+.ai-chat,.chatbot,.ai-panel{border-radius:20px;box-shadow:0 20px 60px rgba(15,23,42,.18);border:1px solid #e5e9f0}
+.modal-content,.modal-card{border-radius:20px}
+@media(max-width:900px){.sidebar{width:76px}.main-content,.content{margin-left:76px;padding:18px}.sidebar .brand span,.sidebar .nav-label{display:none}}
+@media(max-width:560px){.main-content,.content{margin-left:0;padding:12px}.sidebar{position:fixed;bottom:0;top:auto;left:0;width:100%;height:66px;z-index:100;padding:7px 8px;display:flex;flex-direction:row;overflow:hidden}.sidebar .logo,.sidebar .brand{display:none}.sidebar nav,.sidebar .nav{display:flex;flex:1;justify-content:space-around}.sidebar .nav-item,.sidebar a,.sidebar button{font-size:0;padding:9px;min-width:42px}.sidebar .nav-item::first-letter,.sidebar a::first-letter,.sidebar button::first-letter{font-size:20px}}
