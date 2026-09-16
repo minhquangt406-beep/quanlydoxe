@@ -3256,3 +3256,106 @@ input:focus,select:focus,textarea:focus{background:#fff}
   .dashboard-kpis .card{min-height:118px}
   .topbar{background:rgba(238,242,248,.96)}
 }
+
+
+/* ===== TÁCH CHỖ TRỐNG THEO TỪNG KHU, TỰ ĐỘNG NHẬN KHU C/D/... ===== */
+.area-empty-summary{
+  margin-top:18px;
+  padding:18px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#17213a,#202d4b);
+  border:1px solid #30405f;
+  box-shadow:0 12px 28px rgba(20,31,55,.13);
+}
+.area-empty-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.area-empty-title strong{display:block;color:#fff;font-size:16px}
+.area-empty-title span:not(.area-empty-total){display:block;color:#9eabc2;font-size:12px;margin-top:3px}
+.area-empty-total{
+  background:rgba(255,255,255,.11);
+  border:1px solid rgba(255,255,255,.13);
+  color:#fff;
+  padding:7px 11px;
+  border-radius:999px;
+  font-weight:800;
+}
+.area-empty-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:12px;
+}
+.area-empty-card{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  padding:13px;
+  border-radius:15px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.10);
+}
+.area-empty-icon{
+  width:42px;height:42px;flex:0 0 42px;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:linear-gradient(135deg,#5968f2,#8b5cf6);
+  color:#fff;font-weight:900;font-size:13px;
+}
+.area-empty-card:nth-child(2n) .area-empty-icon{
+  background:linear-gradient(135deg,#0dbb91,#087f70);
+}
+.area-empty-card:nth-child(3n) .area-empty-icon{
+  background:linear-gradient(135deg,#f59e0b,#e66a14);
+}
+.area-empty-info{min-width:0;flex:1}
+.area-empty-info b{display:block;color:#fff;font-size:14px}
+.area-empty-info span{display:block;color:#aeb9d0;font-size:12px;margin-top:4px}
+.area-empty-info strong{color:#fff}
+.area-empty-percent{
+  color:#7ef0c6;
+  font-weight:900;
+  font-size:15px;
+}
+.area-empty-none{color:#aeb9d0;font-size:13px;padding:8px}
+.occupancy-bars{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:12px;
+}
+.area-capacity-row{
+  padding:13px 14px;
+  border-radius:14px;
+  background:#f0f3f8;
+  border:1px solid #d9e0eb;
+}
+.area-capacity-row>span{
+  display:flex;justify-content:space-between;gap:8px;
+  font-size:12px;
+}
+.area-capacity-row b{color:#182238}
+.area-capacity-row em{font-style:normal;color:#71809a}
+.area-capacity-track{
+  height:8px;margin:9px 0 5px;
+  background:#dfe5ee;border-radius:999px;overflow:hidden;
+}
+.area-capacity-track i{
+  display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#5968f2,#8b5cf6);
+  transition:width .5s ease;
+}
+.area-capacity-row:nth-child(2n) .area-capacity-track i{
+  background:linear-gradient(90deg,#10b981,#06b6a4);
+}
+.area-capacity-row:nth-child(3n) .area-capacity-track i{
+  background:linear-gradient(90deg,#f59e0b,#ef6c24);
+}
+.area-capacity-row small{color:#8995a9;font-size:11px}
+@media(max-width:760px){
+  .area-empty-summary{padding:14px}
+  .area-empty-grid{grid-template-columns:1fr}
+}

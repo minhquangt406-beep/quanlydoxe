@@ -1,3 +1,4 @@
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));}
 (function(){
   try{
     const u=new URL(window.location.href);
@@ -603,12 +604,32 @@ $("#loginForm").onsubmit=async e=>{
 };
 $("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
+
+function renderAreaAvailability(areas){
+  const wrap=document.getElementById('areaEmptySummary');
+  if(!wrap)return;
+  const rows=(areas||[]).filter(ar=>ar&&ar.name).map(ar=>{
+    const slots=Array.isArray(ar.slots)?ar.slots:[];
+    const total=slots.length;
+    const occupied=slots.filter(x=>x.status==='occupied').length;
+    const empty=slots.filter(x=>x.status!=='occupied').length;
+    return {name:ar.name,total,occupied,empty,rate:total?Math.round(occupied/total*100):0};
+  });
+  wrap.innerHTML=rows.length?rows.map(x=>`
+    <div class="simple-area-card">
+      <div class="simple-area-card-head"><b>${escapeHtml(x.name)}</b><span>${x.empty} chỗ trống</span></div>
+      <div class="simple-area-track"><i style="width:${x.rate}%"></i></div>
+      <small>${x.occupied}/${x.total} vị trí đang sử dụng · ${x.rate}% lấp đầy</small>
+    </div>
+  `).join(''):`<div class="empty-state">Chưa có khu vực nào.</div>`;
+}
+
 async function refreshDashboardRealtime(){
  if(!me || document.hidden || !document.querySelector('#kpiActive')) return;
  try{const [d0,an,ts,s]=await Promise.all([api('/api/dashboard'),api('/api/analytics'),api('/api/dashboard/timeseries'),api('/api/slots')]);
- const d={...d0,...an}; window.__dashboardSeries=ts; window.__latestSlots=s;
+ const d={...d0,...an}; window.__dashboardSeries=ts; window.__latestSlots=s; const liveAreas=[...new Map(s.map(x=>[x.area_id,{id:x.area_id,name:x.area_name,slots:[]}])).values()]; s.forEach(x=>liveAreas.find(ar=>ar.id===x.area_id)?.slots.push(x)); renderAreaAvailability(liveAreas);
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
- set('kpiActive',d.active_vehicles);set('kpiEmpty',d.empty);set('kpiIn',d.today_checkins);set('kpiOut',d.today_checkouts);set('kpiRevenue',money(d.today_revenue));set('kpiOccupancy',d.occupancy_rate+'%');set('occUsed',d.occupied);set('occFree',d.empty);set('chartTodayRevenue',money(ts.revenue[6]||0));set('chartTotal',money(ts.revenue.reduce((a,b)=>a+b,0)));set('dashUpdated','Cập nhật '+new Date().toLocaleTimeString('vi-VN'));
+ set('kpiActive',d.active_vehicles);set('kpiEmpty',d.empty);set('kpiIn',d.today_checkins);set('kpiOut',d.today_checkouts);set('kpiRevenue',money(d.today_revenue));set('kpiOccupancy',d.occupancy_rate+'%');set('occUsed',d.occupied);set('occFree',d.empty);set('todayTrafficTotal',(d.today_checkins+d.today_checkouts)+' lượt');set('occupancyText',d.occupancy_rate+'%');const ob=document.getElementById('occupancyBar');if(ob)ob.style.width=d.occupancy_rate+'%';set('chartTodayRevenue',money(ts.revenue[6]||0));set('chartTotal',money(ts.revenue.reduce((a,b)=>a+b,0)));set('dashUpdated','Cập nhật '+new Date().toLocaleTimeString('vi-VN'));
  const ring=document.getElementById('occupancyRing');if(ring)ring.style.setProperty('--rate',d.occupancy_rate+'%');
  const maxTraffic=Math.max(1,...ts.checkins,...ts.checkouts),wrap=document.getElementById('trafficChart');if(wrap){const w=wrap.clientWidth||700,h=250,p=28,iw=Math.max(1,w-p*2),ih=h-p*1.5,x=i=>p+iw*i/23,y=v=>h-p-(v/maxTraffic)*ih,path=a=>a.map((v,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');wrap.querySelector('.traffic-in')?.setAttribute('d',path(ts.checkins));wrap.querySelector('.traffic-out')?.setAttribute('d',path(ts.checkouts));wrap.querySelectorAll('.dot-in').forEach((c,i)=>{c.setAttribute('cx',x(i));c.setAttribute('cy',y(ts.checkins[i]))});wrap.querySelectorAll('.dot-out').forEach((c,i)=>{c.setAttribute('cx',x(i));c.setAttribute('cy',y(ts.checkouts[i]))})}
  const bars=document.querySelectorAll('.rev-bar');const maxRev=Math.max(1,...ts.revenue);bars.forEach((b,i)=>b.style.height=Math.max(8,ts.revenue[i]/maxRev*100)+'%');
@@ -667,15 +688,81 @@ const maps=areas.map(zone).join("");
 const maxRev=Math.max(1,...ts.revenue);
 const maxTraffic=Math.max(1,...ts.checkins,...ts.checkouts);
 const spark=(vals,max)=>vals.map(v=>Math.max(2,(v/max)*100)).join(',');
-$("#content").innerHTML=`<div class="dash-head"><div><div class="eyebrow">BẢNG ĐIỀU KHIỂN THỜI GIAN THỰC</div><h1>Tổng quan vận hành</h1><span class="muted">Theo dõi bãi xe, lưu lượng và doanh thu trong một màn hình.</span></div><div class="realtime-badge"><i></i><b>LIVE</b><span id="dashUpdated">Đang đồng bộ...</span></div></div>
-<div class="cards dashboard-kpis"><div class="card kpi-card"><div class="label">XE ĐANG GỬI</div><div class="metric" id="kpiActive">${d.active_vehicles}</div><div class="trend positive">● Đang vận hành</div></div><div class="card kpi-card"><div class="label">Ô TRỐNG</div><div class="metric" id="kpiEmpty">${d.empty}</div><div class="trend">${d.total_slots} tổng vị trí</div></div><div class="card kpi-card"><div class="label">XE VÀO HÔM NAY</div><div class="metric" id="kpiIn">${d.today_checkins}</div><div class="trend">Cập nhật realtime</div></div><div class="card kpi-card"><div class="label">XE RA HÔM NAY</div><div class="metric" id="kpiOut">${d.today_checkouts}</div><div class="trend">Cập nhật realtime</div></div><div class="card kpi-card revenue-kpi"><div class="label">DOANH THU HÔM NAY</div><div class="metric" id="kpiRevenue">${money(d.today_revenue)}</div><div class="trend positive">● Đang ghi nhận</div></div><div class="card kpi-card"><div class="label">TỶ LỆ LẤP ĐẦY</div><div class="metric" id="kpiOccupancy">${d.occupancy_rate}%</div><div class="mini-progress"><i style="width:${d.occupancy_rate}%"></i></div></div></div>
-<div class="realtime-charts"><div class="panel realtime-chart"><div class="chart-head"><div><h3>Lưu lượng xe theo giờ</h3><span class="muted">Xe vào và xe ra trong ngày hôm nay</span></div><span class="chart-live">● LIVE</span></div><div class="line-chart" id="trafficChart"></div><div class="chart-legend"><span><i class="ci-in"></i>Xe vào</span><span><i class="ci-out"></i>Xe ra</span></div></div><div class="panel realtime-chart"><div class="chart-head"><div><h3>Doanh thu 7 ngày</h3><span class="muted">Doanh thu gửi xe + vé tháng</span></div><span class="chart-total" id="chartTotal">${money(ts.revenue.reduce((a,b)=>a+b,0))}</span></div><div class="bar-chart" id="revenueChart"></div><div class="chart-foot"><span>Hôm nay</span><b id="chartTodayRevenue">${money(ts.revenue[6]||0)}</b></div></div></div>
-<div class="panel occupancy-live-panel"><div class="chart-head"><div><h3>Trạng thái bãi xe</h3><span class="muted">Phân bổ vị trí theo thời gian thực</span></div><span class="live-clock" id="liveClock">--:--:--</span></div><div class="occupancy-layout"><div class="occupancy-ring" id="occupancyRing"><div><b>${d.occupancy_rate}%</b><span>lấp đầy</span></div></div><div class="occ-stats"><div><i class="occ-dot used"></i><span>Đang sử dụng</span><b id="occUsed">${d.occupied}</b></div><div><i class="occ-dot free"></i><span>Còn trống</span><b id="occFree">${d.empty}</b></div><div><i class="occ-dot total"></i><span>Tổng vị trí</span><b>${d.total_slots}</b></div></div><div class="occupancy-bars"><div><span><b>Khu A</b><em id="areaAValue">—</em></span><div><i id="areaABar"></i></div></div><div><span><b>Khu B</b><em id="areaBValue">—</em></span><div><i id="areaBBar"></i></div></div></div></div></div>
-<div class="panel area-overview"><div class="panel-head"><div><h3>Bản đồ bãi xe thực tế</h3><span class="muted">Biển số hiển thị trực tiếp trên ô đang đỗ</span></div><span class="pill green">LIVE MAP</span></div><div class="parking-map">${maps}<div class="map-legend"><span><i class="legend-dot legend-empty"></i>Trống</span><span><i class="legend-dot legend-occupied"></i>Đang đỗ</span></div></div></div>
-<div class="dashboard-bottom"><div class="panel active-panel"><div class="panel-head"><h3>Xe đang trong bãi</h3><span class="muted">${a.length} xe</span></div>${a.length?`<div class="active-vehicles-grid">${a.slice(0,12).map(x=>`<div class="active-row" data-time-in="${x.time_in}"><div class="active-row-main"><b>${x.vehicle_type === "Xe đạp" ? vehicleIcon(x.vehicle_type) : ""}${displayPlate(x.license_plate, x.vehicle_type)}</b><span class="active-slot">${x.slot}</span></div><div class="active-row-meta"><span>${x.vehicle_type}</span><span>${dt(x.time_in)}</span></div><div class="active-row-duration"><span>Đã đỗ</span><b class="duration" data-time="${x.time_in}">${duration(x.time_in)}</b></div></div>`).join("")}</div>`:`<div class="empty-state">Chưa có xe đang gửi</div>`}</div><div class="panel"><div class="panel-head"><div><h3>Nhật ký hoạt động</h3><span class="muted">8 thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div><div class="activity-list">${log.length?log.map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div></div></div>`;
+$("#content").innerHTML=`<div class="dash-head simple-dash-head">
+  <div><div class="eyebrow">TỔNG QUAN VẬN HÀNH</div><h1>Tổng quan</h1><span class="muted">Các chỉ số chính của bãi xe được cập nhật theo dữ liệu thực tế.</span></div>
+  <div class="realtime-badge simple-live"><i></i><b>LIVE</b><span id="dashUpdated">Đang đồng bộ...</span></div>
+</div>
+
+<div class="simple-kpis">
+  <div class="simple-kpi"><span>Xe đang gửi</span><strong id="kpiActive">${d.active_vehicles}</strong><small>Hiện tại</small></div>
+  <div class="simple-kpi"><span>Chỗ trống</span><strong id="kpiEmpty">${d.empty}</strong><small>${d.total_slots} tổng vị trí</small></div>
+  <div class="simple-kpi"><span>Xe vào hôm nay</span><strong id="kpiIn">${d.today_checkins}</strong><small>Trong ngày</small></div>
+  <div class="simple-kpi"><span>Xe ra hôm nay</span><strong id="kpiOut">${d.today_checkouts}</strong><small>Trong ngày</small></div>
+  <div class="simple-kpi"><span>Doanh thu hôm nay</span><strong id="kpiRevenue">${money(d.today_revenue)}</strong><small>Gửi xe + vé tháng</small></div>
+  <div class="simple-kpi"><span>Tỷ lệ lấp đầy</span><strong id="kpiOccupancy">${d.occupancy_rate}%</strong><div class="simple-progress"><i style="width:${d.occupancy_rate}%"></i></div></div>
+</div>
+
+<div class="overview-chart-panel">
+  <div class="panel-head simple-panel-head">
+    <div><h3>Biểu đồ tổng quan hoạt động</h3><span class="muted">Lưu lượng xe vào và xe ra theo từng giờ hôm nay</span></div>
+    <span class="chart-total-simple" id="todayTrafficTotal">${d.today_checkins + d.today_checkouts} lượt</span>
+  </div>
+  <div class="line-chart simple-chart" id="trafficChart"></div>
+  <div class="chart-legend simple-legend"><span><i class="ci-in"></i>Xe vào</span><span><i class="ci-out"></i>Xe ra</span></div>
+</div>
+
+<div class="overview-two-col">
+  <div class="panel simple-panel">
+    <div class="panel-head simple-panel-head">
+      <div><h3>Doanh thu 7 ngày</h3><span class="muted">Gửi xe và vé tháng</span></div>
+      <span class="chart-total-simple" id="chartTotal">${money(ts.revenue.reduce((a,b)=>a+b,0))}</span>
+    </div>
+    <div class="bar-chart simple-revenue-chart" id="revenueChart"></div>
+    <div class="chart-foot"><span>Hôm nay</span><b id="chartTodayRevenue">${money(ts.revenue[6]||0)}</b></div>
+  </div>
+
+  <div class="panel simple-panel">
+    <div class="panel-head simple-panel-head">
+      <div><h3>Tình trạng bãi</h3><span class="muted">Tổng số vị trí hiện tại</span></div>
+      <strong id="occupancyText">${d.occupancy_rate}%</strong>
+    </div>
+    <div class="simple-occupancy">
+      <div class="simple-occupancy-bar"><i id="occupancyBar" style="width:${d.occupancy_rate}%"></i></div>
+      <div class="simple-occupancy-row"><span>Đang sử dụng</span><b id="occUsed">${d.occupied}</b></div>
+      <div class="simple-occupancy-row"><span>Còn trống</span><b id="occFree">${d.empty}</b></div>
+      <div class="simple-occupancy-row total"><span>Tổng vị trí</span><b>${d.total_slots}</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel simple-panel area-summary-panel">
+  <div class="panel-head simple-panel-head">
+    <div><h3>Chỗ trống theo khu vực</h3><span class="muted">Khu nào được tạo trong hệ thống sẽ tự xuất hiện tại đây</span></div>
+  </div>
+  <div class="simple-area-list" id="areaEmptySummary"></div>
+</div>
+
+<div class="dashboard-bottom simple-bottom">
+  <div class="panel simple-panel active-panel">
+    <div class="panel-head simple-panel-head"><div><h3>Xe đang trong bãi</h3><span class="muted">${a.length} xe</span></div></div>
+    ${a.length?`<div class="active-vehicles-grid">${a.slice(0,12).map(x=>`<div class="active-row" data-time-in="${x.time_in}"><div class="active-row-main"><b>${x.vehicle_type === "Xe đạp" ? vehicleIcon(x.vehicle_type) : ""}${displayPlate(x.license_plate, x.vehicle_type)}</b><span class="active-slot">${x.slot}</span></div><div class="active-row-meta"><span>${x.vehicle_type}</span><span>${dt(x.time_in)}</span></div><div class="active-row-duration"><span>Đã đỗ</span><b class="duration" data-time="${x.time_in}">${duration(x.time_in)}</b></div></div>`).join("")}</div>`:`<div class="empty-state">Chưa có xe đang gửi</div>`}
+  </div>
+  <div class="panel simple-panel">
+    <div class="panel-head simple-panel-head"><div><h3>Nhật ký hoạt động</h3><span class="muted">8 thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div>
+    <div class="activity-list">${log.length?log.map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div>
+  </div>
+</div>`;
+
+function renderTraffic(){const wrap=document.getElementById('trafficChart');if(!wrap)return;const w=wrap.clientWidth||700,h=250,p=28,iw=Math.max(1,w-p*2),ih=h-p*1.5;const maxTraffic=Math.max(1,...ts.checkins,...ts.checkouts);const x=i=>p+(iw*(i/23));const y=v=>h-p-(v/maxTraffic)*(ih);const path=vals=>vals.map((v,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');const dots=(vals,cls)=>vals.map((v,i)=>`<circle class="${cls}" cx="${x(i)}" cy="${y(v)}" r="3"></circle>`).join('');let grid='';for(let i=0;i<=4;i++){let yy=p+ih*i/4;grid+=`<line x1="${p}" y1="${yy}" x2="${w-p}" y2="${yy}" class="chart-grid"/><text x="4" y="${yy+3}" class="chart-y">${Math.round(maxTraffic*(1-i/4))}</text>`}let labels='';[0,4,8,12,16,20,23].forEach(i=>labels+=`<text x="${x(i)}" y="${h-4}" text-anchor="middle" class="chart-x">${String(i).padStart(2,'0')}h</text>`);wrap.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}<path d="${path(ts.checkins)}" class="traffic-in"/><path d="${path(ts.checkouts)}" class="traffic-out"/>${dots(ts.checkins,'dot-in')}${dots(ts.checkouts,'dot-out')}${labels}</svg>`}
+function renderRevenue(){const wrap=document.getElementById('revenueChart');if(!wrap)return;const max=Math.max(1,...ts.revenue);wrap.innerHTML=ts.revenue.map((v,i)=>`<div class="rev-bar-wrap"><span>${money(v).replace(' ₫','')}</span><div class="rev-bar ${i===6?'today':''}" style="height:${Math.max(8,v/max*100)}%"><i></i></div><b>${ts.days[i]}</b></div>`).join('')}
+renderTraffic();renderRevenue();renderAreaAvailability(areas);
+const trafficTotal=document.getElementById('todayTrafficTotal');if(trafficTotal)trafficTotal.textContent=(d.today_checkins+d.today_checkouts)+' lượt';
+const occupancyBar=document.getElementById('occupancyBar');if(occupancyBar)occupancyBar.style.width=d.occupancy_rate+'%';
+const occupancyText=document.getElementById('occupancyText');if(occupancyText)occupancyText.textContent=d.occupancy_rate+'%';
+$('#openActivity')?.addEventListener('click',()=>navigate('activity'));window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);window.clearInterval(window.__dashboardRealtime);window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);window.clearInterval(window.__clockTimer);window.__clockTimer=setInterval(()=>{},1000);wireMapInteractions()},
 function renderTraffic(){const wrap=document.getElementById('trafficChart');if(!wrap)return;const w=wrap.clientWidth||700,h=250,p=28,iw=Math.max(1,w-p*2),ih=h-p*1.5;const x=i=>p+(iw*(i/23));const y=v=>h-p-(v/maxTraffic)*(ih);const path=vals=>vals.map((v,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');const dots=(vals,cls)=>vals.map((v,i)=>`<circle class="${cls}" cx="${x(i)}" cy="${y(v)}" r="3"></circle>`).join('');let grid='';for(let i=0;i<=4;i++){let yy=p+ih*i/4;grid+=`<line x1="${p}" y1="${yy}" x2="${w-p}" y2="${yy}" class="chart-grid"/><text x="4" y="${yy+3}" class="chart-y">${Math.round(maxTraffic*(1-i/4))}</text>`}let labels='';[0,4,8,12,16,20,23].forEach(i=>labels+=`<text x="${x(i)}" y="${h-4}" text-anchor="middle" class="chart-x">${String(i).padStart(2,'0')}h</text>`);wrap.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}<path d="${path(ts.checkins)}" class="traffic-in"/><path d="${path(ts.checkouts)}" class="traffic-out"/>${dots(ts.checkins,'dot-in')}${dots(ts.checkouts,'dot-out')}${labels}</svg>`}
 function renderRevenue(){const wrap=document.getElementById('revenueChart');if(!wrap)return;const max=Math.max(1,...ts.revenue);wrap.innerHTML=ts.revenue.map((v,i)=>`<div class="rev-bar-wrap"><span>${money(v).replace(' ₫','')}</span><div class="rev-bar ${i===6?'today':''}" style="height:${Math.max(8,v/max*100)}%"><i></i></div><b>${ts.days[i]}</b></div>`).join('')}
-renderTraffic();renderRevenue();const areaA=areas.find(x=>x.name.toLowerCase().includes('a')),areaB=areas.find(x=>x.name.toLowerCase().includes('b'));const setArea=(el,bar,ar)=>{if(!ar)return;const occ=ar.slots.filter(x=>x.status==='occupied').length,rate=ar.slots.length?occ/ar.slots.length*100:0;if(el)el.textContent=Math.round(rate)+'%';if(bar)bar.style.width=rate+'%'};setArea($('#areaAValue'),$('#areaABar'),areaA);setArea($('#areaBValue'),$('#areaBBar'),areaB);$('#openActivity')?.addEventListener('click',()=>navigate('activity'));window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);window.clearInterval(window.__dashboardRealtime);window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);window.clearInterval(window.__clockTimer);window.__clockTimer=setInterval(()=>{$('#liveClock')&&($('#liveClock').textContent=new Date().toLocaleTimeString('vi-VN'))},1000);$('#liveClock').textContent=new Date().toLocaleTimeString('vi-VN');wireMapInteractions()},
+renderTraffic();renderRevenue();renderAreaAvailability(areas);setArea($('#areaBValue'),$('#areaBBar'),areaB);$('#openActivity')?.addEventListener('click',()=>navigate('activity'));window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);window.clearInterval(window.__dashboardRealtime);window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);window.clearInterval(window.__clockTimer);window.__clockTimer=setInterval(()=>{$('#liveClock')&&($('#liveClock').textContent=new Date().toLocaleTimeString('vi-VN'))},1000);$('#liveClock').textContent=new Date().toLocaleTimeString('vi-VN');wireMapInteractions()},
 parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");$("#content").innerHTML=`
 <div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
 <div class="panel"><div class="panel-head"><h3>Xe đang gửi</h3><span class="muted">${active.length} xe</span></div><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Biển số</th><th>Vị trí</th><th>Thời gian</th><th></th></tr></thead><tbody>${active.map(x=>`<tr><td>#${x.id}</td><td><b>${displayPlate(x.license_plate, x.vehicle_type)}</b></td><td>${x.slot}</td><td>${dt(x.time_in)}</td><td><button class="btn checkout" data-id="${x.id}">Tính phí & xe ra</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty-state">Không có xe</td></tr>`}</tbody></table></div></div></div>`;
