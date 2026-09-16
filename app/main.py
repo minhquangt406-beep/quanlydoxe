@@ -893,13 +893,31 @@ def areas(db: Session = Depends(get_db), user: User = Depends(current_user)):
 
 @app.post("/api/areas")
 def add_area(data: AreaIn, db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    a = Area(name=data.name.strip(), capacity=data.capacity)
+    name = (data.name or "").strip()
+    if not name:
+        existing_names = [a.name for a in db.query(Area).all()]
+        used = set()
+        for n in existing_names:
+            m = re.match(r"^khu\s+([a-z])$", n.strip(), re.I)
+            if m:
+                used.add(m.group(1).upper())
+        letter = "A"
+        for code in range(ord("A"), ord("Z") + 1):
+            if chr(code) not in used:
+                letter = chr(code)
+                break
+        name = f"Khu {letter}"
+    if data.capacity < 1:
+        raise HTTPException(400, "Sức chứa phải lớn hơn 0")
+    if db.query(Area).filter(Area.name.ilike(name)).first():
+        raise HTTPException(409, f"{name} đã tồn tại")
+    a = Area(name=name, capacity=data.capacity)
     db.add(a); db.flush()
     audit(db, user, "CREATE_AREA", f"Tạo {a.name} ({a.capacity} vị trí)")
     for i in range(1, data.capacity + 1):
-        db.add(ParkingSlot(area_id=a.id, name=f"{data.name}-{i:02d}", status="empty"))
+        db.add(ParkingSlot(area_id=a.id, name=f"{name}-{i:02d}", status="empty"))
     db.commit()
-    return {"message": "Đã tạo khu vực", "id": a.id}
+    return {"message": f"Đã tạo {a.name}", "id": a.id, "name": a.name}
 
 @app.delete("/api/areas/{area_id}")
 def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depends(manager_only)):
@@ -914,16 +932,18 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
     if occupied:
         raise HTTPException(409, "Không thể xóa khu đang có xe. Hãy cho xe ra trước.")
 
-    # Keep historical parking records intact. A used slot cannot be deleted because
-    # its history points to it via ParkingRecord.slot_id.
+    # Cho phép xóa cả khu đã từng có lịch sử. Các bản ghi/thanh toán gắn với
+    # các vị trí của khu được xóa cùng khu để tránh lỗi khóa ngoại.
     if slot_ids:
-        historical = db.query(ParkingRecord).filter(ParkingRecord.slot_id.in_(slot_ids)).first()
-        if historical:
-            raise HTTPException(409, "Khu này đã có lịch sử gửi xe nên không thể xóa để tránh mất dữ liệu. Có thể đổi tên khu thay thế.")
+        records = db.query(ParkingRecord).filter(ParkingRecord.slot_id.in_(slot_ids)).all()
+        record_ids = [r.id for r in records]
+        if record_ids:
+            db.query(Payment).filter(Payment.record_id.in_(record_ids)).delete(synchronize_session=False)
+            db.query(ParkingRecord).filter(ParkingRecord.id.in_(record_ids)).delete(synchronize_session=False)
 
     for slot in slots_in_area:
         db.delete(slot)
-    audit(db, user, "DELETE_AREA", f"Xóa {area.name}")
+    audit(db, user, "DELETE_AREA", f"Xóa {area.name} và dữ liệu lịch sử gắn với khu")
     db.delete(area)
     db.commit()
     return {"message": f"Đã xóa {area.name}"}

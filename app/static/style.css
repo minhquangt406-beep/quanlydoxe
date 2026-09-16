@@ -3670,3 +3670,10 @@ input:focus,select:focus,textarea:focus{background:#fff}
   .simple-kpi{min-height:95px!important}
   .simple-chart{height:210px!important}
 }
+
+.area-admin-card .click-hint{margin-top:8px}
+.form-grid label small.muted{display:block;margin-top:5px;font-size:10px}
+
+/* ===== KHU VỰC MỚI TỰ ĐỘNG HIỆN TRÊN TỔNG QUAN ===== */
+.simple-area-card{animation:areaCardIn .25s ease both}
+@keyframes areaCardIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
