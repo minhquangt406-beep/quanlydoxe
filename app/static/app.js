@@ -683,9 +683,9 @@ async function openReceipt(id){const r=await fetch('/api/receipt/'+id,{headers:{
 
 window.pages={
 dashboard:async()=>{
- const [d0,an,ts,s,areaSummary]=await Promise.all([
+ const [d0,an,ts,s,areaSummary,activityData]=await Promise.all([
    api('/api/dashboard'),api('/api/analytics'),api('/api/dashboard/timeseries'),
-   api('/api/slots'),api('/api/areas')
+   api('/api/slots'),api('/api/areas'),api('/api/activity'),api('/api/activity')
  ]);
  const d={...d0,...an};
  window.__dashboardSeries=ts; window.__latestSlots=s;
@@ -762,7 +762,7 @@ dashboard:async()=>{
    </section>
    <section class="overview-panel">
      <div class="overview-panel-head"><div><h3>Nhật ký hoạt động</h3><span>Thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div>
-     <div class="activity-list">${log.length?log.slice(0,8).map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div>
+     <div class="activity-list">${(Array.isArray(activityData)?activityData:[]).slice(0,8).length?(Array.isArray(activityData)?activityData:[]).slice(0,8).map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div>
    </section>
  </div>`;
 
