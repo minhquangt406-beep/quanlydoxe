@@ -3677,3 +3677,188 @@ input:focus,select:focus,textarea:focus{background:#fff}
 /* ===== KHU VỰC MỚI TỰ ĐỘNG HIỆN TRÊN TỔNG QUAN ===== */
 .simple-area-card{animation:areaCardIn .25s ease both}
 @keyframes areaCardIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Doanh thu: mọi ngày có doanh thu đều có cột nhìn rõ, ngày nhiều doanh thu cao hơn */
+.simple-revenue-chart .rev-bar{
+  transition:height .35s ease,opacity .2s ease;
+  min-height:4px!important;
+}
+.simple-revenue-chart .rev-bar.today{
+  box-shadow:0 2px 8px rgba(89,104,220,.16)!important;
+}
+
+/* Xóa khu: trạng thái xử lý rõ ràng */
+.delete-area:disabled{opacity:.65;cursor:wait}
+
+/* ===== KHU VỰC TRÊN TỔNG QUAN: GỌN KHI CÓ NHIỀU KHU ===== */
+.area-summary-panel{
+  padding:16px 18px!important;
+}
+.area-summary-panel .simple-panel-head{
+  margin-bottom:8px!important;
+}
+.simple-area-list{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(145px,1fr))!important;
+  gap:8px!important;
+  margin-top:10px!important;
+}
+.simple-area-card{
+  min-width:0!important;
+  padding:10px 11px!important;
+  border-radius:9px!important;
+  background:#f7f8fa!important;
+}
+.simple-area-card-head{
+  margin-bottom:6px!important;
+  align-items:center!important;
+}
+.simple-area-card-head b{
+  font-size:12px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.simple-area-card-head span{
+  flex:0 0 auto!important;
+  font-size:10px!important;
+  white-space:nowrap!important;
+}
+.simple-area-track{
+  height:5px!important;
+}
+.simple-area-card small{
+  margin-top:5px!important;
+  font-size:9px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(min-width:1400px){
+  .simple-area-list{
+    grid-template-columns:repeat(auto-fit,minmax(155px,1fr))!important;
+  }
+}
+@media(max-width:760px){
+  .simple-area-list{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .simple-area-card{
+    padding:9px!important;
+  }
+}
+
+
+/* ===== TỔNG QUAN FINAL: ĐƠN GIẢN, GỌN, NHIỀU THÔNG TIN ===== */
+.overview-final-head{margin-bottom:16px!important}
+.overview-live{
+  display:flex;align-items:center;gap:7px;padding:8px 12px;
+  border:1px solid #dce3e8;border-radius:20px;background:#fff;
+  color:#687486;font-size:11px;
+}
+.overview-live i{width:7px;height:7px;border-radius:50%;background:#27a477}
+.overview-live b{font-size:10px;color:#27785e}
+
+.overview-kpis{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;
+}
+.overview-kpi{
+  min-width:0;padding:14px 15px;border:1px solid #dde3e8;border-radius:10px;
+  background:#fff;box-shadow:0 2px 9px rgba(20,31,48,.035);
+}
+.overview-kpi span{display:block;color:#697586;font-size:11px;font-weight:650}
+.overview-kpi small{display:block;margin-top:3px;color:#9aa3ae;font-size:9px}
+.overview-kpi strong{display:block;margin-top:9px;color:#182233;font-size:22px;line-height:1.1;white-space:nowrap}
+.overview-progress{height:4px;margin-top:10px;background:#e9edf0;border-radius:99px;overflow:hidden}
+.overview-progress i{display:block;height:100%;background:#5968dc;border-radius:99px}
+
+.overview-main-grid{
+  display:grid;grid-template-columns:minmax(0,1.65fr) minmax(250px,.55fr);gap:14px;margin-bottom:14px;
+}
+.overview-second-grid{
+  display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:14px;margin-bottom:14px;
+}
+.overview-bottom-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;
+}
+.overview-panel{
+  border:1px solid #dde3e8;border-radius:11px;background:#fff;
+  box-shadow:0 2px 9px rgba(20,31,48,.035);padding:16px;
+}
+.overview-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;
+}
+.overview-panel-head h3{margin:0;color:#202b3c;font-size:14px;font-weight:700}
+.overview-panel-head span{display:block;margin-top:4px;color:#8c96a3;font-size:10px}
+.overview-panel-head>b{color:#354155;font-size:12px;white-space:nowrap}
+
+.overview-traffic-chart{height:235px!important}
+.overview-traffic-chart .chart-grid{stroke:#edf0f2!important}
+.overview-traffic-chart .chart-x,.overview-traffic-chart .chart-y{fill:#939ca8!important;font-size:8px!important}
+.overview-traffic-chart .traffic-in{stroke:#5968dc!important}
+.overview-traffic-chart .traffic-out{stroke:#2c9a78!important}
+.overview-traffic-chart .dot-in{fill:#5968dc!important}
+.overview-traffic-chart .dot-out{fill:#2c9a78!important}
+.overview-legend{display:flex;gap:17px;margin-top:2px}
+.overview-legend span{display:flex;align-items:center;gap:6px;color:#788493;font-size:10px}
+.overview-legend i{width:7px;height:7px;border-radius:50%}
+.legend-in{background:#5968dc}.legend-out{background:#2c9a78}
+
+.status-number{display:flex;align-items:baseline;gap:6px;margin:21px 0 12px}
+.status-number strong{font-size:36px;color:#182233}
+.status-number span{font-size:11px;color:#87919e}
+.status-progress{height:10px;background:#e9edf0;border-radius:99px;overflow:hidden;margin-bottom:12px}
+.status-progress i{display:block;height:100%;background:#5968dc;border-radius:99px;transition:width .4s}
+.status-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf0f2;color:#707b89;font-size:11px}
+.status-row b{color:#202b3c}
+.status-row:last-child{border-bottom:0}
+
+.overview-revenue-chart{height:190px!important;display:flex!important;align-items:flex-end!important;gap:9px;padding:7px 2px 0;border-bottom:1px solid #edf0f2}
+.overview-revenue-chart .rev-bar-wrap{height:100%!important;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.overview-revenue-chart .rev-bar-wrap>span{color:#8d96a2!important;font-size:8px!important}
+.overview-revenue-chart .rev-bar{width:100%!important;max-width:30px!important;min-height:3px!important;background:#aab2bd!important;border-radius:5px 5px 1px 1px!important;box-shadow:none!important;transition:height .35s ease}
+.overview-revenue-chart .rev-bar.today{background:#5968dc!important}
+.overview-revenue-chart .rev-bar-wrap b{color:#727d8b!important;font-size:9px!important}
+.overview-today{display:flex;justify-content:space-between;margin-top:8px;color:#8993a0;font-size:10px}
+.overview-today b{color:#344052}
+
+.warning-panel{min-height:250px}
+.overview-warning{
+  display:flex;gap:10px;padding:10px 11px;border:1px solid #e2e6ea;border-radius:8px;
+  background:#f8f9fa;margin-bottom:8px;
+}
+.overview-warning i{width:7px;height:7px;flex:0 0 7px;border-radius:50%;margin-top:4px;background:#27a477}
+.overview-warning b{display:block;color:#263143;font-size:11px}
+.overview-warning span{display:block;margin-top:3px;color:#8a94a1;font-size:10px}
+.overview-warning.warn{background:#fffaf0;border-color:#f0e1bf}
+.overview-warning.warn i{background:#d99520}
+.overview-warning.danger{background:#fff5f5;border-color:#eed2d2}
+.overview-warning.danger i{background:#d75a63}
+
+.area-overview-panel{margin-bottom:14px}
+.area-overview-panel .simple-area-list{margin-top:10px!important}
+.area-overview-panel .simple-area-card{padding:10px 11px!important}
+
+.overview-vehicle-list{display:grid;gap:6px}
+.overview-vehicle-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 10px;border:1px solid #e7eaed;border-radius:8px;background:#f8f9fa;
+}
+.overview-vehicle-row b{display:block;color:#263143;font-size:11px}
+.overview-vehicle-row span{display:block;margin-top:3px;color:#8b95a1;font-size:9px}
+.overview-vehicle-row time{color:#7b8694;font-size:9px;white-space:nowrap}
+
+@media(max-width:1200px){
+  .overview-kpis{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:850px){
+  .overview-main-grid,.overview-second-grid,.overview-bottom-grid{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+  .overview-kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+  .overview-kpi{padding:12px}
+  .overview-kpi strong{font-size:19px}
+  .overview-panel{padding:13px}
+  .overview-traffic-chart{height:210px!important}
+}
