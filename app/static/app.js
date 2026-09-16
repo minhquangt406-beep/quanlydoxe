@@ -609,107 +609,13 @@ async function downloadBackup(){const r=await fetch('/api/backup',{headers:{Auth
 async function openReceipt(id){const r=await fetch('/api/receipt/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Không thể tạo biên lai');}const blob=await r.blob();const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000)}
 
 window.pages={
-dashboard:async()=>{
-  let d=await api("/api/dashboard"),an=await api("/api/analytics"),s=await api("/api/slots"),a=await api("/api/active"),log=await api("/api/activity?limit=8");
-  d={...d,...an}; window.__latestSlots=s;
-
-  const occupied=Number(d.active_vehicles||0), total=Number(d.total_slots||s.length||0), empty=Number(d.empty||Math.max(total-occupied,0));
-  const occRate=Number(d.occupancy_rate||0);
-  const revenue=Number(d.today_revenue||0);
-  const areaCounts={};
-  s.forEach(x=>{
-    const name=x.area_name||"Khu A";
-    areaCounts[name]=(areaCounts[name]||0)+(x.status==="occupied"?1:0);
-  });
-  const areas=[...new Set(s.map(x=>x.area_name||"Khu A"))];
-  const areaA=areas[0]||"Khu A", areaB=areas[1]||"Khu B";
-
-  const spotRows=s.slice(0,18).map(x=>{
-    const busy=x.status==="occupied";
-    return `<div class="ref-spot-row ${busy?"used":"available"}">
-      <span class="ref-spot-car">${busy?vehicleIcon(x.vehicle_type||"Ô tô"):""}</span>
-      <b>${x.name||"—"}</b>
-      <span class="ref-spot-state">${busy?displayPlate(x.license_plate,x.vehicle_type):"Trống"}</span>
-    </div>`;
-  }).join("");
-
-  const chartVals=[
-    Math.max(1,Number(d.today_checkins||0)),
-    Math.max(1,Number(d.today_checkouts||0)),
-    Math.max(1,Math.round(occRate)),
-    Math.max(1,Math.round((revenue||0)/10000))
-  ];
-  const maxChart=Math.max(...chartVals,10);
-  const points=chartVals.map((v,i)=>{
-    const x=28+i*82, y=128-(v/maxChart)*92;
-    return `${x},${y}`;
-  }).join(" ");
-
-  const durationBars=[42,70,50,82,62,75,58];
-  const durationSvg=durationBars.map((v,i)=>`<rect x="${24+i*54}" y="${120-v}" width="25" height="${v}" rx="4"></rect>`).join("");
-
-  $("#content").innerHTML=`
-  <div class="ref-dashboard">
-    <div class="ref-kpis">
-      <div class="ref-kpi"><div><span>Tổng vị trí</span><strong>${total}</strong><small>● ${occRate}% đang sử dụng</small></div><div class="ref-kpi-icon">⌗</div></div>
-      <div class="ref-kpi"><div><span>Xe đang gửi</span><strong>${occupied}</strong><small>● ${d.today_checkins||0} lượt vào hôm nay</small></div><div class="ref-kpi-icon">🚗</div></div>
-      <div class="ref-kpi"><div><span>Vị trí còn trống</span><strong>${empty}</strong><small>● Khu ${areaA.replace(/^Khu\\s*/i,"")} / ${areaB.replace(/^Khu\\s*/i,"")}</small></div><div class="ref-kpi-icon">▣</div></div>
-      <div class="ref-kpi"><div><span>Doanh thu hôm nay</span><strong>${money(revenue)}</strong><small>● ${d.today_checkouts||0} lượt hoàn tất</small></div><div class="ref-kpi-icon">↗</div></div>
-    </div>
-
-    <div class="ref-grid-top">
-      <div class="ref-panel ref-rate">
-        <div class="ref-panel-head"><div><h3>Tỷ lệ sử dụng vị trí</h3><p>Biến động vận hành của bãi xe</p></div><button class="ref-outline" data-page="reports">↓ Báo cáo</button></div>
-        <div class="ref-line-chart">
-          <svg viewBox="0 0 360 155" preserveAspectRatio="none">
-            <defs><linearGradient id="refFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3f7fe8" stop-opacity=".42"/><stop offset="1" stop-color="#3f7fe8" stop-opacity="0"/></linearGradient></defs>
-            <path d="M28 128 L110 72 L192 102 L274 42 L356 76 L356 145 L28 145 Z" fill="url(#refFill)"></path>
-            <polyline points="${points}" fill="none" stroke="#6fb3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-            <circle cx="${28+Math.min(3,chartVals.length-1)*82}" cy="${128-(chartVals[Math.min(3,chartVals.length-1)]/maxChart)*92}" r="6" fill="#fff" stroke="#2d91ed" stroke-width="4"></circle>
-          </svg>
-          <div class="ref-axis"><span>Đầu ngày</span><span>Trưa</span><span>Chiều</span><span>Tối</span></div>
-        </div>
-      </div>
-
-      <div class="ref-panel ref-spots">
-        <div class="ref-panel-head"><div><h3>Vị trí đỗ phổ biến</h3><p>Trạng thái các vị trí trong bãi</p></div><div class="ref-legend"><span><i class="dot-used"></i>Đang dùng</span><span><i class="dot-free"></i>Còn trống</span></div></div>
-        <div class="ref-spots-grid">${spotRows||'<div class="ref-empty">Chưa có vị trí</div>'}</div>
-      </div>
-    </div>
-
-    <div class="ref-grid-bottom">
-      <div class="ref-panel ref-revenue">
-        <div class="ref-panel-head"><div><h3>Tổng doanh thu</h3><p>Tổng hợp doanh thu theo hoạt động</p></div><div class="ref-legend"><span><i class="line-blue"></i>Hôm nay</span><span><i class="line-orange"></i>Vé tháng</span></div></div>
-        <div class="ref-revenue-body">
-          <div class="ref-ylabels"><span>${money(Math.round(revenue*1.2))}</span><span>${money(Math.round(revenue*.8))}</span><span>${money(Math.round(revenue*.4))}</span><span>0 ₫</span></div>
-          <svg viewBox="0 0 640 175" preserveAspectRatio="none">
-            <g class="grid-lines"><line x1="10" y1="25" x2="630" y2="25"/><line x1="10" y1="72" x2="630" y2="72"/><line x1="10" y1="119" x2="630" y2="119"/><line x1="10" y1="166" x2="630" y2="166"/></g>
-            <polyline points="10,130 90,112 170,128 250,70 330,95 410,52 490,104 570,80 630,92" fill="none" stroke="#4b8df0" stroke-width="3"></polyline>
-            <polyline points="10,105 90,60 170,120 250,88 330,42 410,118 490,68 570,126 630,76" fill="none" stroke="#f3a51b" stroke-width="3"></polyline>
-          </svg>
-        </div>
-        <div class="ref-months"><span>T1</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>T8</span><span>T9</span><span>T10</span><span>T11</span><span>T12</span></div>
-      </div>
-
-      <div class="ref-panel ref-duration">
-        <div class="ref-panel-head"><div><h3>Thời gian gửi xe</h3><p>Phân bố theo khung thời gian</p></div><select id="refDurationPeriod"><option>Tuần này</option><option>Hôm nay</option></select></div>
-        <svg viewBox="0 0 400 150" preserveAspectRatio="none" class="duration-svg">
-          <g class="grid-lines"><line x1="20" y1="20" x2="380" y2="20"/><line x1="20" y1="62" x2="380" y2="62"/><line x1="20" y1="104" x2="380" y2="104"/><line x1="20" y1="146" x2="380" y2="146"/></g>
-          ${durationSvg}
-        </svg>
-        <div class="ref-week"><span>T7</span><span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span></div>
-      </div>
-    </div>
-
-    <div class="ref-panel ref-activity-panel">
-      <div class="ref-panel-head"><div><h3>Hoạt động gần đây</h3><p>Các thao tác mới nhất trên hệ thống</p></div><button class="ref-outline" id="openActivity">Xem tất cả</button></div>
-      <div class="activity-list">${log.length?log.map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div>
-    </div>
-  </div>`;
-
-  $("#content .ref-outline[data-page]")?.addEventListener("click",()=>navigate("reports"));
-  $("#openActivity")?.addEventListener("click",()=>navigate("activity"));
-},
+dashboard:async()=>{let d=await api("/api/dashboard"),an=await api("/api/analytics"),s=await api("/api/slots"),a=await api("/api/active"),log=await api("/api/activity?limit=8");d={...d,...an};window.__latestSlots=s;
+const areas=[...new Map(s.map(x=>[x.area_id,{id:x.area_id,name:x.area_name,slots:[]}])).values()]; s.forEach(x=>areas.find(ar=>ar.id===x.area_id)?.slots.push(x));
+const zone=(ar)=>{const occupied=ar.slots.filter(x=>x.status==="occupied").length,empty=ar.slots.length-occupied; const cls=ar.name.toLowerCase().includes("b")?"zone-b":"zone-a"; return `<div class="map-zone ${cls}" data-area-id="${ar.id}"><div class="zone-title"><div><span class="zone-chip">${ar.name.toUpperCase()}</span><h3>${ar.name} · Sơ đồ bãi</h3><span class="muted">${ar.slots.length} vị trí · ${empty} trống · ${occupied} đang dùng</span></div><span class="pill ${empty?"green":"red"}">${empty?"CÒN CHỖ":"ĐẦY"}</span></div><div class="real-slot-grid">${ar.slots.map(x=>{const vt=x.vehicle_type||"Ô tô";const vcls=vt.toLowerCase().includes("đạp")?"vehicle-bicycle":(vt.toLowerCase().includes("máy")?"vehicle-bike":"vehicle-car");return `<div class="real-slot ${x.status} ${x.status==="occupied"?vcls:""}" data-slot-id="${x.id}" data-area-id="${ar.id}"><div class="slot-top"><span>${x.name}</span><span>${x.status==="occupied"?vt:""}</span></div><div class="slot-icon">${x.status==="occupied"?vehicleIcon(vt):emptyIcon()}</div>${x.status==="occupied"?`<span class="plate">${displayPlate(x.license_plate, x.vehicle_type)}</span>`:`<span class="slot-status">CHỖ TRỐNG</span>`}<span class="slot-status">${x.status==="occupied"?"ĐANG SỬ DỤNG":"SẴN SÀNG"}</span></div>`}).join("")}</div></div>`};
+const maps=areas.map(zone).join("");
+$("#content").innerHTML=`<div class="cards"><div class="card"><div class="label">XE ĐANG GỬI</div><div class="metric">${d.active_vehicles}</div><div class="trend">● Đang vận hành</div></div><div class="card"><div class="label">Ô TRỐNG</div><div class="metric">${d.empty}</div><div class="trend">${d.total_slots} tổng vị trí</div></div><div class="card"><div class="label">LƯỢT XE VÀO HÔM NAY</div><div class="metric">${d.today_checkins}</div><div class="trend">Dữ liệu thực tế</div></div><div class="card"><div class="label">LƯỢT XE RA HÔM NAY</div><div class="metric">${d.today_checkouts}</div><div class="trend">Đã hoàn tất</div></div><div class="card"><div class="label">DOANH THU HÔM NAY</div><div class="metric">${money(d.today_revenue)}</div><div class="trend">${d.closed_records} lượt hoàn tất toàn hệ thống</div></div><div class="card"><div class="label">TỶ LỆ LẤP ĐẦY</div><div class="metric">${d.occupancy_rate}%</div><div class="trend">Cao điểm ${d.peak_hour}</div></div></div>
+<div class="panel area-overview"><div class="panel-head"><div><h3>Bản đồ bãi xe thực tế</h3><span class="muted">Biển số hiển thị trực tiếp trên ô đang đỗ</span></div><span class="pill green">LIVE MAP</span></div><div class="parking-map">${maps}<div class="map-legend"><span><i class="legend-dot legend-empty"></i>Trống</span><span><i class="legend-dot legend-occupied"></i>Đang đỗ</span></div></div></div>
+<div class="panel active-panel"><div class="panel-head"><h3>Xe đang trong bãi</h3><span class="muted">${a.length} xe</span></div>${a.length?`<div class="active-vehicles-grid">${a.slice(0,20).map(x=>`<div class="active-row" data-time-in="${x.time_in}"><div class="active-row-main"><b>${x.vehicle_type === "Xe đạp" ? vehicleIcon(x.vehicle_type) : ""}${displayPlate(x.license_plate, x.vehicle_type)}</b><span class="active-slot">${x.slot}</span></div><div class="active-row-meta"><span>${x.vehicle_type}</span><span>${dt(x.time_in)}</span></div><div class="active-row-duration"><span>Đã đỗ</span><b class="duration" data-time="${x.time_in}">${duration(x.time_in)}</b></div></div>`).join("")}</div>${a.length>20?`<div class="muted active-more">Hiển thị 20 xe gần nhất · còn ${a.length-20} xe khác</div>`:""}`:`<div class="empty-state">Chưa có xe đang gửi</div>`}</div><div class="panel"><div class="panel-head"><div><h3>Nhật ký hoạt động</h3><span class="muted">8 thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div><div class="activity-list">${log.length?log.map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div></div>`;document.getElementById("openActivity")?.addEventListener("click",()=>navigate("activity"));window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);wireMapInteractions()},
 parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");$("#content").innerHTML=`
 <div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
 <div class="panel"><div class="panel-head"><h3>Xe đang gửi</h3><span class="muted">${active.length} xe</span></div><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Biển số</th><th>Vị trí</th><th>Thời gian</th><th></th></tr></thead><tbody>${active.map(x=>`<tr><td>#${x.id}</td><td><b>${displayPlate(x.license_plate, x.vehicle_type)}</b></td><td>${x.slot}</td><td>${dt(x.time_in)}</td><td><button class="btn checkout" data-id="${x.id}">Tính phí & xe ra</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty-state">Không có xe</td></tr>`}</tbody></table></div></div></div>`;
