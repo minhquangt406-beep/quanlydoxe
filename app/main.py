@@ -608,12 +608,19 @@ def current_revenue(db: Session):
     if not marker:
         marker = db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
 
-    total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
+    parking_total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
         ParkingRecord.time_out.is_not(None),
         ParkingRecord.time_out > marker.reset_at,
         ParkingRecord.time_out <= now
     ).scalar() or 0
-    return float(total), marker
+    # Monthly-pass sales are revenue at the moment the pass is created. They are
+    # intentionally separate from ParkingRecord.fee because a vehicle with an
+    # active monthly pass is free when it checks out.
+    monthly_total = db.query(func.coalesce(func.sum(MonthlyPass.price), 0)).filter(
+        MonthlyPass.started_at > marker.reset_at,
+        MonthlyPass.started_at <= now
+    ).scalar() or 0
+    return float(parking_total) + float(monthly_total), marker
 
 @app.post("/api/account/password")
 def change_password(data: PasswordChange, db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -792,9 +799,19 @@ def reports(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db), 
     daily, by_area, total = {}, {}, 0.0
     for r,v,s in rows:
         key = r.time_out.strftime("%Y-%m-%d")
-        daily[key] = daily.get(key, 0.0) + float(r.fee or 0)
+        amount = float(r.fee or 0)
+        daily[key] = daily.get(key, 0.0) + amount
         area = db.get(Area, s.area_id); name = area.name if area else "Không xác định"
-        by_area[name] = by_area.get(name, 0.0) + float(r.fee or 0); total += float(r.fee or 0)
+        by_area[name] = by_area.get(name, 0.0) + amount; total += amount
+    # Monthly passes are sales and must appear in revenue reports even though
+    # their vehicles pay 0 VNĐ on each subsequent checkout.
+    monthly_rows = db.query(MonthlyPass).filter(MonthlyPass.started_at >= since).all()
+    for mp in monthly_rows:
+        key = mp.started_at.strftime("%Y-%m-%d")
+        amount = float(mp.price or 0)
+        daily[key] = daily.get(key, 0.0) + amount
+        by_area["Vé tháng"] = by_area.get("Vé tháng", 0.0) + amount
+        total += amount
     return {"days": days, "total_revenue": total, "closed_records": len(rows), "daily": daily, "by_area": by_area}
 
 @app.get("/api/backup")
@@ -968,8 +985,25 @@ def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(c
     db.commit(); db.refresh(record)
     return {"message": "Cho xe vào thành công", "record_id": record.id, "time_in": record.time_in.isoformat(), "slot": slot.name, "vehicle_type": vehicle_type, "license_plate": None if vehicle_type == "Xe đạp" else plate}
 
+def has_active_monthly_pass(db: Session, vehicle_id: int, at_time: datetime | None = None):
+    at_time = at_time or now_vn()
+    monthly_pass = (db.query(MonthlyPass)
+        .filter(MonthlyPass.vehicle_id == vehicle_id, MonthlyPass.active.is_(True), MonthlyPass.started_at <= at_time, MonthlyPass.expires_at >= at_time)
+        .order_by(MonthlyPass.expires_at.desc()).first())
+    if monthly_pass:
+        return True, monthly_pass
+    legacy_ticket = (db.query(Ticket)
+        .filter(Ticket.vehicle_id == vehicle_id, Ticket.active.is_(True), Ticket.ticket_type == "monthly", Ticket.valid_until.isnot(None), Ticket.valid_until >= at_time)
+        .order_by(Ticket.valid_until.desc()).first())
+    return (True, legacy_ticket) if legacy_ticket else (False, None)
+
 def calculate_fee(db: Session, record: ParkingRecord, time_out: datetime):
     vehicle = db.get(Vehicle, record.vehicle_id)
+    if not vehicle:
+        raise HTTPException(404, "Không tìm thấy phương tiện")
+    has_pass, _ = has_active_monthly_pass(db, vehicle.id, time_out)
+    if has_pass:
+        return max(0, (time_out - record.time_in).total_seconds()) / 3600.0, 0
     price = db.query(Pricing).filter(Pricing.vehicle_type == vehicle.vehicle_type).first()
     if not price: raise HTTPException(400, "Chưa có bảng giá cho loại xe")
     total_seconds = max(0, (time_out - record.time_in).total_seconds())
@@ -993,6 +1027,7 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
     price = db.query(Pricing).filter(Pricing.vehicle_type == (vehicle.vehicle_type if vehicle else "")).first()
     price_per_hour = float(price.price_per_hour) if price else 0
     vehicle_type = vehicle.vehicle_type if vehicle else ""
+    monthly_active, monthly_pass = has_active_monthly_pass(db, vehicle.id, time_out) if vehicle else (False, None)
     # Xe đạp không có biển số, nên dùng nội dung chuyển khoản riêng và duy nhất theo mã lượt.
     transfer_content = f"VE-XEDAP-{record.id}" if vehicle_type == "Xe đạp" else f"VE-{(vehicle.license_plate if vehicle else '')}"
     return {
@@ -1007,7 +1042,9 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
         "duration_text": duration_text,
         "price_per_hour": price_per_hour,
         "fee": fee,
-        "billing_text": f"{hours:.2f} giờ × {price_per_hour:,.0f} VNĐ/giờ = {fee:,.0f} VNĐ"
+        "monthly_pass": monthly_active,
+        "monthly_pass_expires_at": (monthly_pass.expires_at.isoformat() if monthly_pass and hasattr(monthly_pass, "expires_at") else None),
+        "billing_text": (f"Vé tháng còn hiệu lực → Miễn phí" if monthly_active else f"{hours:.2f} giờ × {price_per_hour:,.0f} VNĐ/giờ = {fee:,.0f} VNĐ")
     }
 
 @app.post("/api/checkout")
@@ -1017,14 +1054,18 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
     time_out = now_vn()
     hours, fee = calculate_fee(db, record, time_out)
+    vehicle = db.get(Vehicle, record.vehicle_id)
+    monthly_active, monthly_pass = has_active_monthly_pass(db, vehicle.id, time_out) if vehicle else (False, None)
     method = data.payment_method if data.payment_method in ("Tiền mặt","Chuyển khoản","QR ngân hàng","Miễn phí") else "Tiền mặt"
-    # Lượt miễn phí luôn có tổng tiền bằng 0, không thu phí.
-    if method == "Miễn phí":
+    # Xe có vé tháng còn hiệu lực luôn được miễn phí, bất kể phương thức thanh toán frontend gửi lên.
+    if monthly_active:
+        fee = 0
+        method = "Miễn phí"
+    elif method == "Miễn phí":
         fee = 0
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)
     if slot: slot.status = "empty"
-    vehicle = db.get(Vehicle, record.vehicle_id)
     db.add(Payment(record_id=record.id, method=method, paid_at=now_vn(), amount=fee))
     audit(db, user, "CHECKOUT", f"{vehicle.license_plate if vehicle else record.vehicle_id} → {fee:,.0f} VNĐ · {method}")
     db.commit()
@@ -1500,7 +1541,9 @@ def analytics(db: Session = Depends(get_db), user: User = Depends(non_guest_user
     end = start + timedelta(days=1)
     ins = db.query(ParkingRecord).filter(ParkingRecord.time_in >= start, ParkingRecord.time_in < end).count()
     outs = db.query(ParkingRecord).filter(ParkingRecord.time_out >= start, ParkingRecord.time_out < end).count()
-    revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(ParkingRecord.time_out >= start, ParkingRecord.time_out < end).scalar() or 0
+    parking_revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(ParkingRecord.time_out >= start, ParkingRecord.time_out < end).scalar() or 0
+    monthly_revenue = db.query(func.coalesce(func.sum(MonthlyPass.price), 0)).filter(MonthlyPass.started_at >= start, MonthlyPass.started_at < end).scalar() or 0
+    revenue = float(parking_revenue) + float(monthly_revenue)
     types = {}
     for (typ, count) in db.query(Vehicle.vehicle_type, func.count(ParkingRecord.id)).join(ParkingRecord, ParkingRecord.vehicle_id == Vehicle.id).group_by(Vehicle.vehicle_type).all(): types[typ] = count
     return {"today_checkins": ins, "today_checkouts": outs, "today_revenue": float(revenue), "vehicle_types": types}
@@ -1511,7 +1554,9 @@ def local_ai(db: Session, question: str):
     total_slots = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
     empty = max(total_slots - occupied, 0)
-    revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
+    parking_revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).scalar() or 0
+    monthly_revenue = db.query(func.coalesce(func.sum(MonthlyPass.price), 0)).scalar() or 0
+    revenue = float(parking_revenue) + float(monthly_revenue)
     active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
     rows = db.query(ParkingRecord.time_in, ParkingRecord.time_out, ParkingRecord.fee).all()
 
