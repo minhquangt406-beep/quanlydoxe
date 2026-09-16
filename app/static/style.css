@@ -3062,3 +3062,197 @@ body.sidebar-collapsed .main:before{left:78px;}
   .sidebar.sidebar-collapsed nav button{justify-content:flex-start;padding:13px 14px;}
   .sidebar-toggle{width:38px;height:38px;}
 }
+
+
+/* ===== PARKFLOW COLOR BALANCE UI v36 ===== */
+:root{
+  --bg:#eef2f8;
+  --panel:#ffffff;
+  --panel-dark:#151d32;
+  --panel-dark-2:#1c2740;
+  --ink:#172033;
+  --muted:#71809a;
+  --line:#dfe5ef;
+  --primary:#5968f2;
+  --primary2:#8b5cf6;
+  --green:#16b981;
+  --amber:#f59e0b;
+  --red:#ef5b68;
+  --cyan:#06b6d4;
+  --shadow:0 16px 38px rgba(24,35,58,.08);
+}
+
+/* Nền tổng thể: xám xanh nhẹ thay vì trắng */
+body{
+  background:
+    radial-gradient(800px 420px at 72% -10%,rgba(91,109,245,.16),transparent 65%),
+    radial-gradient(600px 380px at 8% 80%,rgba(6,182,212,.09),transparent 65%),
+    #eef2f8;
+}
+.main{
+  background:linear-gradient(180deg,rgba(238,242,248,.72),rgba(232,237,246,.92));
+}
+.topbar{
+  background:rgba(238,242,248,.88);
+  border-bottom:1px solid #dce3ef;
+}
+
+/* KPI: mỗi thẻ có màu nhận diện riêng */
+.dashboard-kpis .card,
+.pf-kpi{
+  color:#fff;
+  border:0;
+  background:linear-gradient(145deg,#202b48,#151d32);
+  box-shadow:0 15px 32px rgba(21,29,50,.16);
+}
+.dashboard-kpis .card:nth-child(1){background:linear-gradient(145deg,#5968f2,#424fd0)}
+.dashboard-kpis .card:nth-child(2){background:linear-gradient(145deg,#08a982,#087d68)}
+.dashboard-kpis .card:nth-child(3){background:linear-gradient(145deg,#f59e0b,#e16d12)}
+.dashboard-kpis .card:nth-child(4){background:linear-gradient(145deg,#06a9c7,#087baf)}
+.dashboard-kpis .card:nth-child(5){background:linear-gradient(145deg,#8b5cf6,#6736c9)}
+.dashboard-kpis .card .label,
+.dashboard-kpis .pf-kpi-label{color:rgba(255,255,255,.72)}
+.dashboard-kpis .card .metric,
+.dashboard-kpis .pf-kpi-value{color:#fff}
+.dashboard-kpis .trend,
+.dashboard-kpis .pf-kpi-meta{color:#d8fff0}
+.dashboard-kpis .card:after,
+.pf-kpi:after{background:rgba(255,255,255,.10)}
+
+/* Các panel chính có nền hơi xanh để giảm cảm giác trắng */
+.card,.panel,.pf-elite-card{
+  background:linear-gradient(145deg,#ffffff,#f5f7fb);
+  border-color:#dce3ee;
+  box-shadow:0 14px 35px rgba(24,35,58,.075);
+}
+.panel-head,
+.pf-elite-head{
+  position:relative;
+}
+.panel h3,.pf-elite-title{color:#182238}
+
+/* Biểu đồ: nền đậm vừa phải, dễ đọc */
+.realtime-chart,
+.pf-elite-card:has(.pf-chart){
+  background:linear-gradient(145deg,#18233c,#202d4a);
+  border-color:#2e3b59;
+  color:#fff;
+}
+.realtime-chart .panel-head h3,
+.pf-elite-card:has(.pf-chart) .pf-elite-title{color:#fff}
+.realtime-chart .muted,
+.pf-elite-card:has(.pf-chart) .pf-elite-sub{color:#aeb9d0}
+.pf-gridline{stroke:rgba(255,255,255,.11)}
+.pf-axis{fill:#9eabc2}
+
+/* Donut card: giữ sáng nhưng có header màu */
+.pf-elite-card:has(.pf-donut){
+  background:linear-gradient(145deg,#fff,#f0f3fb);
+}
+.pf-donut{
+  box-shadow:0 12px 35px rgba(36,50,82,.14);
+}
+.pf-donut:before{background:#f8faff}
+
+/* Card xe vào/ra và khu vực */
+.pf-flow-card{
+  background:#f0f4fb;
+  border-color:#dce4ef;
+}
+.pf-flow-card:nth-child(1){border-top:3px solid #5968f2}
+.pf-flow-card:nth-child(2){border-top:3px solid #16b981}
+.pf-flow-value{color:#172033}
+
+/* Khu A/B có màu riêng */
+.pf-zone:nth-child(1){
+  background:linear-gradient(145deg,#f1f3ff,#e9edff);
+  border-color:#cbd3ff;
+}
+.pf-zone:nth-child(2){
+  background:linear-gradient(145deg,#ecfbf6,#e5f7f0);
+  border-color:#bdebd9;
+}
+.pf-zone-bar{background:#dfe5ef}
+
+/* Bản đồ bãi */
+.parking-map{
+  background:linear-gradient(145deg,#d8e0ea,#cbd5e1);
+  border-color:#bcc8d7;
+}
+.map-zone.zone-a{
+  background:linear-gradient(145deg,#e8ebff,#dfe4ff);
+  border-color:#8292ff;
+}
+.map-zone.zone-b{
+  background:linear-gradient(145deg,#e2f8ef,#d7f1e8);
+  border-color:#64cda7;
+}
+.real-slot.empty{
+  background:linear-gradient(145deg,#effcf7,#e1f8ee);
+}
+.real-slot.occupied{
+  background:linear-gradient(145deg,#fff2f3,#ffe7e9);
+}
+
+/* Bảng và form */
+.table-wrap,.table{background:transparent}
+.table tbody tr:hover{background:#edf2fa}
+input,select,textarea{background:#f0f3f8;border-color:#d7deea}
+input:focus,select:focus,textarea:focus{background:#fff}
+.btn{background:#eef2f8;border-color:#d7deea}
+.btn:hover{background:#e5eaf3}
+.notice{background:linear-gradient(90deg,#e9edff,#f0ebff);border-color:#d7dcff}
+
+/* Sidebar: rõ màu và dễ phân biệt */
+.sidebar{
+  background:
+    radial-gradient(180px 180px at 20% 10%,rgba(99,102,241,.18),transparent 70%),
+    linear-gradient(180deg,#0b1224,#121d36 58%,#0b1224);
+  box-shadow:10px 0 35px rgba(8,15,30,.13);
+}
+.sidebar nav button{
+  color:#aab6cf;
+}
+.sidebar nav button:hover{
+  background:rgba(99,102,241,.14);
+  color:#fff;
+}
+.sidebar nav button.active{
+  background:linear-gradient(90deg,rgba(99,102,241,.34),rgba(139,92,246,.20));
+  box-shadow:inset 0 0 0 1px rgba(139,92,246,.28),0 7px 18px rgba(30,35,90,.18);
+}
+.sidebar nav button.active:before{
+  background:linear-gradient(180deg,#8b5cf6,#5b6df5);
+  box-shadow:0 0 12px rgba(139,92,246,.7);
+}
+.sidebar-toggle{
+  background:linear-gradient(135deg,#5968f2,#7c4de8);
+  border:0;
+  color:#fff;
+  box-shadow:0 8px 20px rgba(89,104,242,.25);
+}
+.sidebar-toggle:hover{color:#fff}
+
+/* Trạng thái LIVE */
+.live-line{
+  background:#e6faf2;
+  border-color:#c7eedf;
+  color:#177e5d;
+}
+
+/* Nút AI */
+.ai-support-fab{
+  background:linear-gradient(135deg,#5968f2,#8b5cf6)!important;
+  box-shadow:0 12px 30px rgba(89,104,242,.35)!important;
+}
+
+/* Hiệu ứng chuyển cảnh */
+.card,.panel,.pf-elite-card,.pf-kpi,.pf-flow-card,.pf-zone,.real-slot{
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+@media(max-width:760px){
+  body{background:#eef2f8}
+  .main{background:#eef2f8}
+  .dashboard-kpis .card{min-height:118px}
+  .topbar{background:rgba(238,242,248,.96)}
+}
