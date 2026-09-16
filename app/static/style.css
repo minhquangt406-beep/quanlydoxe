@@ -3222,3 +3222,101 @@ body{
   .ref-spots-grid{grid-template-columns:1fr 1fr}
   .ref-revenue-body{grid-template-columns:52px 1fr}
 }
+
+/* LIGHTER REFERENCE UI */
+body{
+  background:#e9edf3 !important;
+}
+.sidebar{
+  background:#ffffff !important;
+  color:#4f5968 !important;
+  border-right:1px solid #e2e7ee !important;
+  box-shadow:4px 0 18px rgba(35,48,65,.05) !important;
+}
+.sidebar .logo>span{
+  color:#2878e8 !important;
+}
+.sidebar .logo b{
+  color:#273142 !important;
+}
+.sidebar nav button{
+  color:#5d6675 !important;
+}
+.sidebar nav button.active{
+  color:#246fe0 !important;
+  background:#eaf2ff !important;
+  box-shadow:inset 3px 0 0 #347fe8 !important;
+}
+.sidebar nav button:hover{
+  background:#f3f6fa !important;
+  color:#286fce !important;
+}
+.main{
+  background:#f5f7fa !important;
+  color:#273142 !important;
+}
+.topbar{
+  background:#ffffff !important;
+  border-bottom:1px solid #e5e9ef !important;
+  box-shadow:0 2px 12px rgba(35,48,65,.04) !important;
+}
+.topbar .eyebrow{color:#8993a3 !important}
+.topbar h2,.topbar-actions,.userbox{
+  color:#273142 !important;
+}
+.live-line{
+  background:#f5f8fc !important;
+  border-color:#e1e7ef !important;
+  color:#626d7c !important;
+}
+.userbox{background:transparent !important}
+.icon-btn{
+  background:#f5f7fa !important;
+  color:#4e5969 !important;
+  border-color:#e2e7ee !important;
+}
+.ref-kpi{
+  background:#ffffff !important;
+  border:1px solid #e4e8ee !important;
+  box-shadow:0 5px 18px rgba(35,48,65,.06) !important;
+}
+.ref-kpi span{color:#687385 !important}
+.ref-kpi strong{color:#263244 !important}
+.ref-kpi small{color:#36a06a !important}
+.ref-kpi-icon{
+  background:#edf4ff !important;
+  color:#347fe8 !important;
+  border-color:#dbe9ff !important;
+}
+.ref-panel{
+  background:#ffffff !important;
+  border-color:#e3e7ed !important;
+  box-shadow:0 5px 18px rgba(35,48,65,.05) !important;
+}
+.ref-panel-head h3{color:#303a4a !important}
+.ref-panel-head p{color:#8a94a3 !important}
+.ref-outline{
+  color:#2f78dc !important;
+  background:#f4f8ff !important;
+  border-color:#d5e4fa !important;
+}
+.ref-legend{color:#707a89 !important}
+.ref-spot-row{border-top-color:#edf0f4 !important;color:#3f4958 !important}
+.ref-spot-row b{color:#377fdf !important}
+.ref-spot-state{color:#7c8694 !important}
+.ref-spot-row.used .ref-spot-state{color:#596473 !important}
+.grid-lines line{stroke:#dfe4eb !important}
+.ref-axis,.ref-months,.ref-week{color:#8993a2 !important}
+.ref-ylabels{color:#8993a2 !important}
+.ref-duration select{
+  background:#f7f9fc !important;
+  color:#3278dc !important;
+  border-color:#dbe3ee !important;
+}
+.ref-empty{color:#8993a2 !important}
+.activity-list .activity-item{
+  border-color:#edf0f4 !important;
+}
+.dark-mode .main{
+  background:#f5f7fa !important;
+}
