@@ -4,8 +4,80 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quản lý bãi đỗ xe · Parking AI Pro</title>
-<link rel="stylesheet" href="/static/style.css?v=ULTRA-PREMIUM-V4-20260916">
-</head>
+<link rel="stylesheet" href="/static/style.css?v=v34-login-balance-20260916">
+<style id='parkflow-ultra-premium-202609'>
+/* === PARKFLOW ULTRA PREMIUM OVERRIDE v2026.09 === */
+:root{
+ --ultra-bg:#f4f7fc;--ultra-card:rgba(255,255,255,.92);--ultra-primary:#596cf5;
+ --ultra-primary2:#7564ee;--ultra-text:#152033;--ultra-muted:#8995a7;--ultra-line:#e6eaf2;
+}
+html{background:var(--ultra-bg)!important}
+body{
+ font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+ background:
+ radial-gradient(700px 400px at 90% -5%,rgba(92,108,245,.12),transparent 65%),
+ radial-gradient(600px 360px at 0% 20%,rgba(47,196,153,.08),transparent 65%),
+ #f4f7fc!important;
+ color:var(--ultra-text)!important;
+}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.35),transparent 40%);z-index:-1}
+aside,.sidebar,.sidenav,.side-bar{
+ background:linear-gradient(180deg,#0d1625,#101a2b)!important;
+ box-shadow:14px 0 45px rgba(19,31,50,.12)!important;
+}
+header,.header,.topbar,.navbar{
+ background:rgba(255,255,255,.88)!important;
+ backdrop-filter:blur(18px)!important;
+ border-bottom:1px solid rgba(225,231,240,.9)!important;
+}
+main,.main,.content,.page-content{background:transparent!important}
+.card,.panel,.box,.stat,.stat-card,.dashboard-card,.table-card,.content-card,.widget{
+ background:var(--ultra-card)!important;
+ border:1px solid var(--ultra-line)!important;
+ border-radius:18px!important;
+ box-shadow:0 12px 32px rgba(31,45,69,.07)!important;
+ transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease!important;
+}
+.card:hover,.panel:hover,.box:hover,.stat:hover,.stat-card:hover,.dashboard-card:hover,.widget:hover{
+ transform:translateY(-4px)!important;
+ box-shadow:0 20px 45px rgba(31,45,69,.11)!important;
+ border-color:#d9dff0!important;
+}
+button,.btn,.button,.primary,.btn-primary{
+ border-radius:11px!important;
+ transition:all .2s ease!important;
+}
+.primary,.btn-primary,.add-btn,.btn-success{
+ background:linear-gradient(135deg,#596cf5,#7564ee)!important;
+ color:#fff!important;
+ border:0!important;
+ box-shadow:0 10px 24px rgba(89,108,245,.25)!important;
+}
+.primary:hover,.btn-primary:hover,.add-btn:hover,.btn-success:hover{
+ transform:translateY(-2px)!important;
+ box-shadow:0 15px 30px rgba(89,108,245,.35)!important;
+}
+input,select,textarea{
+ background:#fff!important;border:1px solid #dfe5ee!important;border-radius:11px!important;
+}
+input:focus,select:focus,textarea:focus{
+ border-color:#aab6ff!important;box-shadow:0 0 0 4px rgba(89,108,245,.10)!important;outline:0!important;
+}
+table thead th{background:#f8f9fc!important;color:#8792a3!important}
+table tbody tr{transition:.18s!important}
+table tbody tr:hover{background:#f7f8fd!important}
+.badge,.pill,.status,.tag{border-radius:999px!important}
+.progress,.progress-bar,.bar{border-radius:999px!important}
+.modal,.overlay,.modal-overlay{backdrop-filter:blur(8px)!important;background:rgba(11,20,34,.68)!important}
+.modal-content,.modal-box,.dialog{
+ border-radius:20px!important;box-shadow:0 30px 90px rgba(5,14,27,.42)!important;
+ animation:ultraPop .24s ease!important;
+}
+@keyframes ultraPop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media(max-width:1000px){
+ aside,.sidebar,.sidenav,.side-bar{box-shadow:15px 0 40px rgba(0,0,0,.22)!important}
+}
+</style></head>
 <body>
 <div id="loginView" class="login-page">
   <section class="login-showcase" aria-hidden="true">
