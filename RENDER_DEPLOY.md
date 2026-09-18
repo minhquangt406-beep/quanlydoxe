@@ -1,46 +1,33 @@
-# Parking AI Pro – Render deployment (PostgreSQL)
+# SmartPark / quanlydoxe – Render deployment
 
-## 1. GitHub
-Giải nén ZIP và upload **nội dung bên trong** vào ROOT repository. Không upload thư mục cha.
+Bản này chạy **một Web Service duy nhất tên `quanlydoxe`**. Node.js chatbot chạy nội bộ cùng container với FastAPI, nên không cần tạo service `parking-ai-chat` riêng.
 
-Repository root phải có:
-- Dockerfile
-- requirements.txt
-- render.yaml
-- app/
-- .gitignore
-
-**Không upload `.env` lên GitHub.**
-
-## 2. Render
-Nếu dùng Blueprint, Render sẽ đọc `render.yaml` để tạo Web Service và PostgreSQL.
+## Render
+- Web Service: `quanlydoxe`
 - Runtime: Docker
 - Dockerfile: `./Dockerfile`
 - Health Check: `/api/health`
-- `DATABASE_URL` được nối tự động với PostgreSQL.
+- `NODE_AI_URL`: `http://127.0.0.1:3100`
+- `NODE_AI_SINGLE_SERVICE`: `true`
 
-Nếu bạn đã có PostgreSQL cũ, hãy giữ database đó và kiểm tra `DATABASE_URL` trỏ đúng database trước khi deploy.
+## Environment Variables
+Bắt buộc để chatbot AI hoạt động:
+- `OPENAI_API_KEY`: API key của OpenAI
+- `OPENAI_MODEL`: `gpt-5.6-luna`
+- `WEB_SEARCH_ENABLED`: `true`
+- `WEB_SEARCH_CONTEXT_SIZE`: `medium`
 
-## 3. Environment variables
-Trên Render → Web Service → Environment:
-- `DATABASE_URL`: Internal Database URL của PostgreSQL
-- `SECRET_KEY`: chuỗi bí mật dài, hoặc để Render generate
-- `DEEPSEEK_API_KEY`: tùy chọn
-- `DEEPSEEK_MODEL`: `deepseek-chat`
-- `DEEPSEEK_BASE_URL`: `https://api.deepseek.com`
+Có thể thêm DeepSeek làm fallback:
+- `DEEPSEEK_API_KEY`
+- `DEEPSEEK_MODEL=deepseek-chat`
+- `DEEPSEEK_BASE_URL=https://api.deepseek.com`
 
-## 4. Dữ liệu bền vững
-Dữ liệu xe, lịch sử, tài khoản, khu vực, ô đỗ, bảng giá và nhật ký hoạt động được lưu trong PostgreSQL.
-Không xóa PostgreSQL khi redeploy Web Service.
+Không cần `NODE_AI_URL` trỏ tới một Render service khác; bản này tự chạy Node.js tại `127.0.0.1:3100`.
 
-## 5. Kiểm tra
-Sau khi Deploy thành công, mở `/api/health`. Kết quả phải có `status=ok` và `database=connected`.
+## Deploy
+1. Push toàn bộ nội dung ZIP vào root GitHub repository hiện tại.
+2. Render → `quanlydoxe` → Manual Deploy → Deploy latest commit.
+3. Kiểm tra `/api/health`.
+4. Kiểm tra chatbot bằng nút **AI CHAT** ở góc phải.
 
-## 6. Tính năng bản này
-- Giờ xe vào/ra theo giờ Việt Nam (UTC+7).
-- Giữ phiên đăng nhập khi rời trang dưới 30 phút.
-- Tự nhận diện xe máy/ô tô theo cấu trúc biển số.
-- Dashboard có lượt vào/ra và doanh thu hôm nay.
-- Nhật ký hoạt động quản trị, xe vào/ra, thay đổi bảng giá/khu vực/tài khoản.
-- Bảo vệ lịch sử: không cho xóa phương tiện đã phát sinh lịch sử.
-- Giao diện mobile và bảng dữ liệu có thể vuốt ngang.
+Không commit `.env` hoặc API key lên GitHub.

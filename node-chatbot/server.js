@@ -12,6 +12,8 @@ const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENABLED || "true");
 const WEB_SEARCH_CONTEXT_SIZE = process.env.WEB_SEARCH_CONTEXT_SIZE || "medium";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+app.use((req,res,next)=>{res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");if(req.method === "OPTIONS") return res.sendStatus(204);next();});
 
 const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống quản lý bãi đỗ xe Parking AI Pro.
 - Trả lời bằng tiếng Việt tự nhiên, lịch sự, ngắn gọn và đúng trọng tâm.
@@ -46,7 +48,7 @@ function extractWebSources(response) {
 }
 
 async function callOpenAI({history, context, question}) {
-  const client = new OpenAI({apiKey: OPENAI_API_KEY, timeout: 45000, maxRetries: 0});
+  const client = new OpenAI({apiKey: OPENAI_API_KEY, timeout: 50000, maxRetries: 1});
   const input = [...history, {role: "user", content: `PARKING_CONTEXT:\n${JSON.stringify(context)}\n\nCÂU HỎI:\n${question}`}];
   const response = await client.responses.create({
     model: OPENAI_MODEL,
@@ -64,7 +66,7 @@ async function callOpenAI({history, context, question}) {
 }
 
 async function callDeepSeek({history, context, question}) {
-  const client = new OpenAI({apiKey: DEEPSEEK_API_KEY, baseURL: DEEPSEEK_BASE_URL, timeout: 45000, maxRetries: 0});
+  const client = new OpenAI({apiKey: DEEPSEEK_API_KEY, baseURL: DEEPSEEK_BASE_URL, timeout: 50000, maxRetries: 1});
   const messages = [
     {role: "system", content: SYSTEM},
     ...history,
@@ -76,7 +78,7 @@ async function callDeepSeek({history, context, question}) {
   return answer;
 }
 
-app.get("/health", (req, res) => res.json({status: "ok", service: "parking-ai-node", openai: !!OPENAI_API_KEY, deepseek: !!DEEPSEEK_API_KEY, web_search: WEB_SEARCH_ENABLED && !!OPENAI_API_KEY}));
+app.get("/health", (req, res) => res.json({status: "ok", service: "quanlydoxe-node-chat", openai: !!OPENAI_API_KEY, deepseek: !!DEEPSEEK_API_KEY, web_search: WEB_SEARCH_ENABLED && !!OPENAI_API_KEY, model: OPENAI_MODEL}));
 
 app.post("/chat", async (req, res) => {
   const data = buildPrompt(req.body || {});
@@ -91,7 +93,7 @@ app.post("/chat", async (req, res) => {
       try { return res.json({answer: await callDeepSeek(data), provider: "DeepSeek via Node.js"}); }
       catch (e) { console.error("[Node AI] DeepSeek:", e.message); }
     }
-    return res.status(503).json({error: "Chatbot chưa được cấu hình API key. Hãy thêm OPENAI_API_KEY hoặc DEEPSEEK_API_KEY vào Environment Variables của service parking-ai-chat trên Render."});
+    return res.status(503).json({error: "Chatbot chưa được cấu hình API key. Hãy thêm OPENAI_API_KEY vào Environment Variables của service quanlydoxe trên Render, rồi Redeploy."});
   } catch (e) {
     console.error("[Node AI]", e);
     return res.status(500).json({error: "AI service error"});

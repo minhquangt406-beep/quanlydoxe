@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: parking-ai
+    name: quanlydoxe
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -8,24 +8,28 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: parking-ai-db
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
-        value: gpt-5.4-mini
+        value: gpt-5.6-luna
       - key: DEEPSEEK_API_KEY
         sync: false
       - key: DEEPSEEK_MODEL
         value: deepseek-chat
       - key: DEEPSEEK_BASE_URL
         value: https://api.deepseek.com
-
-databases:
-  - name: parking-ai-db
-    databaseName: parking_ai
-    user: parking_ai
-    plan: basic-256mb
+      - key: WEB_SEARCH_ENABLED
+        value: "true"
+      - key: WEB_SEARCH_CONTEXT_SIZE
+        value: medium
+      - key: NODE_AI_SINGLE_SERVICE
+        value: "true"
+      - key: NODE_AI_URL
+        value: http://127.0.0.1:3100
+      - key: NODE_AI_TIMEOUT_SECONDS
+        value: "55"
+      - key: AI_SUPPORT_TIMEOUT_SECONDS
+        value: "60"
