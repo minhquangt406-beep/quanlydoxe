@@ -627,6 +627,49 @@ function renderAreaAvailability(areas){
   `).join(''):`<div class="empty-state">Chưa có khu vực nào.</div>`;
 }
 
+function renderTraffic(){
+  const wrap=document.getElementById('trafficChart');
+  const ts=window.__dashboardSeries||{};
+  if(!wrap)return;
+  const ins=Array.isArray(ts.checkins)?ts.checkins.map(v=>Number(v)||0):Array(24).fill(0);
+  const outs=Array.isArray(ts.checkouts)?ts.checkouts.map(v=>Number(v)||0):Array(24).fill(0);
+  const n=Math.max(ins.length,outs.length,24);
+  while(ins.length<n)ins.push(0);
+  while(outs.length<n)outs.push(0);
+  const w=Math.max(640,wrap.clientWidth||760),h=235,pad={l:34,r:14,t:12,b:26};
+  const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  const max=Math.max(1,...ins,...outs);
+  const x=i=>pad.l+(iw*i/(n-1));
+  const y=v=>pad.t+ih-(v/max)*ih;
+  const path=a=>a.map((v,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const grid=[0,.25,.5,.75,1].map(r=>{
+    const yy=pad.t+ih-(ih*r);
+    const val=Math.round(max*r);
+    return `<line class="chart-grid" x1="${pad.l}" y1="${yy}" x2="${w-pad.r}" y2="${yy}"/><text class="chart-y" x="${pad.l-8}" y="${yy+3}" text-anchor="end">${val}</text>`;
+  }).join('');
+  const labels=[0,4,8,12,16,20,23].map(i=>`<text class="chart-x" x="${x(i)}" y="${h-7}" text-anchor="middle">${String(i).padStart(2,'0')}h</text>`).join('');
+  const dots=(a,cls)=>a.map((v,i)=>`<circle class="${cls}" cx="${x(i)}" cy="${y(v)}" r="2.6"></circle>`).join('');
+  wrap.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Biểu đồ xe vào và xe ra theo giờ">${grid}<path class="traffic-in" d="${path(ins)}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path><path class="traffic-out" d="${path(outs)}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>${dots(ins,'dot-in')}${dots(outs,'dot-out')}${labels}</svg>`;
+}
+
+function renderRevenue(){
+  const wrap=document.getElementById('revenueChart');
+  const ts=window.__dashboardSeries||{};
+  if(!wrap)return;
+  const days=Array.isArray(ts.days)?ts.days:[];
+  const revenue=Array.isArray(ts.revenue)?ts.revenue.map(v=>Math.max(0,Number(v)||0)):[];
+  const count=Math.max(days.length,revenue.length,7);
+  const max=Math.max(1,...revenue);
+  const todayIndex=count-1;
+  const labels=Array.from({length:count},(_,i)=>days[i]||'—');
+  const values=Array.from({length:count},(_,i)=>revenue[i]||0);
+  wrap.innerHTML=values.map((v,i)=>{
+    const h=v<=0?3:Math.max(12,Math.sqrt(v/max)*100);
+    const cls=i===todayIndex?'rev-bar today':'rev-bar';
+    return `<div class="rev-bar-wrap" title="${labels[i]}: ${money(v)}"><span>${labels[i]}</span><div class="${cls}" style="height:${h}%"></div><b>${v?money(v):'0 ₫'}</b></div>`;
+  }).join('');
+}
+
 async function refreshDashboardRealtime(){
  if(!me || document.hidden || !document.querySelector('#kpiActive')) return;
  try{const [d0,an,ts,s,areaSummary]=await Promise.all([api('/api/dashboard'),api('/api/analytics'),api('/api/dashboard/timeseries'),api('/api/slots'),api('/api/areas')]);
@@ -685,7 +728,7 @@ window.pages={
 dashboard:async()=>{
  const [d0,an,ts,s,areaSummary,activityData]=await Promise.all([
    api('/api/dashboard'),api('/api/analytics'),api('/api/dashboard/timeseries'),
-   api('/api/slots'),api('/api/areas'),api('/api/activity'),api('/api/activity')
+   api('/api/slots'),api('/api/areas'),api('/api/activity')
  ]);
  const d={...d0,...an};
  window.__dashboardSeries=ts; window.__latestSlots=s;
