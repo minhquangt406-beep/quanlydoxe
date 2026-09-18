@@ -6,7 +6,7 @@ app.use(express.json({limit: "64kb"}));
 
 const PORT = Number(process.env.PORT || 3100);
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.6-luna";
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || "").trim();
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
@@ -46,7 +46,7 @@ function extractWebSources(response) {
 }
 
 async function callOpenAI({history, context, question}) {
-  const client = new OpenAI({apiKey: OPENAI_API_KEY, timeout: 25000, maxRetries: 0});
+  const client = new OpenAI({apiKey: OPENAI_API_KEY, timeout: 45000, maxRetries: 0});
   const input = [...history, {role: "user", content: `PARKING_CONTEXT:\n${JSON.stringify(context)}\n\nCÂU HỎI:\n${question}`}];
   const response = await client.responses.create({
     model: OPENAI_MODEL,
@@ -64,7 +64,7 @@ async function callOpenAI({history, context, question}) {
 }
 
 async function callDeepSeek({history, context, question}) {
-  const client = new OpenAI({apiKey: DEEPSEEK_API_KEY, baseURL: DEEPSEEK_BASE_URL, timeout: 25000, maxRetries: 0});
+  const client = new OpenAI({apiKey: DEEPSEEK_API_KEY, baseURL: DEEPSEEK_BASE_URL, timeout: 45000, maxRetries: 0});
   const messages = [
     {role: "system", content: SYSTEM},
     ...history,
@@ -91,7 +91,7 @@ app.post("/chat", async (req, res) => {
       try { return res.json({answer: await callDeepSeek(data), provider: "DeepSeek via Node.js"}); }
       catch (e) { console.error("[Node AI] DeepSeek:", e.message); }
     }
-    return res.status(503).json({error: "Chưa cấu hình OPENAI_API_KEY hoặc DEEPSEEK_API_KEY"});
+    return res.status(503).json({error: "Chatbot chưa được cấu hình API key. Hãy thêm OPENAI_API_KEY hoặc DEEPSEEK_API_KEY vào Environment Variables của service parking-ai-chat trên Render."});
   } catch (e) {
     console.error("[Node AI]", e);
     return res.status(500).json({error: "AI service error"});

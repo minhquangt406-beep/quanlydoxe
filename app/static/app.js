@@ -124,7 +124,7 @@ function initAISupport(){
     const typingEl=showAITyping();
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
-      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),35000);
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000);
       let d;
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
       finally{clearTimeout(timer)}
@@ -133,7 +133,7 @@ function initAISupport(){
       addAISupportMessage(answer,"bot",true,d.sources||[]);
     }catch(err){
       typingEl?.remove();
-      const msg=err.name==="AbortError"?"Trợ lý đang xử lý lâu hơn bình thường. Bạn thử lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
+      const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý quá lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
       addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
