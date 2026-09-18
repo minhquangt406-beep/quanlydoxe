@@ -3948,3 +3948,5 @@ input:focus,select:focus,textarea:focus{background:#fff}
 .error{color:#ff8d9a!important}
 @media(max-width:1050px){.login-page{grid-template-columns:1fr!important;padding:30px 18px!important}.login-showcase{display:none!important}.login-card{justify-self:center!important;width:min(475px,94vw)!important}}
 @media(max-width:520px){.login-page{padding:14px!important}.login-card{padding:31px 22px 25px!important;border-radius:23px!important}.login-card h1{font-size:30px!important}.login-security{display:flex!important}}
+
+.ai-web-sources{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:11px}.ai-web-sources small{color:#98a2b3}.ai-web-sources a{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:7px;background:#eef2ff;color:#4f46e5;text-decoration:none;font-weight:700}.ai-web-sources a:hover{background:#e0e7ff}

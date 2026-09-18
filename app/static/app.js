@@ -72,12 +72,19 @@ function loadAISupportHistory(){
   try{const raw=sessionStorage.getItem("parking_ai_support_history");const parsed=raw?JSON.parse(raw):[];aiSupportHistory=Array.isArray(parsed)?parsed.slice(-10):[];}catch(_){aiSupportHistory=[];}
 }
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
-function addAISupportMessage(text, role="bot", persist=true){
+function addAISupportMessage(text, role="bot", persist=true, sources=[]){
   const box=$("#aiSupportMessages"); if(!box) return;
   const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
   const badge=document.createElement("b"); badge.textContent=role==="user"?"Bạn":"AI";
   const body=document.createElement("span"); body.textContent=text;
-  row.append(badge,body); box.appendChild(row); box.scrollTop=box.scrollHeight;
+  row.append(badge,body);
+  if(role==="bot" && Array.isArray(sources) && sources.length){
+    const src=document.createElement("div"); src.className="ai-web-sources";
+    const title=document.createElement("small"); title.textContent="Nguồn web:"; src.appendChild(title);
+    sources.slice(0,5).forEach((s,i)=>{const a=document.createElement("a"); a.href=s.url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=`${i+1}`; a.title=s.url; src.appendChild(a);});
+    row.appendChild(src);
+  }
+  box.appendChild(row); box.scrollTop=box.scrollHeight;
   if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});saveAISupportHistory();}
 }
 function setAISupportBusy(busy){
@@ -123,7 +130,7 @@ function initAISupport(){
       finally{clearTimeout(timer)}
       const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
       typingEl?.remove();
-      addAISupportMessage(answer,"bot");
+      addAISupportMessage(answer,"bot",true,d.sources||[]);
     }catch(err){
       typingEl?.remove();
       const msg=err.name==="AbortError"?"Trợ lý đang xử lý lâu hơn bình thường. Bạn thử lại sau ít giây nhé.":(String(err.message||"").includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");

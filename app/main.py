@@ -35,6 +35,8 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+NODE_AI_URL = os.getenv("NODE_AI_URL", "").strip().rstrip("/")
+NODE_AI_TIMEOUT_SECONDS = float(os.getenv("NODE_AI_TIMEOUT_SECONDS", "25"))
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
@@ -1522,6 +1524,45 @@ def _call_llm(provider: str, api_key: str, model: str, messages, db, user):
     raise RuntimeError("AI vượt quá số vòng gọi dữ liệu")
 
 
+
+def _parking_ai_context(db: Session, user):
+    """Build a privacy-filtered snapshot for the Node.js chatbot service."""
+    total = db.query(ParkingSlot).count()
+    occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
+    active = db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()
+    areas = []
+    for area in db.query(Area).order_by(Area.id).all():
+        slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
+        areas.append({"name": area.name, "total": len(slots), "free": sum(1 for x in slots if x.status != "occupied"), "occupied": sum(1 for x in slots if x.status == "occupied")})
+    pricing = [{"vehicle_type": x.vehicle_type, "price_per_hour": float(x.price_per_hour)} for x in db.query(Pricing).order_by(Pricing.vehicle_type).all()]
+    company = db.query(CompanySetting).first()
+    ctx = {
+        "parking": {"total_slots": total, "occupied_slots": occupied, "free_slots": max(total-occupied, 0), "active_vehicles": active},
+        "areas": areas,
+        "pricing": pricing,
+        "business": {"address": company.address if company else "", "phone": company.phone if company else ""},
+        "role": getattr(user, "role", "guest"),
+    }
+    if getattr(user, "role", "guest") != "guest":
+        rows = (db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.asc()).limit(100).all())
+        ctx["active_vehicle_details"] = [{"license_plate": v.license_plate, "type": v.vehicle_type, "slot": slot.name, "time_in": r.time_in.strftime('%d/%m/%Y %H:%M')} for r,v,slot in rows]
+    return ctx
+
+
+def _call_node_ai(question: str, history, user, context, endpoint="support"):
+    """Send the conversation to the Node.js AI service."""
+    if not NODE_AI_URL:
+        raise RuntimeError("NODE_AI_URL chưa được cấu hình")
+    payload = json.dumps({"question": question, "history": history or [], "role": getattr(user, "role", "guest"), "context": context, "endpoint": endpoint}, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(NODE_AI_URL + "/chat", data=payload, headers={"Content-Type":"application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=NODE_AI_TIMEOUT_SECONDS) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+    answer = (result.get("answer") or "").strip()
+    if not answer:
+        raise RuntimeError("Node.js AI trả về phản hồi rỗng")
+    return answer, result.get("provider", "Node.js"), result.get("sources", []), bool(result.get("web_search"))
+
+
 @app.get("/api/ai/status")
 def ai_support_status():
     return {
@@ -1589,6 +1630,12 @@ QUY TẮC HIỂN THỊ:
     intent = detect_parking_intent(question)
     if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalize_vietnamese_question(question)):
         return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
+    if NODE_AI_URL:
+        try:
+            answer, provider, sources, web_search = _call_node_ai(question, history, user, _parking_ai_context(db, user), "support")
+            return {"answer":answer,"mode":"nodejs","provider":provider,"sources":sources,"web_search":web_search,"history_used":bool(history)}
+        except Exception as node_error:
+            print(f"[AI] Node.js error: {type(node_error).__name__}: {node_error}")
     if OPENAI_API_KEY:
         try: return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
         except Exception as openai_error:
@@ -1597,11 +1644,6 @@ QUY TẮC HIỂN THỊ:
                 try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
                 except Exception as deepseek_error:
                     print(f"[AI] DeepSeek fallback error: {type(deepseek_error).__name__}: {deepseek_error}")
-            # IMPORTANT: fallback must answer the CURRENT question only.
-            # Including previous turns here can cause an old intent (for example
-            # "Khu A") to override a new question (for example "phí xe"), making
-            # the chatbot repeat the same answer over and over when the LLM is
-            # unavailable. Conversation history is still sent to the real LLM.
             return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history),"fallback":True}
     if DEEPSEEK_API_KEY:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
@@ -1681,6 +1723,12 @@ def local_ai(db: Session, question: str):
 @app.post("/api/ai")
 def ai(data: AIQuestion, db: Session = Depends(get_db), user: User = Depends(manager_only)):
     if not data.question.strip(): raise HTTPException(400, "Vui lòng nhập câu hỏi")
+    if NODE_AI_URL:
+        try:
+            answer, provider, sources, web_search = _call_node_ai(data.question.strip(), [], user, _parking_ai_context(db, user), "analytics")
+            return {"answer":answer,"mode":"nodejs","provider":provider,"sources":sources,"web_search":web_search}
+        except Exception as node_error:
+            print(f"[AI] Node.js analytics error: {type(node_error).__name__}: {node_error}")
     if not DEEPSEEK_API_KEY:
         return {"answer": local_ai(db, data.question), "mode": "local", "provider": "local"}
     try:
