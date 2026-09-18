@@ -732,6 +732,7 @@ dashboard:async()=>{
  ]);
  const d={...d0,...an};
  window.__dashboardSeries=ts; window.__latestSlots=s;
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
 
  $("#content").innerHTML=`<div class="simple-dash-head overview-final-head">
    <div>
