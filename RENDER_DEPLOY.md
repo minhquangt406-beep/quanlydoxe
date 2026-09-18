@@ -16,7 +16,7 @@ Required for Google Gemini chatbot:
 
 ```text
 GEMINI_API_KEY=your_key
-OPENAI_MODEL=gpt-5.6-luna
+Gemini_MODEL=gpt-5.6-luna
 WEB_SEARCH_ENABLED=true
 WEB_SEARCH_CONTEXT_SIZE=medium
 NODE_AI_SINGLE_SERVICE=true

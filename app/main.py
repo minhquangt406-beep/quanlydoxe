@@ -1699,7 +1699,7 @@ QUY TẮC HIỂN THỊ:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
         except Exception: pass
     if _question_needs_web_search(question):
-        return {"answer":"Hiện chatbot chưa kết nối được dịch vụ tìm kiếm web. Vui lòng thử lại sau khi kiểm tra OPENAI_API_KEY trên Render.","mode":"web-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
+        return {"answer":"Hiện chatbot chưa kết nối được AI/Web Search. Vui lòng kiểm tra GEMINI_API_KEY hoặc OPENROUTER_API_KEY trên Render rồi Deploy lại.","mode":"ai-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
     return {"answer":local_ai_support(db,question,user),"mode":"local","provider":"local","history_used":bool(history)}
 
 
