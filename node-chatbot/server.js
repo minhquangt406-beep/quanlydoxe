@@ -4,7 +4,9 @@ const OpenAI = require("openai");
 const app = express();
 app.use(express.json({limit: "64kb"}));
 
-const PORT = Number(process.env.PORT || 3100);
+// This Node process runs as an internal sidecar inside the same Render service.
+// Do not use Render's public PORT here because FastAPI owns that port.
+const PORT = Number(process.env.NODE_INTERNAL_PORT || 3100);
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.6-luna";
 const DEEPSEEK_API_KEY = (process.env.DEEPSEEK_API_KEY || "").trim();

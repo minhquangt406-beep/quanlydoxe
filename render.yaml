@@ -27,6 +27,8 @@ services:
         value: medium
       - key: NODE_AI_SINGLE_SERVICE
         value: "true"
+      - key: NODE_INTERNAL_PORT
+        value: "3100"
       - key: NODE_AI_URL
         value: http://127.0.0.1:3100
       - key: NODE_AI_TIMEOUT_SECONDS

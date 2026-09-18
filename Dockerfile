@@ -25,6 +25,7 @@ COPY . .
 RUN chmod +x /app/start.sh && mkdir -p /app/data
 
 ENV NODE_AI_SINGLE_SERVICE=true \
+    NODE_INTERNAL_PORT=3100 \
     NODE_AI_URL=http://127.0.0.1:3100 \
     WEB_SEARCH_ENABLED=true \
     WEB_SEARCH_CONTEXT_SIZE=medium \
