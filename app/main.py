@@ -46,6 +46,10 @@ TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
 OTP_TTL_MINUTES = 10
 OTP_RESEND_SECONDS = 60
 AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "60"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 AI_SUPPORT_RATE_LIMIT = int(os.getenv("AI_SUPPORT_RATE_LIMIT", "20"))
 AI_SUPPORT_WINDOW_SECONDS = int(os.getenv("AI_SUPPORT_WINDOW_SECONDS", "60"))
 _ai_support_rate = {}
@@ -1607,10 +1611,11 @@ def _call_node_ai(question: str, history, user, context, endpoint="support"):
 @app.get("/api/ai/status")
 def ai_support_status():
     return {
-        "openai_configured": bool(OPENAI_API_KEY),
-        "openai_model": OPENAI_MODEL,
-        "deepseek_configured": bool(DEEPSEEK_API_KEY),
-        "ready": bool(OPENAI_API_KEY or DEEPSEEK_API_KEY),
+        "gemini_configured": bool(GEMINI_API_KEY),
+        "gemini_model": GEMINI_MODEL,
+        "openrouter_configured": bool(OPENROUTER_API_KEY),
+        "openrouter_model": OPENROUTER_MODEL,
+        "ready": bool(GEMINI_API_KEY or OPENROUTER_API_KEY),
         "timeout_seconds": AI_SUPPORT_TIMEOUT_SECONDS,
     }
 

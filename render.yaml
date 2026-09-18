@@ -11,20 +11,18 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
-      - key: OPENAI_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
-      - key: OPENAI_MODEL
-        value: gpt-5.6-luna
-      - key: DEEPSEEK_API_KEY
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: OPENROUTER_API_KEY
         sync: false
-      - key: DEEPSEEK_MODEL
-        value: deepseek-chat
-      - key: DEEPSEEK_BASE_URL
-        value: https://api.deepseek.com
+      - key: OPENROUTER_MODEL
+        value: openrouter/free
       - key: WEB_SEARCH_ENABLED
         value: "true"
-      - key: WEB_SEARCH_CONTEXT_SIZE
-        value: medium
+      - key: WEB_SEARCH_URL
+        value: https://html.duckduckgo.com/html/
       - key: NODE_AI_SINGLE_SERVICE
         value: "true"
       - key: NODE_INTERNAL_PORT
