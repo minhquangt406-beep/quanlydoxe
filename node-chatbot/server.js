@@ -14,6 +14,11 @@ const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENABLED || "true");
 const WEB_SEARCH_CONTEXT_SIZE = process.env.WEB_SEARCH_CONTEXT_SIZE || "medium";
+
+function needsWebSearch(question) {
+  const q = String(question || "").toLowerCase();
+  return /(thời tiết|weather|hôm nay|hôm qua|ngày mai|hiện nay|hiện tại|mới nhất|mới đây|tin tức|tin mới|quy định|luật|giá xăng|giá vàng|tỷ giá|tỉ giá|giao thông|địa điểm|nhà hàng|sản phẩm|giá thị trường|cập nhật|latest|today|news)/i.test(q);
+}
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 app.use((req,res,next)=>{res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");if(req.method === "OPTIONS") return res.sendStatus(204);next();});
 
@@ -52,6 +57,7 @@ function extractWebSources(response) {
 async function callOpenAI({history, context, question}) {
   const client = new OpenAI({apiKey: OPENAI_API_KEY, timeout: 50000, maxRetries: 1});
   const input = [...history, {role: "user", content: `PARKING_CONTEXT:\n${JSON.stringify(context)}\n\nCÂU HỎI:\n${question}`}];
+  const forceWeb = WEB_SEARCH_ENABLED && needsWebSearch(question);
   const response = await client.responses.create({
     model: OPENAI_MODEL,
     instructions: SYSTEM,
@@ -59,12 +65,12 @@ async function callOpenAI({history, context, question}) {
     store: false,
     reasoning: {effort: "none"},
     text: {verbosity: "low"},
-    ...(WEB_SEARCH_ENABLED ? {tools: [{type: "web_search", search_context_size: WEB_SEARCH_CONTEXT_SIZE}], tool_choice: "auto"} : {}),
+    ...(WEB_SEARCH_ENABLED ? {tools: [{type: "web_search", search_context_size: WEB_SEARCH_CONTEXT_SIZE}], tool_choice: forceWeb ? "required" : "auto"} : {}),
     max_output_tokens: 700
   });
   const answer = String(response.output_text || "").trim();
   if (!answer) throw new Error("OpenAI trả về phản hồi rỗng");
-  return {answer, sources: extractWebSources(response)};
+  return {answer, sources: extractWebSources(response), web_search: forceWeb};
 }
 
 async function callDeepSeek({history, context, question}) {
@@ -88,7 +94,7 @@ app.post("/chat", async (req, res) => {
   if (data.question.length > 500) return res.status(400).json({error: "Câu hỏi tối đa 500 ký tự"});
   try {
     if (OPENAI_API_KEY) {
-      try { const result = await callOpenAI(data); return res.json({answer: result.answer, sources: result.sources, web_search: result.sources.length > 0, provider: "OpenAI via Node.js"}); }
+      try { const result = await callOpenAI(data); return res.json({answer: result.answer, sources: result.sources, web_search: result.web_search || result.sources.length > 0, provider: "OpenAI via Node.js"}); }
       catch (e) { console.error("[Node AI] OpenAI:", e.message); }
     }
     if (DEEPSEEK_API_KEY) {

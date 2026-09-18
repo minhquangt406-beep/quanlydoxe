@@ -1552,6 +1552,44 @@ def _parking_ai_context(db: Session, user):
     return ctx
 
 
+def _question_needs_web_search(question: str) -> bool:
+    q = normalize_vietnamese_question(question)
+    return bool(re.search(r"(thời tiết|weather|hôm nay|hôm qua|ngày mai|hiện nay|hiện tại|mới nhất|mới đây|tin tức|tin mới|quy định|luật|giá xăng|giá vàng|tỷ giá|tỉ giá|giao thông|địa điểm|nhà hàng|sản phẩm|giá thị trường|cập nhật|latest|today|news)", q, re.I))
+
+def _call_openai_web_support(api_key: str, model: str, question: str, history, context, user):
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key, max_retries=0, timeout=AI_SUPPORT_TIMEOUT_SECONDS)
+    role = getattr(user, "role", "guest")
+    safe_context = dict(context or {})
+    if role == "guest":
+        safe_context.pop("active_vehicle_details", None)
+    hist = []
+    for m in (history or [])[-10:]:
+        hist.append({"role": "assistant" if m.get("role") == "assistant" else "user", "content": str(m.get("content") or "")[:1000]})
+    prompt = "PARKING_CONTEXT:\n" + json.dumps(safe_context, ensure_ascii=False) + "\n\nCÂU HỎI:\n" + question
+    response = client.responses.create(
+        model=model,
+        instructions="""Bạn là trợ lý khách hàng của hệ thống quản lý bãi đỗ xe. Trả lời tiếng Việt tự nhiên. Với câu hỏi cần thông tin hiện tại/bên ngoài hệ thống, bắt buộc dùng Web Search trước khi trả lời. Với dữ liệu bãi xe, chỉ dùng PARKING_CONTEXT và không bịa. Không tiết lộ API, model hay dữ liệu kỹ thuật nội bộ.""",
+        input=hist + [{"role": "user", "content": prompt}],
+        tools=[{"type": "web_search", "search_context_size": "medium"}],
+        tool_choice="required",
+        store=False,
+        max_output_tokens=700,
+    )
+    answer=(getattr(response, "output_text", "") or "").strip()
+    if not answer:
+        raise RuntimeError("OpenAI Web Search trả về phản hồi rỗng")
+    sources=[]
+    for item in (getattr(response, "output", []) or []):
+        if getattr(item, "type", None) != "web_search_call":
+            continue
+        action=getattr(item, "action", None)
+        for src in (getattr(action, "sources", None) or []):
+            url=getattr(src, "url", None)
+            if url: sources.append({"url":url})
+    unique=list({x["url"]:x for x in sources}.values())[:8]
+    return answer, unique
+
 def _call_node_ai(question: str, history, user, context, endpoint="support"):
     """Send the conversation to the Node.js AI service."""
     if not NODE_AI_URL:
@@ -1640,7 +1678,11 @@ QUY TẮC HIỂN THỊ:
         except Exception as node_error:
             print(f"[AI] Node.js error: {type(node_error).__name__}: {node_error}")
     if OPENAI_API_KEY:
-        try: return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
+        try:
+            if _question_needs_web_search(question):
+                answer, sources = _call_openai_web_support(OPENAI_API_KEY, OPENAI_MODEL, question, history, _parking_ai_context(db, user), user)
+                return {"answer":answer,"mode":"openai-web","provider":"OpenAI Web Search","sources":sources,"web_search":True,"history_used":bool(history)}
+            return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
         except Exception as openai_error:
             print(f"[AI] OpenAI error: {type(openai_error).__name__}: {openai_error}")
             if DEEPSEEK_API_KEY:
@@ -1651,6 +1693,8 @@ QUY TẮC HIỂN THỊ:
     if DEEPSEEK_API_KEY:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
         except Exception: pass
+    if _question_needs_web_search(question):
+        return {"answer":"Hiện chatbot chưa kết nối được dịch vụ tìm kiếm web. Vui lòng thử lại sau khi kiểm tra OPENAI_API_KEY trên Render.","mode":"web-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
     return {"answer":local_ai_support(db,question,user),"mode":"local","provider":"local","history_used":bool(history)}
 
 
