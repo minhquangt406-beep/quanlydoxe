@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SmartPark · Đăng nhập hệ thống</title>
-<link rel="stylesheet" href="/static/style.css?v=v35-dashboard-sidebar-20260916">
+<link rel="stylesheet" href="/static/style.css?v=v36-login-pc-balanced-20260922">
 </head>
 <body>
 <div id="loginView" class="login-page">
+  <div class="login-frame">
   <section class="login-showcase" aria-hidden="true">
     <div class="showcase-orb orb-one"></div><div class="showcase-orb orb-two"></div>
     <div class="showcase-grid"></div>
@@ -64,6 +65,7 @@
     </form>
     <div class="login-security"><span>🔒</span><div><b>Kết nối bảo mật</b><small>Dữ liệu được bảo vệ trong suốt phiên đăng nhập</small></div></div>
   </div>
+  </div>
 </div>
 
 <div id="appView" class="app hidden">
@@ -98,16 +100,16 @@
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
 </div>
   <div id="aiSupport" class="ai-support" aria-live="polite">
-    <button id="aiSupportToggle" class="ai-support-fab" aria-label="Mở chatbot AI" title="Mở trợ lý AI"><span class="ai-fab-orb">✦</span><span class="ai-fab-label">AI ASSIST</span><i class="ai-fab-ping"></i></button>
+    <button id="aiSupportToggle" class="ai-support-fab" aria-label="Mở chatbot AI" title="Mở trợ lý AI"><span class="ai-fab-orb">✦</span><span class="ai-fab-label">Ask AI</span><i class="ai-fab-ping"></i></button>
     <section id="aiSupportPanel" class="ai-support-panel hidden" aria-label="Trợ lý AI hỗ trợ">
       <header class="ai-support-head">
         <div class="ai-support-brand">
           <div class="ai-support-avatar"><span>✦</span><i></i></div>
-          <div class="ai-brand-copy"><div class="ai-title-line"><strong>SmartPark AI</strong><span class="ai-pro-badge">PRO</span></div><small>Trợ lý vận hành & hỗ trợ khách hàng</small></div>
+          <div class="ai-brand-copy"><div class="ai-title-line"><strong>SmartPark AI</strong><span class="ai-pro-badge">ASSISTANT</span></div><small>Trợ lý thông minh cho bãi xe</small></div>
         </div>
         <div class="ai-support-head-actions"><span class="ai-online"><i></i> Online</span><button id="aiSupportClear" class="ai-head-btn" aria-label="Xóa cuộc trò chuyện" title="Xóa cuộc trò chuyện">⌫</button><button id="aiSupportClose" class="ai-support-close" aria-label="Đóng" title="Đóng">×</button></div>
       </header>
-      <div class="ai-context-strip"><span class="ai-context-dot">◉</span><span>Dữ liệu bãi xe theo thời gian thực</span><span class="ai-context-live">LIVE</span></div>
+      <div class="ai-context-strip"><span class="ai-context-dot">◉</span><span>Smart data · Live parking</span><span class="ai-context-live">LIVE</span></div>
       <div id="aiSupportMessages" class="ai-support-messages">
         <div class="ai-welcome-card">
           <div class="ai-welcome-icon">✦</div>
@@ -115,7 +117,7 @@
           <div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div>
         </div>
       </div>
-      <div class="ai-support-suggestions-wrap"><div class="ai-suggest-label">Gợi ý nhanh</div><div class="ai-support-suggestions"><button data-ai-q="Hiện còn bao nhiêu chỗ trống?">🚗 Chỗ trống</button><button data-ai-q="Khu A còn bao nhiêu chỗ?">A Khu A</button><button data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?">💳 Mức phí</button><button data-ai-q="Vé tháng có được miễn phí không?">🎫 Vé tháng</button></div></div>
+      <div class="ai-support-suggestions-wrap"><div class="ai-suggest-label">Gợi ý</div><div class="ai-support-suggestions"><button data-ai-q="Hiện còn bao nhiêu chỗ trống?">🚗 Chỗ trống</button><button data-ai-q="Khu A còn bao nhiêu chỗ?">A Khu A</button><button data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?">💳 Mức phí</button><button data-ai-q="Vé tháng có được miễn phí không?">🎫 Vé tháng</button></div></div>
       <div class="ai-input-shell">
         <form id="aiSupportForm" class="ai-support-form"><button type="button" class="ai-input-action" id="aiSupportFocus" aria-label="Tập trung ô nhập" title="Nhập câu hỏi">＋</button><input id="aiSupportInput" autocomplete="off" placeholder="Nhắn tin cho SmartPark AI..." maxlength="500"><button type="submit" aria-label="Gửi" class="ai-send-btn"><span>➤</span></button></form>
         <div class="ai-input-meta"><span>AI có thể trả lời dựa trên dữ liệu bãi xe</span><span>Enter ↵</span></div>
@@ -123,7 +125,7 @@
     </section>
   </div>
 
-<script src="/static/app.js?v=v38-ai-smooth-20260922"></script>
+<script src="/static/app.js?v=v39-ai-command-20260922"></script>
 
 </body>
 </html>
