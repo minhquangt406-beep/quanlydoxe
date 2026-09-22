@@ -4,10 +4,9 @@ const app = express();
 app.use(express.json({ limit: "64kb" }));
 
 const PORT = Number(process.env.NODE_INTERNAL_PORT || 3100);
-const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-const OPENROUTER_API_KEY = (process.env.OPENROUTER_API_KEY || "").trim();
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openrouter/free";
+const XKIRO_API_KEY = (process.env.XKIRO_API_KEY || "").trim();
+const XKIRO_MODEL = process.env.XKIRO_MODEL || "openai/gpt-5.6-sol";
+const XKIRO_BASE_URL = (process.env.XKIRO_BASE_URL || "https://api.xkiro.com/v1").replace(/\/$/, "");
 const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENABLED || "true");
 const WEB_SEARCH_URL = process.env.WEB_SEARCH_URL || "https://html.duckduckgo.com/html/";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
@@ -81,42 +80,33 @@ async function searchWeb(query) {
   return results;
 }
 
-async function callGemini({ history, prompt }) {
-  const contents = [];
-  for (const item of history) contents.push({ role: item.role === "assistant" ? "model" : "user", parts: [{ text: item.content }] });
-  contents.push({ role: "user", parts: [{ text: prompt }] });
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ contents, systemInstruction: { parts: [{ text: SYSTEM }] }, generationConfig: { maxOutputTokens: 700, temperature: 0.3 } }),
-    signal: AbortSignal.timeout(30000)
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message || `Gemini HTTP ${response.status}`);
-  const answer = String(data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "").trim();
-  if (!answer) throw new Error("Gemini trả về phản hồi rỗng");
-  return answer;
-}
-
-async function callOpenRouter({ history, prompt }) {
+async function callXKiro({ history, prompt }) {
   const messages = [{ role: "system", content: SYSTEM }, ...history, { role: "user", content: prompt }];
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch(`${XKIRO_BASE_URL}/chat/completions`, {
     method: "POST",
-    headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": process.env.APP_PUBLIC_URL || "https://quanlydoxe.cloud", "X-Title": "QuanLyDoXe AI" },
-    body: JSON.stringify({ model: OPENROUTER_MODEL, messages, temperature: 0.3, max_tokens: 700 }),
-    signal: AbortSignal.timeout(30000)
+    headers: {
+      "Authorization": `Bearer ${XKIRO_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: XKIRO_MODEL,
+      messages,
+      temperature: 0.3,
+      max_tokens: 700
+    }),
+    signal: AbortSignal.timeout(90000)
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message || `OpenRouter HTTP ${response.status}`);
+  if (!response.ok) throw new Error(data?.error?.message || `xKiro HTTP ${response.status}`);
   const answer = String(data?.choices?.[0]?.message?.content || "").trim();
-  if (!answer) throw new Error("OpenRouter trả về phản hồi rỗng");
+  if (!answer) throw new Error("xKiro trả về phản hồi rỗng");
   return answer;
 }
 
 app.get("/health", (req, res) => res.json({
-  status: "ok", service: "quanlydoxe-node-chat", gemini: !!GEMINI_API_KEY,
-  openrouter: !!OPENROUTER_API_KEY, web_search: WEB_SEARCH_ENABLED,
-  gemini_model: GEMINI_MODEL, openrouter_model: OPENROUTER_MODEL
+  status: "ok", service: "quanlydoxe-node-chat", xkiro: !!XKIRO_API_KEY,
+  web_search: WEB_SEARCH_ENABLED, xkiro_base_url: XKIRO_BASE_URL,
+  xkiro_model: XKIRO_MODEL
 }));
 
 app.post("/chat", async (req, res) => {
@@ -132,20 +122,14 @@ app.post("/chat", async (req, res) => {
   }
   const built = buildPrompt({ ...req.body, question }, webResults);
 
-  if (GEMINI_API_KEY) {
+  if (XKIRO_API_KEY) {
     try {
-      const answer = await callGemini(built);
-      return res.json({ answer, sources: webResults.map(x => ({ url: x.url, title: x.title })), web_search: useWeb && webResults.length > 0, provider: "Gemini Free" });
-    } catch (e) { console.error("[Gemini]", e.message); }
-  }
-  if (OPENROUTER_API_KEY) {
-    try {
-      const answer = await callOpenRouter(built);
-      return res.json({ answer, sources: webResults.map(x => ({ url: x.url, title: x.title })), web_search: useWeb && webResults.length > 0, provider: "OpenRouter Free" });
-    } catch (e) { console.error("[OpenRouter]", e.message); }
+      const answer = await callXKiro(built);
+      return res.json({ answer, sources: webResults.map(x => ({ url: x.url, title: x.title })), web_search: useWeb && webResults.length > 0, provider: "xKiro" });
+    } catch (e) { console.error("[xKiro]", e.message); }
   }
 
-  return res.status(503).json({ error: "Chatbot chưa có API miễn phí khả dụng. Hãy cấu hình GEMINI_API_KEY hoặc OPENROUTER_API_KEY trên Render." });
+  return res.status(503).json({ error: "Chatbot chưa kết nối xKiro. Hãy cấu hình XKIRO_API_KEY trên Render." });
 });
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Parking AI Node.js listening on ${PORT}`));

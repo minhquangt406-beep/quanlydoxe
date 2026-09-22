@@ -46,10 +46,9 @@ TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
 OTP_TTL_MINUTES = 10
 OTP_RESEND_SECONDS = 60
 AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "60"))
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
+XKIRO_API_KEY = os.getenv("XKIRO_API_KEY", "").strip()
+XKIRO_MODEL = os.getenv("XKIRO_MODEL", "openai/gpt-5.6-sol")
+XKIRO_BASE_URL = os.getenv("XKIRO_BASE_URL", "https://api.xkiro.com/v1").strip().rstrip("/")
 AI_SUPPORT_RATE_LIMIT = int(os.getenv("AI_SUPPORT_RATE_LIMIT", "20"))
 AI_SUPPORT_WINDOW_SECONDS = int(os.getenv("AI_SUPPORT_WINDOW_SECONDS", "60"))
 _ai_support_rate = {}
@@ -1611,11 +1610,10 @@ def _call_node_ai(question: str, history, user, context, endpoint="support"):
 @app.get("/api/ai/status")
 def ai_support_status():
     return {
-        "gemini_configured": bool(GEMINI_API_KEY),
-        "gemini_model": GEMINI_MODEL,
-        "openrouter_configured": bool(OPENROUTER_API_KEY),
-        "openrouter_model": OPENROUTER_MODEL,
-        "ready": bool(GEMINI_API_KEY or OPENROUTER_API_KEY),
+        "xkiro_configured": bool(XKIRO_API_KEY),
+        "xkiro_model": XKIRO_MODEL,
+        "xkiro_base_url": XKIRO_BASE_URL,
+        "ready": bool(XKIRO_API_KEY),
         "timeout_seconds": AI_SUPPORT_TIMEOUT_SECONDS,
     }
 
@@ -1699,7 +1697,7 @@ QUY TẮC HIỂN THỊ:
         try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
         except Exception: pass
     if _question_needs_web_search(question):
-        return {"answer":"Hiện chatbot chưa kết nối được AI/Web Search. Vui lòng kiểm tra GEMINI_API_KEY hoặc OPENROUTER_API_KEY trên Render rồi Deploy lại.","mode":"ai-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
+        return {"answer":"Hiện chatbot chưa kết nối được xKiro. Vui lòng kiểm tra XKIRO_API_KEY trên Render rồi Deploy lại.","mode":"ai-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
     return {"answer":local_ai_support(db,question,user),"mode":"local","provider":"local","history_used":bool(history)}
 
 

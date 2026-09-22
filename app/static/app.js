@@ -72,71 +72,68 @@ function loadAISupportHistory(){
   try{const raw=sessionStorage.getItem("parking_ai_support_history");const parsed=raw?JSON.parse(raw):[];aiSupportHistory=Array.isArray(parsed)?parsed.slice(-10):[];}catch(_){aiSupportHistory=[];}
 }
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
+function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
 function addAISupportMessage(text, role="bot", persist=true, sources=[]){
   const box=$("#aiSupportMessages"); if(!box) return;
+  const welcome=box.querySelector(".ai-welcome-card"); if(welcome) welcome.remove();
   const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
-  const badge=document.createElement("b"); badge.textContent=role==="user"?"Bạn":"AI";
-  const body=document.createElement("span"); body.textContent=text;
-  row.append(badge,body);
+  const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent=role==="user"?"B":"✦";
+  const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
+  const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
+  const body=document.createElement("div"); body.className="ai-msg-body"; body.textContent=text;
+  wrap.append(meta,body);
   if(role==="bot" && Array.isArray(sources) && sources.length){
-    const src=document.createElement("div"); src.className="ai-web-sources";
-    const title=document.createElement("small"); title.textContent="Nguồn web:"; src.appendChild(title);
-    sources.slice(0,5).forEach((s,i)=>{const a=document.createElement("a"); a.href=s.url; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent=`${i+1}`; a.title=s.url; src.appendChild(a);});
-    row.appendChild(src);
+    const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
+    const title=document.createElement("small"); title.textContent="Nguồn tham khảo"; src.appendChild(title);
+    sources.slice(0,5).forEach((s,i)=>{const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=`${i+1}`;a.title=s.title||s.url;src.appendChild(a);});
+    wrap.appendChild(src);
   }
-  box.appendChild(row); box.scrollTop=box.scrollHeight;
+  row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight;
   if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});saveAISupportHistory();}
 }
 function setAISupportBusy(busy){
-  const input=$("#aiSupportInput"), btn=$("#aiSupportForm button");
+  const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
   if(input) input.disabled=busy;
-  if(btn){btn.disabled=busy;btn.textContent=busy?"…":"➤";btn.setAttribute("aria-busy",busy?"true":"false");}
+  if(btn){btn.disabled=busy;btn.innerHTML=busy?'<span class="ai-send-spinner"></span>':'<span>➤</span>';btn.setAttribute("aria-busy",busy?"true":"false");}
 }
 function showAITyping(){
   const box=$("#aiSupportMessages"); if(!box) return null;
   const row=document.createElement("div"); row.className="ai-msg ai-msg-bot ai-msg-typing";
-  const badge=document.createElement("b"); badge.textContent="AI";
-  const body=document.createElement("span"); body.innerHTML="<i></i><i></i><i></i>";
-  row.append(badge,body); box.appendChild(row); box.scrollTop=box.scrollHeight;
-  return row;
+  const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent="✦";
+  const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
+  const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML='<b>SmartPark AI</b><span>đang nhập...</span>';
+  const body=document.createElement("div"); body.className="ai-msg-body ai-typing-bubble"; body.innerHTML='<i></i><i></i><i></i>';
+  wrap.append(meta,body); row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight; return row;
 }
 function renderAISupportHistory(){
-  const box=$("#aiSupportMessages"); if(!box) return;
-  box.innerHTML="";
+  const box=$("#aiSupportMessages"); if(!box) return; box.innerHTML="";
   if(!aiSupportHistory.length){
-    addAISupportMessage("Xin chào! 👋 Tôi có thể hỗ trợ bạn về chỗ trống, khu A/B, vị trí đỗ, mức phí, cách sử dụng và thông tin liên hệ. Bạn cứ hỏi như đang trò chuyện với nhân viên nhé.","bot",false);
-    return;
+    box.innerHTML='<div class="ai-welcome-card"><div class="ai-welcome-icon">✦</div><div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div><div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div></div>'; return;
   }
   aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
 }
 function initAISupport(){
-  const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
+  const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
-  const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");setTimeout(()=>input.focus(),80)};
-  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open")};
-  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
-  close?.addEventListener("click",shut);
+  const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");document.body.classList.add("ai-chat-open");setTimeout(()=>input.focus(),80)};
+  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open")};
+  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut(); close?.addEventListener("click",shut); focus?.addEventListener("click",()=>input.focus());
+  clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
     e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
-    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true);
-    const typingEl=showAITyping();
+    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true); const typingEl=showAITyping();
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
-      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000);
-      let d;
-      try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}
-      finally{clearTimeout(timer)}
-      const answer=d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.";
-      typingEl?.remove();
-      addAISupportMessage(answer,"bot",true,d.sources||[]);
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000); let d;
+      try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}finally{clearTimeout(timer)}
+      typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[]);
     }catch(err){
-      typingEl?.remove();
-      const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý quá lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé.");
-      addAISupportMessage(msg,"bot");
+      typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 }
 initAISupport();
 
