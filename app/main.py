@@ -1,4 +1,4 @@
-import os, math, hashlib, secrets, re, json, urllib.request, urllib.parse, base64, time, threading
+import os, math, hashlib, secrets, re, json, urllib.request, urllib.parse, urllib.error, base64, time, threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -1599,8 +1599,16 @@ def _call_node_ai(question: str, history, user, context, endpoint="support"):
         raise RuntimeError("NODE_AI_URL chưa được cấu hình")
     payload = json.dumps({"question": question, "history": history or [], "role": getattr(user, "role", "guest"), "context": context, "endpoint": endpoint}, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(NODE_AI_URL + "/chat", data=payload, headers={"Content-Type":"application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=NODE_AI_TIMEOUT_SECONDS) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=NODE_AI_TIMEOUT_SECONDS) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raw = exc.read().decode("utf-8", "ignore")
+        try:
+            detail = json.loads(raw).get("error") or raw
+        except Exception:
+            detail = raw or f"Node.js HTTP {exc.code}"
+        raise RuntimeError(str(detail)) from exc
     answer = (result.get("answer") or "").strip()
     if not answer:
         raise RuntimeError("Node.js AI trả về phản hồi rỗng")
@@ -1609,13 +1617,31 @@ def _call_node_ai(question: str, history, user, context, endpoint="support"):
 
 @app.get("/api/ai/status")
 def ai_support_status():
-    return {
+    result = {
         "xkiro_configured": bool(XKIRO_API_KEY),
         "xkiro_model": XKIRO_MODEL,
         "xkiro_base_url": XKIRO_BASE_URL,
-        "ready": bool(XKIRO_API_KEY),
-        "timeout_seconds": AI_SUPPORT_TIMEOUT_SECONDS,
+        "node_url": NODE_AI_URL,
+        "web_search_provider": "xKiro",
+        "web_search_enabled": True,
+        "ready": False,
     }
+    try:
+        req = urllib.request.Request(NODE_AI_URL + "/status", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            node = json.loads(resp.read().decode("utf-8"))
+        result.update({
+            "xkiro_configured": bool(node.get("xkiro_configured")),
+            "xkiro_model": node.get("xkiro_model", XKIRO_MODEL),
+            "xkiro_base_url": node.get("xkiro_base_url", XKIRO_BASE_URL),
+            "web_search_provider": node.get("web_search_provider", "xKiro"),
+            "web_search_enabled": bool(node.get("web_search_enabled", True)),
+            "network": node.get("network", "unknown"),
+            "ready": bool(node.get("ready")),
+        })
+    except Exception as exc:
+        result["node_error"] = str(exc)
+    return result
 
 
 def ai_support_user(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
@@ -1679,26 +1705,9 @@ QUY TẮC HIỂN THỊ:
             answer, provider, sources, web_search = _call_node_ai(question, history, user, _parking_ai_context(db, user), "support")
             return {"answer":answer,"mode":"nodejs","provider":provider,"sources":sources,"web_search":web_search,"history_used":bool(history)}
         except Exception as node_error:
-            print(f"[AI] Node.js error: {type(node_error).__name__}: {node_error}")
-    if OPENAI_API_KEY:
-        try:
-            if _question_needs_web_search(question):
-                answer, sources = _call_openai_web_support(OPENAI_API_KEY, OPENAI_MODEL, question, history, _parking_ai_context(db, user), user)
-                return {"answer":answer,"mode":"openai-web","provider":"OpenAI Web Search","sources":sources,"web_search":True,"history_used":bool(history)}
-            return {"answer":_call_llm("openai",OPENAI_API_KEY,OPENAI_MODEL,messages,db,user),"mode":"openai","provider":"OpenAI","history_used":bool(history)}
-        except Exception as openai_error:
-            print(f"[AI] OpenAI error: {type(openai_error).__name__}: {openai_error}")
-            if DEEPSEEK_API_KEY:
-                try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek-fallback","provider":"DeepSeek","history_used":bool(history)}
-                except Exception as deepseek_error:
-                    print(f"[AI] DeepSeek fallback error: {type(deepseek_error).__name__}: {deepseek_error}")
-            return {"answer":local_ai_support(db,question,user),"mode":"fallback","provider":"local","history_used":bool(history),"fallback":True}
-    if DEEPSEEK_API_KEY:
-        try: return {"answer":_call_llm("deepseek",DEEPSEEK_API_KEY,DEEPSEEK_MODEL,messages,db,user),"mode":"deepseek","provider":"DeepSeek","history_used":bool(history)}
-        except Exception: pass
-    if _question_needs_web_search(question):
-        return {"answer":"Hiện chatbot chưa kết nối được xKiro. Vui lòng kiểm tra XKIRO_API_KEY trên Render rồi Deploy lại.","mode":"ai-unavailable","provider":"local","sources":[],"web_search":False,"history_used":bool(history)}
-    return {"answer":local_ai_support(db,question,user),"mode":"local","provider":"local","history_used":bool(history)}
+            print(f"[AI] xKiro Node error: {type(node_error).__name__}: {node_error}")
+            raise HTTPException(502, f"{node_error}")
+    raise HTTPException(503, "xKiro chatbot chưa được cấu hình. Kiểm tra XKIRO_API_KEY trên Render.")
 
 
 @app.get("/api/ai/prediction")

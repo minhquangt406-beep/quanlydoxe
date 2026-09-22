@@ -55,29 +55,32 @@ function decodeHtml(s) {
 }
 
 async function searchWeb(query) {
-  if (!WEB_SEARCH_ENABLED) return [];
-  const url = `${WEB_SEARCH_URL}?q=${encodeURIComponent(query)}`;
-  const response = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 ParkingAI/1.0" }, signal: AbortSignal.timeout(8000) });
-  if (!response.ok) throw new Error(`Web search HTTP ${response.status}`);
-  const html = await response.text();
-  const results = [];
-  const re = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-  let m;
-  while ((m = re.exec(html)) && results.length < 6) {
-    let rawUrl = m[1];
-    try {
-      if (rawUrl.startsWith("//duckduckgo.com/l/?")) rawUrl = "https:" + rawUrl;
-      const parsed = new URL(rawUrl, "https://html.duckduckgo.com");
-      const target = parsed.searchParams.get("uddg");
-      if (target) rawUrl = target;
-    } catch (_) {}
-    const title = decodeHtml(m[2]);
-    const after = html.slice(re.lastIndex, re.lastIndex + 1800);
-    const sm = after.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>|class="result__snippet"[^>]*>([\s\S]*?)<\//i);
-    const snippet = decodeHtml(sm ? (sm[1] || sm[2]) : "");
-    if (title && rawUrl) results.push({ title, url: rawUrl, snippet: snippet.slice(0, 500) });
-  }
-  return results;
+  if (!WEB_SEARCH_ENABLED || !XKIRO_API_KEY) return [];
+  const response = await fetch(`${XKIRO_BASE_URL}/search`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${XKIRO_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "xkiro/web-search",
+      query: String(query || "").slice(0, 500),
+      max_results: 5,
+      country: "VN",
+      search_recency_filter: "noLimit"
+    }),
+    signal: AbortSignal.timeout(15000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || `xKiro Search HTTP ${response.status}`);
+  const rows = Array.isArray(data?.results) ? data.results : [];
+  return rows.map(r => ({
+    title: String(r.title || "").trim(),
+    url: String(r.url || "").trim(),
+    snippet: String(r.snippet || "").trim(),
+    source: String(r.source || "").trim(),
+    published_at: r.published_at || null
+  })).filter(r => r.title && r.url).slice(0, 5);
 }
 
 async function callXKiro({ history, prompt }) {
@@ -104,10 +107,34 @@ async function callXKiro({ history, prompt }) {
 }
 
 app.get("/health", (req, res) => res.json({
-  status: "ok", service: "quanlydoxe-node-chat", xkiro: !!XKIRO_API_KEY,
-  web_search: WEB_SEARCH_ENABLED, xkiro_base_url: XKIRO_BASE_URL,
+  status: "ok", service: "quanlydoxe-node-chat",
+  xkiro_configured: !!XKIRO_API_KEY,
+  web_search: WEB_SEARCH_ENABLED,
+  web_search_provider: "xKiro",
+  xkiro_base_url: XKIRO_BASE_URL,
   xkiro_model: XKIRO_MODEL
 }));
+
+app.get("/status", async (req, res) => {
+  const result = {
+    service: "quanlydoxe-node-chat",
+    xkiro_configured: !!XKIRO_API_KEY,
+    xkiro_model: XKIRO_MODEL,
+    xkiro_base_url: XKIRO_BASE_URL,
+    web_search_enabled: WEB_SEARCH_ENABLED,
+    web_search_provider: "xKiro",
+    network: "unknown"
+  };
+  try {
+    const r = await fetch(`${XKIRO_BASE_URL}/models`, { signal: AbortSignal.timeout(8000) });
+    result.network = r.ok ? "connected" : `http_${r.status}`;
+  } catch (e) {
+    result.network = "unreachable";
+    result.network_error = e.message;
+  }
+  result.ready = !!XKIRO_API_KEY && result.network === "connected";
+  res.status(result.ready ? 200 : 503).json(result);
+});
 
 app.post("/chat", async (req, res) => {
   const question = String(req.body?.question || "").trim();
@@ -126,10 +153,13 @@ app.post("/chat", async (req, res) => {
     try {
       const answer = await callXKiro(built);
       return res.json({ answer, sources: webResults.map(x => ({ url: x.url, title: x.title })), web_search: useWeb && webResults.length > 0, provider: "xKiro" });
-    } catch (e) { console.error("[xKiro]", e.message); }
+    } catch (e) {
+      console.error("[xKiro]", e.message);
+      return res.status(502).json({ error: `xKiro không phản hồi: ${e.message}`, code: "XKIRO_UPSTREAM_ERROR" });
+    }
   }
 
-  return res.status(503).json({ error: "Chatbot chưa kết nối xKiro. Hãy cấu hình XKIRO_API_KEY trên Render." });
+  return res.status(503).json({ error: "XKIRO_API_KEY chưa được cấu hình trên Render.", code: "XKIRO_KEY_MISSING" });
 });
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Parking AI Node.js listening on ${PORT}`));
