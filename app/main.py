@@ -437,12 +437,44 @@ def normalize_vietnamese_question(text):
 
 def detect_parking_intent(text):
     s = normalize_vietnamese_question(text)
+    # IMPORTANT: generic words such as "giá", "hôm nay", "hiện tại" are not
+    # enough to classify a question as a parking question. Otherwise questions
+    # such as "giá vàng hôm nay" get answered with the parking tariff.
+    external_only = [
+        "giá vàng", "giá bạc", "giá bitcoin", "giá cổ phiếu", "giá chứng khoán",
+        "tỷ giá", "tỉ giá", "giá usd", "giá đô", "thời tiết", "tin tức",
+        "tin mới", "ai giàu nhất", "người giàu nhất", "top người giàu",
+        "richest", "gold price", "exchange rate", "weather", "news",
+    ]
+    if any(term in s for term in external_only):
+        return "general"
+
+    parking_context = [
+        "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
+        "chỗ trống", "vị trí đỗ", "vị trí trống", "khu a", "khu b",
+        "xe máy", "ô tô", "xe đạp", "vé tháng", "phí gửi", "giá gửi",
+        "bảng giá gửi", "tiền gửi xe", "trong bãi", "đang gửi", "đang đỗ",
+    ]
+    has_parking_context = any(term in s for term in parking_context)
+
     scores = {k: sum(1 for term in terms if term in s) for k, terms in NATURAL_CHAT_INTENT_RULES.items()}
     # Vehicle type is context, not an intent by itself.
     if scores["vehicle"] and (scores["price"] or any(x in s for x in ["giá", "phí", "bao nhiêu", "nhiêu", "gửi"])):
         return "price"
     if scores["zone"] and scores["occupancy"]:
         return "occupancy"
+
+    # Price/contact/active/occupancy intents require explicit parking context
+    # when the wording is otherwise generic.
+    if scores["price"] and not has_parking_context:
+        return "general"
+    if scores["contact"] and not has_parking_context:
+        return "general"
+    if scores["active"] and not has_parking_context:
+        return "general"
+    if scores["occupancy"] and not has_parking_context:
+        return "general"
+
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else "general"
 
@@ -1343,7 +1375,12 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
-    if any(k in q for k in ["giá", "phí", "bao nhiêu", "nhiêu", "bảng giá", "hết bao nhiêu", "giá gửi", "phí gửi"]):
+    parking_price_context = any(k in q for k in [
+        "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
+        "giá gửi", "phí gửi", "tiền gửi", "bảng giá gửi", "phí đỗ",
+        "xe máy", "ô tô", "xe đạp", "vé tháng"
+    ])
+    if parking_price_context and any(k in q for k in ["giá", "phí", "bao nhiêu", "nhiêu", "bảng giá", "hết bao nhiêu", "giá gửi", "phí gửi"]):
         prices = db.query(Pricing).order_by(Pricing.id).all()
         wanted = None
         if "xe máy" in q: wanted = "Xe máy"
