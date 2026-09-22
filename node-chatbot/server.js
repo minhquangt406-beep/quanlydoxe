@@ -5,7 +5,7 @@ app.use(express.json({ limit: "64kb" }));
 
 const PORT = Number(process.env.NODE_INTERNAL_PORT || 3100);
 const XKIRO_API_KEY = (process.env.XKIRO_API_KEY || "").trim();
-const XKIRO_MODEL = process.env.XKIRO_MODEL || "openai/gpt-5.6-sol";
+const XKIRO_MODEL = process.env.XKIRO_MODEL || "deepseek/deepseek-v4-pro:free";
 const XKIRO_BASE_URL = (process.env.XKIRO_BASE_URL || "https://api.xkiro.com/v1").replace(/\/$/, "");
 const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENABLED || "true");
 const WEB_SEARCH_URL = process.env.WEB_SEARCH_URL || "https://html.duckduckgo.com/html/";

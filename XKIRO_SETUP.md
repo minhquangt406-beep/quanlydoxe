@@ -5,7 +5,7 @@ Render Environment Variables:
 ```text
 XKIRO_API_KEY=sk-xt-...
 XKIRO_BASE_URL=https://api.xkiro.com/v1
-XKIRO_MODEL=openai/gpt-5.6-sol
+XKIRO_MODEL=deepseek/deepseek-v4-pro:free
 WEB_SEARCH_ENABLED=true
 NODE_AI_SINGLE_SERVICE=true
 NODE_AI_URL=http://127.0.0.1:3100
