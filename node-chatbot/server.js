@@ -26,9 +26,9 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Chỉ sử dụng dữ liệu thực tế được truyền trong PARKING_CONTEXT; không bịa số liệu.
 - Nếu người dùng hỏi chỗ trống, khu vực, giá, xe đang gửi hoặc thông tin liên hệ, dùng đúng dữ liệu trong context.
 - Guest không được xem biển số/danh sách xe của người khác, doanh thu hay dữ liệu quản trị. Không tiết lộ active_vehicle_details cho guest.
-- Nếu có WEB_RESULTS, bắt buộc ưu tiên các nguồn đó cho câu hỏi cần thông tin mới/current. Không dùng trí nhớ để thay thế kết quả tìm kiếm.
+- Nếu có WEB_RESULTS, bắt buộc ưu tiên các nguồn đó cho câu hỏi không thuộc dữ liệu bãi xe của SmartPark. Không dùng trí nhớ để thay thế kết quả tìm kiếm khi đã có nguồn web.
 - Khi trả lời từ WEB_RESULTS, đối chiếu ít nhất 2 nguồn nếu có thể; ưu tiên nguồn chính thống, báo chí uy tín hoặc nguồn chuyên ngành. Nếu các nguồn khác nhau, nêu rõ sự khác biệt.
-- Với câu hỏi xếp hạng/giá trị/người nổi tiếng/sự kiện mới, phải nói rõ mốc thời gian và không biến một nguồn thành sự thật tuyệt đối nếu chưa đủ căn cứ.
+- Với câu hỏi xếp hạng/giá trị/người nổi tiếng/sự kiện mới, phải nói rõ mốc thời gian và không biến một nguồn thành sự thật tuyệt đối nếu chưa đủ căn cứ. Với câu hỏi "ai giàu nhất" hoặc xếp hạng, phải dùng nguồn tìm kiếm cụ thể; nếu chưa tìm thấy nguồn phù hợp thì nói "chưa xác minh được" và không kết luận rằng dữ liệu không tồn tại.
 - Có thể dẫn nguồn bằng [1], [2] tương ứng với WEB_RESULTS.
 - Nếu thiếu dữ liệu, nói rõ là chưa có dữ liệu thay vì đoán.
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
@@ -59,15 +59,38 @@ function buildPrompt(body, webResults = [], fetchedPages = []) {
 
   return {
     history,
-    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}`
+    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}\n\nQUY TẮC TÌM KIẾM: Nếu câu hỏi không hỏi dữ liệu riêng của bãi xe SmartPark, hãy ưu tiên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu câu hỏi yêu cầu thông tin hiện tại, xếp hạng, người giàu nhất, giá thị trường hoặc tin mới, chỉ kết luận dựa trên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu nguồn chưa đủ hoặc mâu thuẫn, nói rõ mức độ chưa xác minh thay vì khẳng định hoặc suy đoán.`
   };
+}
+
+function isParkingDataQuestion(question) {
+  const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Only questions that clearly ask for SmartPark's own live/database data
+  // should stay local. Generic words such as "gia", "bao nhieu", "hien tai"
+  // are deliberately NOT enough on their own.
+  const parkingContext = [
+    "bai xe", "bai do", "bai dau", "gui xe", "do xe", "dau xe",
+    "cho trong", "vi tri do", "vi tri trong", "khu a", "khu b",
+    "xe may", "o to", "xe dap", "ve thang", "phi gui", "gia gui",
+    "bang gia gui", "tien gui xe", "trong bai", "dang gui", "dang do",
+    "xe dang gui", "xe dang do", "so xe", "con bao nhieu cho",
+    "con bao nhieu vi tri", "doanh thu bai xe", "lich su gui xe",
+    "thanh toan gui xe", "ma QR bai xe", "lien he bai xe",
+    "smartpark", "quan ly do xe", "quanlydoxe"
+  ];
+  return parkingContext.some(term => q.includes(term));
 }
 
 function needsWebSearch(question) {
   const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  // Prefer live search for questions whose answer can change over time or
-  // requires a current ranking/fact, while keeping static parking questions local.
-  return /(thoi tiet|weather|hom nay|hom qua|ngay mai|hien nay|hien tai|moi nhat|moi day|tin tuc|tin moi|quy dinh|luat|gia xang|gia vang|ty gia|ti gia|giao thong|dia diem|nha hang|san pham|gia thi truong|cap nhat|latest|today|news|gia dien|gia bitcoin|gia tri|gia tri tai san|giau nhat|giau nhat the gioi|nguoi giau|top\s*\d+|xep hang|ranking|rank|ai la|ai dang|nam nay|2026|2025|luc nay|bao nhieu tien|bao nhieu usd|bao nhieu ty|von hoa|thi truong|ket qua|vo dich|thang|thua)/i.test(q);
+  // Policy for this chatbot: if a substantive question is NOT about
+  // SmartPark's own parking/database data, search the live web.
+  // Current/fresh parking-adjacent questions also search when they need
+  // external information.
+  const meta = /^(xin chao|chao|hello|hi|alo|cam on|ok|oke|ban la ai|ban la gi|ban co the lam gi|gioi thieu ban|help)$/i.test(q.trim());
+  if (meta) return false;
+  if (!isParkingDataQuestion(question)) return true;
+  return /(hom nay|ngay mai|hien nay|hien tai|moi nhat|tin tuc|tin moi|quy dinh|luat|gia xang|gia vang|ty gia|ti gia|giao thong|cap nhat|latest|today|news|gia thi truong|gia dien|gia bitcoin|giau nhat|nguoi giau|xep hang|ranking|ket qua|2026|2025)/i.test(q);
 }
 
 function searchQuery(question) {
@@ -98,7 +121,11 @@ async function searchWeb(query) {
   // the country hint improves local results substantially.
   if (/viet nam|vietn am|vietnam|ha noi|ho chi minh|tphcm|thai nguyen|hn|hcm/.test(n)) body.country = "VN";
   if (/giau nhat|nguoi giau|richest|ty phu/.test(n)) {
-    body.search_domain_filter = ["forbes.com", "bloomberg.com", "reuters.com"];
+    if (/viet nam|vietnam/.test(n)) {
+      body.search_domain_filter = ["forbes.com", "forbes.com.vn", "vnexpress.net", "cafef.vn", "tuoitre.vn", "reuters.com"];
+    } else {
+      body.search_domain_filter = ["forbes.com", "bloomberg.com", "reuters.com"];
+    }
   } else if (/gia vang|gold price/.test(n)) {
     body.search_domain_filter = ["sbv.gov.vn", "sjc.com.vn", "vnexpress.net", "reuters.com"];
   }
@@ -229,7 +256,8 @@ app.post("/chat", async (req, res) => {
   const nq = question.toLowerCase();
   const urlMatches = question.match(/https?:\/\/[^\s<>"]+/gi) || [];
   const explicitUrls = [...new Set(urlMatches.map(u => u.replace(/[),.;!?]+$/, "")))].slice(0, 3);
-  const fetchRequested = WEB_FETCH_ENABLED && (explicitUrls.length > 0 || /(đọc|doc|nội dung|noi dung|chi tiết|chi tiet|phân tích trang|phan tich trang|trang web|link này|link nay|nguồn này|nguon nay)/i.test(nq));
+  const rankingFetchRequested = /(ai\s+(l[aà]u|dang)?\s*gi[aà]u|ai\s*gi[aà]u|người\s+gi[aà]u|nguoi\s+giau|gi[aà]u\s+nh[aấ]t|giau\s+nhat|richest|ty\s*ph[uú]|t[oố]p\s*\d+\s+ng[uư][oờ]i\s+gi[aà]u|x[eế]p\s+h[aà]ng)/i.test(nq);
+  const fetchRequested = WEB_FETCH_ENABLED && (explicitUrls.length > 0 || rankingFetchRequested || /(đọc|doc|nội dung|noi dung|chi tiết|chi tiet|phân tích trang|phan tich trang|trang web|link này|link nay|nguồn này|nguon nay)/i.test(nq));
 
   // Use the standalone search endpoint only when we need URLs to feed into
   // web-fetch. For ordinary live questions, chat/completions performs the
@@ -271,7 +299,10 @@ app.post("/chat", async (req, res) => {
         return undefined;
       })();
       const domains = /giau nhat|nguoi giau|richest|ty phu/i.test(query)
-        ? ["forbes.com", "bloomberg.com", "reuters.com"] : undefined;
+        ? (/viet nam|vietnam/i.test(query)
+            ? ["forbes.com", "forbes.com.vn", "vnexpress.net", "cafef.vn", "tuoitre.vn", "reuters.com"]
+            : ["forbes.com", "bloomberg.com", "reuters.com"])
+        : undefined;
       const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026)/i.test(query) ? "week" : "noLimit";
       // If we already performed standalone search to obtain URLs for fetch,
       // do not trigger a second search inside chat/completions.
