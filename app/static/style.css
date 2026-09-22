@@ -4012,3 +4012,92 @@ input:focus,select:focus,textarea:focus{background:#fff}
   .ai-support-messages{padding-left:10px!important;padding-right:10px!important}
   .ai-msg-wrap{max-width:calc(100% - 34px)!important}
 }
+
+/* =========================================================
+   SMARTPARK AI — SMOOTH MOTION / GLASS V11
+   Final UI polish: softer motion, cleaner hierarchy, better mobile touch
+   ========================================================= */
+.ai-support,
+.ai-support-panel,
+.ai-support-fab,
+.ai-head-btn,
+.ai-support-close,
+.ai-send-btn,
+.ai-input-action,
+.ai-support-suggestions button,
+.ai-msg-body,
+.ai-msg-avatar{will-change:transform,opacity}
+
+.ai-support-fab{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease,filter .28s ease!important}
+.ai-support-fab:hover{filter:saturate(1.08) brightness(1.04)!important;transform:translateY(-4px)!important}
+.ai-support-fab:active{transform:translateY(-1px) scale(.96)!important}
+.ai-support-fab.open:hover{transform:translateY(1px) scale(.97)!important}
+
+.ai-support-panel{transform-origin:bottom right!important;animation:aiSmoothOpen .36s cubic-bezier(.16,1,.3,1)!important}
+@keyframes aiSmoothOpen{0%{opacity:0;transform:translateY(18px) scale(.965);filter:blur(2px)}55%{opacity:1}100%{opacity:1;transform:none;filter:blur(0)}}
+
+.ai-support-head{box-shadow:inset 0 -1px rgba(255,255,255,.06)!important}
+.ai-support-head:before{content:"";position:absolute;left:-20%;top:-80%;width:55%;height:240%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.09),transparent);transform:rotate(12deg);animation:aiHeaderSheen 7s ease-in-out infinite;pointer-events:none}
+@keyframes aiHeaderSheen{0%,55%{left:-55%;opacity:0}65%{opacity:1}85%,100%{left:120%;opacity:0}}
+
+.ai-context-strip{box-shadow:0 1px 0 rgba(15,23,42,.015)!important}
+.ai-context-dot{animation:aiLiveDot 2.2s ease-in-out infinite}
+@keyframes aiLiveDot{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+
+.ai-support-messages{scroll-behavior:smooth!important;scrollbar-width:thin;scrollbar-color:#d8deea transparent}
+.ai-support-messages::-webkit-scrollbar{width:6px}
+.ai-support-messages::-webkit-scrollbar-track{background:transparent}
+.ai-support-messages::-webkit-scrollbar-thumb{background:#d9dfeb;border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+
+.ai-welcome-card{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease!important}
+.ai-welcome-card:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(30,41,59,.07)!important;border-color:#dfe4ef!important}
+
+.ai-msg{animation:aiMessageIn .34s cubic-bezier(.22,1,.36,1)!important}
+@keyframes aiMessageIn{from{opacity:0;transform:translateY(9px) scale(.985)}to{opacity:1;transform:none}}
+.ai-msg-user .ai-msg-body{transition:transform .2s ease,box-shadow .2s ease!important}
+.ai-msg-user .ai-msg-body:hover{transform:translateY(-1px);box-shadow:0 11px 24px rgba(79,70,229,.2)!important}
+.ai-msg-bot .ai-msg-body{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important}
+.ai-msg-bot .ai-msg-body:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(15,23,42,.06)!important;border-color:#dfe4ee!important}
+
+.ai-msg-body strong{font-weight:850;color:#273b7a}
+.ai-msg-user .ai-msg-body strong{color:#fff}
+.ai-msg-body a{color:#4f46e5;font-weight:800;text-decoration:none;border-bottom:1px solid #c7d2fe}
+.ai-msg-body a:hover{border-bottom-color:#6366f1}
+
+.ai-support-suggestions button{transition:transform .2s cubic-bezier(.22,1,.36,1),background .2s ease,border-color .2s ease,box-shadow .2s ease!important}
+.ai-support-suggestions button:hover{transform:translateY(-2px)!important;box-shadow:0 6px 14px rgba(79,70,229,.08)!important}
+.ai-support-suggestions button:active{transform:scale(.96)!important}
+
+.ai-support-form{transition:border-color .2s ease,box-shadow .2s ease,background .2s ease!important}
+.ai-support-form:focus-within{border-color:#b9b5ff!important;background:#fff!important;box-shadow:0 0 0 4px rgba(99,102,241,.075),0 6px 18px rgba(15,23,42,.045)!important}
+.ai-support-form input::placeholder{transition:opacity .2s ease}
+.ai-support-form:focus-within input::placeholder{opacity:.65}
+.ai-input-action{transition:background .18s ease,color .18s ease,transform .18s ease!important}
+.ai-input-action:hover{transform:rotate(8deg) scale(1.04)!important}
+.ai-send-btn{transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s ease,filter .2s ease!important}
+.ai-send-btn:hover{filter:brightness(1.06)!important}
+.ai-send-btn:active{transform:scale(.91)!important}
+.ai-send-btn:disabled{filter:saturate(.7)!important}
+
+.ai-source-card{flex-wrap:wrap!important;padding:2px 1px 0!important}
+.ai-source-card a{transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease!important}
+.ai-source-card a:hover{transform:translateY(-2px)!important;background:#e9e7ff!important;border-color:#c7d2fe!important;box-shadow:0 5px 12px rgba(79,70,229,.12)!important}
+.ai-source-card em{font-style:normal;font-size:7px;color:#a1a8b5}
+
+.ai-typing-bubble{padding:11px 13px!important;background:linear-gradient(145deg,#fff,#f8faff)!important}
+.ai-typing-bubble i{width:5px!important;height:5px!important}
+
+@media(max-width:600px){
+  .ai-support{right:12px!important;bottom:calc(76px + env(safe-area-inset-bottom))!important}
+  .ai-support-fab{box-shadow:0 14px 34px rgba(49,46,129,.35),0 0 0 1px rgba(255,255,255,.16) inset!important}
+  .ai-support-panel{right:0!important;bottom:69px!important;width:calc(100vw - 14px)!important;height:min(74dvh,700px)!important;max-height:calc(100dvh - 94px - env(safe-area-inset-bottom))!important;border-radius:22px!important}
+  .ai-support-head{min-height:70px!important}
+  .ai-support-messages{padding:15px 11px 12px!important}
+  .ai-msg-wrap{max-width:calc(100% - 37px)!important}
+  .ai-msg-body{font-size:11px!important;line-height:1.6!important}
+  .ai-support-suggestions-wrap{padding:8px 10px 9px!important}
+  .ai-input-shell{padding-left:9px!important;padding-right:9px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .ai-support *, .ai-support *:before, .ai-support *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
