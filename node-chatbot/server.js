@@ -32,6 +32,30 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
 - Không tự nhận là con người.`;
 
+function buildPrompt(body, webResults = []) {
+  const role = body.role || "guest";
+  const context = { ...(body.context || {}), role };
+  if (role === "guest") delete context.active_vehicle_details;
+
+  const history = Array.isArray(body.history)
+    ? body.history.slice(-10).map(x => ({
+        role: x.role === "assistant" ? "assistant" : "user",
+        content: String(x.content || "").slice(0, 1500)
+      }))
+    : [];
+
+  const webBlock = webResults.length
+    ? `\n\nWEB_RESULTS (nguồn tìm kiếm bên ngoài):\n${webResults.map((r, i) =>
+        `[${i + 1}] ${r.title}\nURL: ${r.url}\nNguồn: ${r.source || ""}\n${r.snippet || ""}${r.published_at ? `\nNgày: ${r.published_at}` : ""}`
+      ).join("\n\n")}`
+    : "";
+
+  return {
+    history,
+    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}`
+  };
+}
+
 function needsWebSearch(question) {
   const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   // Prefer live search for questions whose answer can change over time or
