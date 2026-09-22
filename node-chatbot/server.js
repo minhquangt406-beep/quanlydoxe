@@ -24,51 +24,60 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Chỉ sử dụng dữ liệu thực tế được truyền trong PARKING_CONTEXT; không bịa số liệu.
 - Nếu người dùng hỏi chỗ trống, khu vực, giá, xe đang gửi hoặc thông tin liên hệ, dùng đúng dữ liệu trong context.
 - Guest không được xem biển số/danh sách xe của người khác, doanh thu hay dữ liệu quản trị. Không tiết lộ active_vehicle_details cho guest.
-- Nếu có WEB_RESULTS, dùng chúng cho câu hỏi cần thông tin mới/current; phân biệt rõ thông tin web với dữ liệu bãi xe.
+- Nếu có WEB_RESULTS, bắt buộc ưu tiên các nguồn đó cho câu hỏi cần thông tin mới/current. Không dùng trí nhớ để thay thế kết quả tìm kiếm.
+- Khi trả lời từ WEB_RESULTS, đối chiếu ít nhất 2 nguồn nếu có thể; ưu tiên nguồn chính thống, báo chí uy tín hoặc nguồn chuyên ngành. Nếu các nguồn khác nhau, nêu rõ sự khác biệt.
+- Với câu hỏi xếp hạng/giá trị/người nổi tiếng/sự kiện mới, phải nói rõ mốc thời gian và không biến một nguồn thành sự thật tuyệt đối nếu chưa đủ căn cứ.
+- Có thể dẫn nguồn bằng [1], [2] tương ứng với WEB_RESULTS.
 - Nếu thiếu dữ liệu, nói rõ là chưa có dữ liệu thay vì đoán.
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
 - Không tự nhận là con người.`;
 
 function needsWebSearch(question) {
-  const q = String(question || "").toLowerCase();
-  return /(thời tiết|weather|hôm nay|hôm qua|ngày mai|hiện nay|hiện tại|mới nhất|mới đây|tin tức|tin mới|quy định|luật|giá xăng|giá vàng|tỷ giá|tỉ giá|giao thông|địa điểm|nhà hàng|sản phẩm|giá thị trường|cập nhật|latest|today|news|giá điện|giá bitcoin)/i.test(q);
+  const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Prefer live search for questions whose answer can change over time or
+  // requires a current ranking/fact, while keeping static parking questions local.
+  return /(thoi tiet|weather|hom nay|hom qua|ngay mai|hien nay|hien tai|moi nhat|moi day|tin tuc|tin moi|quy dinh|luat|gia xang|gia vang|ty gia|ti gia|giao thong|dia diem|nha hang|san pham|gia thi truong|cap nhat|latest|today|news|gia dien|gia bitcoin|gia tri|gia tri tai san|giau nhat|giau nhat the gioi|nguoi giau|top\s*\d+|xep hang|ranking|rank|ai la|ai dang|nam nay|2026|2025|luc nay|bao nhieu tien|bao nhieu usd|bao nhieu ty|von hoa|thi truong|ket qua|vo dich|thang|thua)/i.test(q);
 }
 
-function buildPrompt(body, webResults = []) {
-  const role = body.role || "guest";
-  const context = { ...(body.context || {}), role };
-  if (role === "guest") delete context.active_vehicle_details;
-  const history = Array.isArray(body.history)
-    ? body.history.slice(-10).map(x => ({ role: x.role === "assistant" ? "assistant" : "user", content: String(x.content || "").slice(0, 1000) }))
-    : [];
-  const webBlock = webResults.length
-    ? `\n\nWEB_RESULTS (thông tin tìm kiếm bên ngoài hệ thống):\n${webResults.map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.snippet}`).join("\n\n")}`
-    : "";
-  return { history, prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}` };
-}
-
-function decodeHtml(s) {
-  return String(s || "")
-    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;/g, "'")
-    .replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+function searchQuery(question) {
+  const q = String(question || "").replace(/\s+/g, " ").trim();
+  const n = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let extra = "";
+  if (/giau nhat|nguoi giau|richest|ty phu/.test(n)) extra = " 2026 Forbes Bloomberg richest person";
+  else if (/thoi tiet|weather/.test(n)) extra = " weather today forecast";
+  else if (/gia vang|gold price/.test(n)) extra = " gold price today Vietnam";
+  else if (/ty gia|ti gia|usd|dollar/.test(n)) extra = " exchange rate today Vietnam";
+  else if (/tin tuc|tin moi|latest|news/.test(n)) extra = " latest news 2026";
+  else if (/xep hang|ranking|top\\s*\\d+/.test(n)) extra = " current ranking 2026";
+  else if (/nam nay|hien tai|moi nhat|today|latest/.test(n)) extra = " current 2026";
+  return (q + extra).slice(0, 450);
 }
 
 async function searchWeb(query) {
   if (!WEB_SEARCH_ENABLED || !XKIRO_API_KEY) return [];
+  const q = String(query || "").slice(0, 500);
+  const n = q.toLowerCase();
+  const body = {
+    model: "xkiro/web-search",
+    query: q,
+    max_results: 8,
+    search_recency_filter: /thoi tiet|weather|tin tuc|tin moi|latest|today|hien tai|moi nhat|2026/.test(n) ? "week" : "noLimit"
+  };
+  // Do not bias global questions toward Vietnam. For Vietnam-specific topics,
+  // the country hint improves local results substantially.
+  if (/viet nam|vietn am|vietnam|ha noi|ho chi minh|tphcm|thai nguyen|hn|hcm/.test(n)) body.country = "VN";
+  if (/giau nhat|nguoi giau|richest|ty phu/.test(n)) {
+    body.search_domain_filter = ["forbes.com", "bloomberg.com", "reuters.com"];
+  } else if (/gia vang|gold price/.test(n)) {
+    body.search_domain_filter = ["sbv.gov.vn", "sjc.com.vn", "vnexpress.net", "reuters.com"];
+  }
   const response = await fetch(`${XKIRO_BASE_URL}/search`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${XKIRO_API_KEY}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: "xkiro/web-search",
-      query: String(query || "").slice(0, 500),
-      max_results: 5,
-      country: "VN",
-      search_recency_filter: "noLimit"
-    }),
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(15000)
   });
   const data = await response.json().catch(() => ({}));
@@ -79,31 +88,42 @@ async function searchWeb(query) {
     url: String(r.url || "").trim(),
     snippet: String(r.snippet || "").trim(),
     source: String(r.source || "").trim(),
-    published_at: r.published_at || null
-  })).filter(r => r.title && r.url).slice(0, 5);
+    published_at: r.publishedDate || null
+  })).filter(r => r.title && r.url).slice(0, 8);
 }
 
-async function callXKiro({ history, prompt }) {
+async function callXKiro({ history, prompt }, useWeb = false) {
   const messages = [{ role: "system", content: SYSTEM }, ...history, { role: "user", content: prompt }];
+  const payload = {
+    model: XKIRO_MODEL,
+    messages,
+    temperature: 0.2,
+    max_tokens: 900
+  };
+  // Search results are supplied separately below, so do not enable a second
+  // xKiro search here. This keeps each live question to one search request.
+  // The prompt already contains the ranked WEB_RESULTS.
+
   const response = await fetch(`${XKIRO_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${XKIRO_API_KEY}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: XKIRO_MODEL,
-      messages,
-      temperature: 0.3,
-      max_tokens: 700
-    }),
+    body: JSON.stringify(payload),
     signal: AbortSignal.timeout(90000)
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data?.error?.message || `xKiro HTTP ${response.status}`);
   const answer = String(data?.choices?.[0]?.message?.content || "").trim();
   if (!answer) throw new Error("xKiro trả về phản hồi rỗng");
-  return answer;
+  const search = data?.web_search || null;
+  const sources = Array.isArray(search?.results) ? search.results.map(r => ({
+    url: String(r.url || ""),
+    title: String(r.title || ""),
+    source: String(r.source || "")
+  })).filter(r => r.url && r.title).slice(0, 6) : [];
+  return { answer, sources, webSearchStatus: search?.status || null, remainingToday: search?.remaining_today ?? null };
 }
 
 app.get("/health", (req, res) => res.json({
@@ -144,15 +164,21 @@ app.post("/chat", async (req, res) => {
   const useWeb = needsWebSearch(question);
   let webResults = [];
   if (useWeb && WEB_SEARCH_ENABLED) {
-    try { webResults = await searchWeb(question); }
+    try { webResults = await searchWeb(searchQuery(question)); }
     catch (e) { console.error("[Web Search]", e.message); }
   }
   const built = buildPrompt({ ...req.body, question }, webResults);
 
   if (XKIRO_API_KEY) {
     try {
-      const answer = await callXKiro(built);
-      return res.json({ answer, sources: webResults.map(x => ({ url: x.url, title: x.title })), web_search: useWeb && webResults.length > 0, provider: "xKiro" });
+      const result = await callXKiro(built, useWeb);
+      return res.json({
+        answer: result.answer,
+        sources: webResults.map(x => ({ url: x.url, title: x.title, source: x.source })),
+        web_search: Boolean(useWeb && webResults.length),
+        web_search_status: useWeb ? (webResults.length ? "ok" : "no_results") : null,
+        provider: "xKiro"
+      });
     } catch (e) {
       console.error("[xKiro]", e.message);
       return res.status(502).json({ error: `xKiro không phản hồi: ${e.message}`, code: "XKIRO_UPSTREAM_ERROR" });
