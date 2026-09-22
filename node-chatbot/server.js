@@ -11,6 +11,7 @@ const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENAB
 const WEB_SEARCH_URL = process.env.WEB_SEARCH_URL || "https://html.duckduckgo.com/html/";
 const WEB_FETCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_FETCH_ENABLED || "true");
 const WEB_FETCH_TOP = Math.max(0, Math.min(3, Number(process.env.WEB_FETCH_TOP || 2)));
+const WEB_SEARCH_DEFAULT_LOCATION = process.env.WEB_SEARCH_DEFAULT_LOCATION || "Thái Nguyên, Việt Nam";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use((req, res, next) => {
@@ -27,7 +28,9 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Nếu người dùng hỏi chỗ trống, khu vực, giá, xe đang gửi hoặc thông tin liên hệ, dùng đúng dữ liệu trong context.
 - Guest không được xem biển số/danh sách xe của người khác, doanh thu hay dữ liệu quản trị. Không tiết lộ active_vehicle_details cho guest.
 - Nếu có WEB_RESULTS, bắt buộc ưu tiên các nguồn đó cho câu hỏi không thuộc dữ liệu bãi xe của SmartPark. Không dùng trí nhớ để thay thế kết quả tìm kiếm khi đã có nguồn web.
-- Khi trả lời từ WEB_RESULTS, đối chiếu ít nhất 2 nguồn nếu có thể; ưu tiên nguồn chính thống, báo chí uy tín hoặc nguồn chuyên ngành. Nếu các nguồn khác nhau, nêu rõ sự khác biệt.
+- Khi trả lời từ WEB_RESULTS/WEB_PAGE_CONTENT, phải trả lời trực tiếp câu hỏi trước, sau đó mới giải thích và nêu nguồn. Không trả lời vòng vo kiểu "hãy kiểm tra ứng dụng khác" nếu nguồn web đã có dữ liệu.
+- Đối chiếu ít nhất 2 nguồn nếu có thể; ưu tiên nguồn chính thống, báo chí uy tín hoặc nguồn chuyên ngành. Nếu các nguồn khác nhau, nêu rõ sự khác biệt.
+- Với thời tiết, giá thị trường, tỷ giá, tin tức, xếp hạng và dữ liệu hiện tại, phải dùng dữ liệu web mới nhất có sẵn; nêu rõ địa điểm và thời điểm nếu có. Nếu nguồn web có số liệu thì phải đưa số liệu đó vào câu trả lời thay vì chỉ nói rằng "đang tìm kiếm".
 - Với câu hỏi xếp hạng/giá trị/người nổi tiếng/sự kiện mới, phải nói rõ mốc thời gian và không biến một nguồn thành sự thật tuyệt đối nếu chưa đủ căn cứ. Với câu hỏi "ai giàu nhất" hoặc xếp hạng, phải dùng nguồn tìm kiếm cụ thể; nếu chưa tìm thấy nguồn phù hợp thì nói "chưa xác minh được" và không kết luận rằng dữ liệu không tồn tại.
 - Có thể dẫn nguồn bằng [1], [2] tương ứng với WEB_RESULTS.
 - Nếu thiếu dữ liệu, nói rõ là chưa có dữ liệu thay vì đoán.
@@ -98,7 +101,7 @@ function searchQuery(question) {
   const n = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   let extra = "";
   if (/giau nhat|nguoi giau|richest|ty phu/.test(n)) extra = " 2026 Forbes Bloomberg richest person";
-  else if (/thoi tiet|weather/.test(n)) extra = " weather today forecast";
+  else if (/thoi tiet|weather/.test(n)) extra = ` weather today forecast ${WEB_SEARCH_DEFAULT_LOCATION}`;
   else if (/gia vang|gold price/.test(n)) extra = " gold price today Vietnam";
   else if (/ty gia|ti gia|usd|dollar/.test(n)) extra = " exchange rate today Vietnam";
   else if (/tin tuc|tin moi|latest|news/.test(n)) extra = " latest news 2026";
@@ -115,7 +118,7 @@ async function searchWeb(query) {
     model: "xkiro/web-search",
     query: q,
     max_results: 8,
-    search_recency_filter: /thoi tiet|weather|tin tuc|tin moi|latest|today|hien tai|moi nhat|2026/.test(n) ? "week" : "noLimit"
+    search_recency_filter: /thoi tiet|weather|tin tuc|tin moi|latest|today|hien tai|moi nhat|2026|gia vang|ty gia/.test(n) ? "day" : "noLimit"
   };
   // Do not bias global questions toward Vietnam. For Vietnam-specific topics,
   // the country hint improves local results substantially.
@@ -259,10 +262,11 @@ app.post("/chat", async (req, res) => {
   const rankingFetchRequested = /(ai\s+(l[aà]u|dang)?\s*gi[aà]u|ai\s*gi[aà]u|người\s+gi[aà]u|nguoi\s+giau|gi[aà]u\s+nh[aấ]t|giau\s+nhat|richest|ty\s*ph[uú]|t[oố]p\s*\d+\s+ng[uư][oờ]i\s+gi[aà]u|x[eế]p\s+h[aà]ng)/i.test(nq);
   const fetchRequested = WEB_FETCH_ENABLED && (explicitUrls.length > 0 || rankingFetchRequested || /(đọc|doc|nội dung|noi dung|chi tiết|chi tiet|phân tích trang|phan tich trang|trang web|link này|link nay|nguồn này|nguon nay)/i.test(nq));
 
-  // Use the standalone search endpoint only when we need URLs to feed into
-  // web-fetch. For ordinary live questions, chat/completions performs the
-  // search itself so one user question consumes one search request.
-  if (useWeb && XKIRO_API_KEY && fetchRequested && !explicitUrls.length) {
+  // Use one explicit search for every non-parking question so we can inspect
+  // the actual search results and fetch the most relevant pages. This gives
+  // much better answers for weather, prices, news and rankings than relying
+  // on a model-only search summary.
+  if (useWeb && XKIRO_API_KEY && !explicitUrls.length) {
     try {
       webResults = await searchWeb(query);
       webStatus = webResults.length ? "ok" : "no_results";
@@ -303,10 +307,10 @@ app.post("/chat", async (req, res) => {
             ? ["forbes.com", "forbes.com.vn", "vnexpress.net", "cafef.vn", "tuoitre.vn", "reuters.com"]
             : ["forbes.com", "bloomberg.com", "reuters.com"])
         : undefined;
-      const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026)/i.test(query) ? "week" : "noLimit";
-      // If we already performed standalone search to obtain URLs for fetch,
-      // do not trigger a second search inside chat/completions.
-      const chatSearch = useWeb && !(fetchRequested && webResults.length);
+      const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026|gia vang|ty gia)/i.test(query) ? "day" : "noLimit";
+      // We already performed the standalone search above. Do not trigger a
+      // second search inside chat/completions; this preserves the free quota.
+      const chatSearch = false;
       const result = await callXKiro(built, chatSearch, {count: 8, country: domainInfo, domains, recency});
       const apiSearch = result.search || {};
       remainingToday = apiSearch.remaining_today ?? null;
