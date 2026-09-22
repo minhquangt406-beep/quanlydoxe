@@ -9,6 +9,8 @@ const XKIRO_MODEL = process.env.XKIRO_MODEL || "deepseek/deepseek-v4-pro:free";
 const XKIRO_BASE_URL = (process.env.XKIRO_BASE_URL || "https://api.xkiro.com/v1").replace(/\/$/, "");
 const WEB_SEARCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_SEARCH_ENABLED || "true");
 const WEB_SEARCH_URL = process.env.WEB_SEARCH_URL || "https://html.duckduckgo.com/html/";
+const WEB_FETCH_ENABLED = /^(1|true|yes|on)$/i.test(process.env.WEB_FETCH_ENABLED || "true");
+const WEB_FETCH_TOP = Math.max(0, Math.min(3, Number(process.env.WEB_FETCH_TOP || 2)));
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use((req, res, next) => {
@@ -32,7 +34,7 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
 - Không tự nhận là con người.`;
 
-function buildPrompt(body, webResults = []) {
+function buildPrompt(body, webResults = [], fetchedPages = []) {
   const role = body.role || "guest";
   const context = { ...(body.context || {}), role };
   if (role === "guest") delete context.active_vehicle_details;
@@ -49,10 +51,15 @@ function buildPrompt(body, webResults = []) {
         `[${i + 1}] ${r.title}\nURL: ${r.url}\nNguồn: ${r.source || ""}\n${r.snippet || ""}${r.published_at ? `\nNgày: ${r.published_at}` : ""}`
       ).join("\n\n")}`
     : "";
+  const fetchBlock = fetchedPages.length
+    ? `\n\nWEB_PAGE_CONTENT (nội dung đã đọc từ các trang web):\n${fetchedPages.map((r, i) =>
+        `[TRANG ${i + 1}] ${r.title || r.url}\nURL: ${r.url}\n${r.content || ""}`
+      ).join("\n\n")}`
+    : "";
 
   return {
     history,
-    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}`
+    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}`
   };
 }
 
@@ -116,17 +123,45 @@ async function searchWeb(query) {
   })).filter(r => r.title && r.url).slice(0, 8);
 }
 
-async function callXKiro({ history, prompt }, useWeb = false) {
+async function fetchWebPages(urls) {
+  const clean = [...new Set((urls || []).filter(u => /^https?:\/\//i.test(String(u))).map(String))].slice(0, 10);
+  if (!clean.length) return [];
+  const response = await fetch(`${XKIRO_BASE_URL}/fetch`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${XKIRO_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ model: "xkiro/web-fetch", urls: clean, max_content_tokens: 6000 }),
+    signal: AbortSignal.timeout(25000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || `xKiro Fetch HTTP ${response.status}`);
+  return Array.isArray(data?.results) ? data.results.map(r => ({
+    url: String(r.url || ""), title: String(r.title || ""), content: String(r.content || ""),
+    error: r.error || null
+  })) : [];
+}
+
+async function callXKiro({ history, prompt }, useWeb = false, searchOptions = {}) {
   const messages = [{ role: "system", content: SYSTEM }, ...history, { role: "user", content: prompt }];
   const payload = {
     model: XKIRO_MODEL,
     messages,
     temperature: 0.2,
-    max_tokens: 900
+    max_tokens: 1000
   };
-  // Search results are supplied separately below, so do not enable a second
-  // xKiro search here. This keeps each live question to one search request.
-  // The prompt already contains the ranked WEB_RESULTS.
+  if (useWeb) {
+    payload.web_search = {
+      enable: true,
+      count: Math.max(1, Math.min(10, Number(searchOptions.count || 8)))
+    };
+    if (searchOptions.country) payload.web_search.country = searchOptions.country;
+    if (searchOptions.recency) payload.web_search.search_recency_filter = searchOptions.recency;
+    if (Array.isArray(searchOptions.domains) && searchOptions.domains.length) {
+      payload.web_search.search_domain_filter = searchOptions.domains.slice(0, 20);
+    }
+  }
 
   const response = await fetch(`${XKIRO_BASE_URL}/chat/completions`, {
     method: "POST",
@@ -185,22 +220,76 @@ app.post("/chat", async (req, res) => {
   if (!question) return res.status(400).json({ error: "Vui lòng nhập câu hỏi" });
   if (question.length > 500) return res.status(400).json({ error: "Câu hỏi tối đa 500 ký tự" });
 
-  const useWeb = needsWebSearch(question);
+  const useWeb = WEB_SEARCH_ENABLED && needsWebSearch(question);
   let webResults = [];
-  if (useWeb && WEB_SEARCH_ENABLED) {
-    try { webResults = await searchWeb(searchQuery(question)); }
-    catch (e) { console.error("[Web Search]", e.message); }
+  let fetchedPages = [];
+  let webStatus = null;
+  let remainingToday = null;
+  const query = searchQuery(question);
+  const nq = question.toLowerCase();
+  const urlMatches = question.match(/https?:\/\/[^\s<>"]+/gi) || [];
+  const explicitUrls = [...new Set(urlMatches.map(u => u.replace(/[),.;!?]+$/, "")))].slice(0, 3);
+  const fetchRequested = WEB_FETCH_ENABLED && (explicitUrls.length > 0 || /(đọc|doc|nội dung|noi dung|chi tiết|chi tiet|phân tích trang|phan tich trang|trang web|link này|link nay|nguồn này|nguon nay)/i.test(nq));
+
+  // Use the standalone search endpoint only when we need URLs to feed into
+  // web-fetch. For ordinary live questions, chat/completions performs the
+  // search itself so one user question consumes one search request.
+  if (useWeb && XKIRO_API_KEY && fetchRequested && !explicitUrls.length) {
+    try {
+      webResults = await searchWeb(query);
+      webStatus = webResults.length ? "ok" : "no_results";
+    } catch (e) {
+      webStatus = "search_error";
+      console.error("[Web Search]", e.message);
+    }
   }
-  const built = buildPrompt({ ...req.body, question }, webResults);
+
+  // Read the most relevant pages when the question asks for details, or when
+  // an explicit URL was supplied. Keep the default at 2 pages to conserve the
+  // free xKiro fetch allowance.
+  if (WEB_FETCH_ENABLED && XKIRO_API_KEY && (fetchRequested || (useWeb && WEB_FETCH_TOP > 0))) {
+    const urls = explicitUrls.length ? explicitUrls : webResults.slice(0, WEB_FETCH_TOP).map(x => x.url);
+    if (urls.length) {
+      try {
+        const fetched = await fetchWebPages(urls.slice(0, 3));
+        fetchedPages = fetched.filter(x => x.content).map(x => ({
+          url: x.url, title: x.title, content: String(x.content).slice(0, 14000), error: x.error || null
+        }));
+      } catch (e) {
+        console.error("[Web Fetch]", e.message);
+      }
+    }
+  }
+
+  const built = buildPrompt({ ...req.body, question }, webResults, fetchedPages);
 
   if (XKIRO_API_KEY) {
     try {
-      const result = await callXKiro(built, useWeb);
+      const domainInfo = (() => {
+        const n = query.toLowerCase();
+        if (/viet nam|vietnam|hà nội|ha noi|hồ chí minh|ho chi minh|thái nguyên|thai nguyen/.test(n)) return "VN";
+        return undefined;
+      })();
+      const domains = /giau nhat|nguoi giau|richest|ty phu/i.test(query)
+        ? ["forbes.com", "bloomberg.com", "reuters.com"] : undefined;
+      const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026)/i.test(query) ? "week" : "noLimit";
+      // If we already performed standalone search to obtain URLs for fetch,
+      // do not trigger a second search inside chat/completions.
+      const chatSearch = useWeb && !(fetchRequested && webResults.length);
+      const result = await callXKiro(built, chatSearch, {count: 8, country: domainInfo, domains, recency});
+      const apiSearch = result.search || {};
+      remainingToday = apiSearch.remaining_today ?? null;
+      const sources = webResults.map(x => ({ url: x.url, title: x.title, source: x.source }));
+      const apiSources = Array.isArray(apiSearch.results) ? apiSearch.results.map(r => ({url:String(r.url||""),title:String(r.title||""),source:String(r.source||"")})).filter(x=>x.url&&x.title) : [];
+      const merged = [...sources, ...apiSources].filter((x,i,a)=>a.findIndex(y=>y.url===x.url)===i).slice(0,8);
       return res.json({
         answer: result.answer,
-        sources: webResults.map(x => ({ url: x.url, title: x.title, source: x.source })),
-        web_search: Boolean(useWeb && webResults.length),
-        web_search_status: useWeb ? (webResults.length ? "ok" : "no_results") : null,
+        sources: merged,
+        web_search: Boolean(useWeb),
+        web_search_status: useWeb ? (apiSearch.status || webStatus || (webResults.length ? "ok" : "no_results")) : null,
+        web_search_remaining_today: remainingToday,
+        web_fetched: fetchedPages.length > 0,
+        fetched_pages: fetchedPages.map(x => ({url:x.url,title:x.title,error:x.error||null})),
         provider: "xKiro"
       });
     } catch (e) {

@@ -73,7 +73,7 @@ function loadAISupportHistory(){
 }
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
 function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
-function addAISupportMessage(text, role="bot", persist=true, sources=[]){
+function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
   const welcome=box.querySelector(".ai-welcome-card"); if(welcome) welcome.remove();
   const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
@@ -82,9 +82,10 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[]){
   const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
   const body=document.createElement("div"); body.className="ai-msg-body"; body.textContent=text;
   wrap.append(meta,body);
-  if(role==="bot" && Array.isArray(sources) && sources.length){
+  if(role==="bot" && (Array.isArray(sources) && sources.length || webMeta?.searched || webMeta?.fetched)){
     const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
-    const title=document.createElement("small"); title.textContent="Nguồn tham khảo"; src.appendChild(title);
+    const title=document.createElement("small"); title.textContent=webMeta?.fetched?"🌐 Đã tìm web + đọc nội dung trang":"🌐 Nguồn web được AI đối chiếu"; src.appendChild(title);
+    if(webMeta?.remaining!=null){const q=document.createElement("em"); q.textContent=` còn ${webMeta.remaining} lượt tìm hôm nay`; src.appendChild(q);}
     sources.slice(0,5).forEach((s,i)=>{const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=`${i+1}`;a.title=s.title||s.url;src.appendChild(a);});
     wrap.appendChild(src);
   }
@@ -96,12 +97,12 @@ function setAISupportBusy(busy){
   if(input) input.disabled=busy;
   if(btn){btn.disabled=busy;btn.innerHTML=busy?'<span class="ai-send-spinner"></span>':'<span>➤</span>';btn.setAttribute("aria-busy",busy?"true":"false");}
 }
-function showAITyping(){
+function showAITyping(web=false){
   const box=$("#aiSupportMessages"); if(!box) return null;
   const row=document.createElement("div"); row.className="ai-msg ai-msg-bot ai-msg-typing";
   const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent="✦";
   const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
-  const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML='<b>SmartPark AI</b><span>đang nhập...</span>';
+  const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>SmartPark AI</b><span>${web?"đang tìm kiếm & đối chiếu web...":"đang xử lý..."}</span>`;
   const body=document.createElement("div"); body.className="ai-msg-body ai-typing-bubble"; body.innerHTML='<i></i><i></i><i></i>';
   wrap.append(meta,body); row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight; return row;
 }
@@ -123,12 +124,12 @@ function initAISupport(){
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
     e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
-    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true); const typingEl=showAITyping();
+    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; setAISupportBusy(true); const typingEl=showAITyping(/https?:\/\/|hôm nay|mới nhất|thời tiết|tin tức|ai là|giá |tỷ giá|xếp hạng|hiện nay|hiện tại|latest|today|news|richest/i.test(q));
     try{
       const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
       const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000); let d;
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}finally{clearTimeout(timer)}
-      typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[]);
+      typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[],{searched:!!d.web_search,fetched:!!d.web_fetched,remaining:d.web_search_remaining_today});
     }catch(err){
       typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
