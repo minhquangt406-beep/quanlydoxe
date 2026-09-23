@@ -94,8 +94,8 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   if(role==="bot" && (Array.isArray(sources) && sources.length || webMeta?.searched || webMeta?.fetched)){
     const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
     const heading=document.createElement("div"); heading.className="ai-source-heading";
-    const label=document.createElement("span"); label.textContent=webMeta?.fetched?"🌐 Nguồn đã đọc và đối chiếu":"🌐 Nguồn tham khảo";
-    const count=document.createElement("span"); count.textContent=sources.length?`${Math.min(sources.length,3)} nguồn`:"Web Search";
+    const label=document.createElement("span"); label.textContent=webMeta?.fetched?"🌐 Nguồn đã đọc":"🌐 Nguồn web";
+    const count=document.createElement("span"); count.textContent=sources.length?`${Math.min(sources.length,3)} nguồn`:"Đã tìm web";
     heading.append(label,count); src.appendChild(heading);
     sources.slice(0,3).forEach((s,i)=>{
       const a=document.createElement("a"); a.className="ai-web-source-item"; a.href=s.url||"#"; a.target="_blank"; a.rel="noopener noreferrer";

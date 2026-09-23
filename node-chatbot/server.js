@@ -34,6 +34,10 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Với câu hỏi xếp hạng/giá trị/người nổi tiếng/sự kiện mới, phải nói rõ mốc thời gian và không biến một nguồn thành sự thật tuyệt đối nếu chưa đủ căn cứ. Với câu hỏi "ai giàu nhất" hoặc xếp hạng, phải dùng nguồn tìm kiếm cụ thể; nếu chưa tìm thấy nguồn phù hợp thì nói "chưa xác minh được" và không kết luận rằng dữ liệu không tồn tại.
 - Có thể dẫn nguồn bằng [1], [2] tương ứng với WEB_RESULTS.
 - Nếu thiếu dữ liệu, nói rõ là chưa có dữ liệu thay vì đoán.
+- QUY TẮC NGHIỆP VỤ VÉ THÁNG: xe có vé tháng còn hiệu lực được miễn phí tiền gửi xe; không yêu cầu chọn phương thức thanh toán và không tính phí lượt gửi vào doanh thu. Nếu người dùng hỏi "vé tháng có được miễn phí không" hoặc câu tương đương, trả lời ngay: "Có. Xe có vé tháng còn hiệu lực được miễn phí tiền gửi xe." Sau đó chỉ giải thích thêm nếu cần.
+- Với câu hỏi về MỨC PHÍ GỬI XE, chỉ trả lời các mức phí hiện có trong PARKING_CONTEXT.pricing, nêu rõ loại xe và VNĐ/giờ; không chuyển sang chủ đề khác.
+- Với câu hỏi về CHỖ TRỐNG/KHU VỰC, ưu tiên các số liệu parking trong context và trả lời bằng số liệu trước, không kể dài dòng.
+- Mỗi câu trả lời phải đi thẳng vào ý chính trong 1-2 câu đầu; phần giải thích thêm chỉ dùng khi thực sự cần.
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
 - Không tự nhận là con người.`;
 
@@ -60,9 +64,19 @@ function buildPrompt(body, webResults = [], fetchedPages = []) {
       ).join("\n\n")}`
     : "";
 
+  const q = String(body.question || "").trim();
+  const normalizedQ = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const businessRules = [
+    "VE THANG: nếu vé tháng còn hiệu lực => phí gửi xe = 0 VNĐ, không chọn phương thức thanh toán, không cộng phí lượt gửi vào doanh thu.",
+    "GIA GUI XE: chỉ lấy từ PARKING_CONTEXT.pricing; không tự bịa mức phí.",
+    "CHO TRONG/KHU VUC: chỉ lấy từ PARKING_CONTEXT.parking và PARKING_CONTEXT.areas.",
+  ];
+  if (/ve thang|thang.*mien phi|mien phi.*ve thang/.test(normalizedQ)) {
+    businessRules.unshift("CÂU HỎI HIỆN TẠI LIÊN QUAN VÉ THÁNG: trả lời trực tiếp rằng vé tháng còn hiệu lực được miễn phí gửi xe.");
+  }
   return {
     history,
-    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nCÂU HỎI:\n${String(body.question || "").trim()}\n\nQUY TẮC TÌM KIẾM: Nếu câu hỏi không hỏi dữ liệu riêng của bãi xe SmartPark, hãy ưu tiên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu câu hỏi yêu cầu thông tin hiện tại, xếp hạng, người giàu nhất, giá thị trường hoặc tin mới, chỉ kết luận dựa trên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu nguồn chưa đủ hoặc mâu thuẫn, nói rõ mức độ chưa xác minh thay vì khẳng định hoặc suy đoán.`
+    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nQUY TẮC NGHIỆP VỤ ƯU TIÊN:\n- ${businessRules.join("\n- ")}\n\nCÂU HỎI:\n${q}\n\nQUY TẮC TÌM KIẾM: Nếu câu hỏi không hỏi dữ liệu riêng của bãi xe SmartPark, hãy ưu tiên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu câu hỏi yêu cầu thông tin hiện tại, xếp hạng, người giàu nhất, giá thị trường hoặc tin mới, chỉ kết luận dựa trên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu nguồn chưa đủ hoặc mâu thuẫn, nói rõ mức độ chưa xác minh thay vì khẳng định hoặc suy đoán. Trả lời trực tiếp ý chính trước, không lan sang chủ đề khác.`
   };
 }
 
