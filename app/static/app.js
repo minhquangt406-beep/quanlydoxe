@@ -76,24 +76,49 @@ function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",m
 function escapeAIHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#039;");}
 function formatAIText(v){
   let s=escapeAIHtml(v).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-  s=s.replace(/<p>\s*(Nguồn\s*:?\s*.*)<\/p>/gi,"");
-  const lines=s.split(/\r?\n/); let out="",inList=false,section=0;
-  const flush=()=>{if(inList){out+="</ul>";inList=false}};
-  for(const line of lines){
-    const t=line.trim(); if(!t) continue;
-    if(/^[-*•]\s+/.test(t)){if(!inList){out+="<ul>";inList=true}out+="<li>"+t.replace(/^[-*•]\s+/,"")+"</li>";continue;}
-    flush();
-    const lower=t.toLowerCase();
-    let label="";
-    if(section===0) label="KẾT QUẢ CHÍNH";
-    else if(/^(lưu ý|lưu ý:|ghi chú|chú ý)/i.test(t)) label="LƯU Ý";
-    else if(/^(nguồn|nguồn tham khảo|tham khảo)/i.test(t)) label="NGUỒN";
-    else if(/^(chi tiết|thông tin chi tiết|cụ thể)/i.test(t)) label="CHI TIẾT";
-    if(label){ out+=`<div class="ai-answer-section"><div class="ai-section-label">${label}</div><p>${t.replace(/^(lưu ý|lưu ý:|ghi chú|chú ý|nguồn tham khảo|nguồn|tham khảo|chi tiết|thông tin chi tiết|cụ thể)\s*:??\s*/i,"")}</p></div>`; }
-    else out+=section===0?`<div class="ai-answer-section ai-answer-primary"><div class="ai-section-label">KẾT QUẢ CHÍNH</div><p>${t}</p></div>`:`<div class="ai-answer-section"><p>${t}</p></div>`;
-    section++;
+  s=s.replace(/<p>\s*(Nguồn\s*:?.*)<\/p>/gi,"");
+  const lines=s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  let out="", list=false, table=false, firstContent=true;
+  const closeList=()=>{if(list){out+="</ul>";list=false}};
+  const closeTable=()=>{if(table){out+="</tbody></table></div>";table=false}};
+  const isTableLine=t=>/^\|.*\|$/.test(t);
+  const cells=t=>t.replace(/^\||\|$/g,"").split("|").map(x=>x.trim());
+  for(let i=0;i<lines.length;i++){
+    const t=lines[i];
+    if(/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(t)) continue;
+    if(isTableLine(t)){
+      closeList();
+      const c=cells(t);
+      if(!table){
+        table=true; out+='<div class="ai-answer-table-wrap"><table class="ai-answer-table"><thead><tr>'+c.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+      }else out+='<tr>'+c.map(x=>`<td>${x}</td>`).join('')+'</tr>';
+      continue;
+    }
+    closeTable();
+    if(/^[-*•]\s+/.test(t)){
+      if(!list){out+='<ul class="ai-answer-list">';list=true}
+      out+='<li>'+t.replace(/^[-*•]\s+/,'')+'</li>'; continue;
+    }
+    closeList();
+    if(/^#{1,3}\s+/.test(t)){
+      out+=`<div class="ai-answer-heading">${t.replace(/^#{1,3}\s+/,'')}</div>`; firstContent=false; continue;
+    }
+    if(/^\d+[.)]\s+/.test(t)){
+      out+=`<div class="ai-answer-heading">${t}</div>`; firstContent=false; continue;
+    }
+    if(/^(lưu ý|ghi chú|chú ý)\s*:?/i.test(t)){
+      out+=`<div class="ai-answer-note"><div class="ai-note-title">⚠ Lưu ý</div><p>${t.replace(/^(lưu ý|ghi chú|chú ý)\s*:?\s*/i,'')}</p></div>`; firstContent=false; continue;
+    }
+    if(/^(nguồn|nguồn tham khảo|tham khảo)\s*:?/i.test(t)) continue;
+    if(firstContent){
+      out+=`<div class="ai-answer-primary"><div class="ai-section-label">⌕ Kết quả chính</div><p>${t}</p></div>`;
+      firstContent=false;
+    }else{
+      out+=`<p class="ai-answer-paragraph">${t}</p>`;
+    }
   }
-  flush(); return out||"<p></p>";
+  closeList(); closeTable();
+  return out||"<p></p>";
 }
 function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
