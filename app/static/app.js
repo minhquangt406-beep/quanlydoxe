@@ -129,7 +129,7 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent=role==="user"?"B":"✦";
   const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
   const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
-  const body=document.createElement("div"); body.className="ai-msg-body"; body.innerHTML=formatAIText(text);
+  const body=document.createElement("div"); body.className="ai-msg-body"; body.innerHTML=role==="user"?`<p class="ai-user-question">${escapeAIHtml(text)}</p>`:formatAIText(text);
   wrap.append(meta);
   if(role==="bot"){
     const badge=document.createElement("div");
@@ -144,7 +144,7 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
     const label=document.createElement("span"); label.textContent=webMeta?.fetched?"🌐 Nguồn đã đọc":"🌐 Nguồn web";
     const count=document.createElement("span"); count.textContent=sources.length?`${Math.min(sources.length,3)} nguồn`:"Đã tìm web";
     heading.append(label,count); src.appendChild(heading);
-    sources.slice(0,3).forEach((s,i)=>{
+    sources.filter(s=>s&&/^https?:\/\//i.test(s.url||"")).slice(0,3).forEach((s,i)=>{
       const a=document.createElement("a"); a.className="ai-web-source-item"; a.href=s.url||"#"; a.target="_blank"; a.rel="noopener noreferrer";
       const n=document.createElement("span"); n.className="ai-web-source-num"; n.textContent=String(i+1);
       const info=document.createElement("span"); info.className="ai-web-source-info";
@@ -186,7 +186,7 @@ function initAISupport(){
   loadAISupportHistory(); renderAISupportHistory();
   const open=()=>{
     panel.classList.remove("hidden","closing");
-    panel.classList.add("ai-v50-fullscreen");
+    panel.classList.add("ai-v50-fullscreen","ai-v51");
     document.getElementById("aiSupport")?.classList.add("fullscreen-open");
     toggle.classList.add("open");
     document.body.classList.add("ai-chat-open");
