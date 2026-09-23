@@ -157,7 +157,7 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
     wrap.appendChild(src);
   }
   row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight;
-  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});saveAISupportHistory();}
+  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text)),time:Date.now()});saveAISupportHistory();window.__smartParkRenderAIHistory?.();}
 }
 function setAISupportBusy(busy){
   const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
@@ -176,20 +176,7 @@ function showAITyping(web=false){
 function renderAISupportHistory(){
   const box=$("#aiSupportMessages"); if(!box) return; box.innerHTML="";
   if(!aiSupportHistory.length){
-    box.innerHTML=`<div class="ai-studio-welcome">
-      <div class="ai-welcome-logo">✦</div>
-      <h1>Xin chào! Tôi là <span>SmartPark AI</span></h1>
-      <p>Tôi có thể giúp bạn tra cứu bãi xe, mức phí, vé tháng và tìm kiếm thông tin mới nhất trên Web.</p>
-      <div class="ai-capability-row"><span>🅿️ Dữ liệu bãi xe</span><span>🌐 Web Search</span><span>✨ AI Analysis</span></div>
-      <div class="ai-starter-grid">
-        <button type="button" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><b>🅿️ Chỗ trống</b><small>Kiểm tra số vị trí còn trống</small></button>
-        <button type="button" data-ai-q="Khu A còn bao nhiêu chỗ?"><b>▣ Khu vực</b><small>Xem tình trạng khu A</small></button>
-        <button type="button" data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?"><b>💳 Mức phí</b><small>Tra cứu giá gửi xe</small></button>
-        <button type="button" data-ai-q="Vé tháng có được miễn phí không?"><b>🎫 Vé tháng</b><small>Kiểm tra chính sách vé tháng</small></button>
-      </div>
-    </div>`;
-    $$('.ai-starter-grid [data-ai-q]').forEach(b=>b.addEventListener('click',()=>{const input=$('#aiSupportInput'),form=$('#aiSupportForm');if(input){input.value=b.dataset.aiQ||'';input.focus();form?.requestSubmit();}}));
-    return;
+    box.innerHTML='<div class="ai-welcome-card"><div class="ai-welcome-icon">✦</div><div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div><div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div></div>'; return;
   }
   aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
 }
@@ -197,6 +184,17 @@ function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
+  const renderHistorySidebar=()=>{
+    const today=document.getElementById("aiHistoryToday"), prev=document.getElementById("aiHistoryPrevious"); if(!today||!prev)return;
+    today.innerHTML=""; prev.innerHTML="";
+    const users=aiSupportHistory.filter(x=>x.role==="user");
+    const now=Date.now();
+    const groups=[[],[]]; users.slice().reverse().forEach((m,i)=>{ const obj={...m,idx:i}; (now-(m.time||now)<7*86400000?groups[0]:groups[1]).push(obj); });
+    const make=(arr,host)=>{ if(!arr.length){host.innerHTML='<div class="ai-history-empty">Chưa có cuộc trò chuyện</div>';return;} arr.slice(0,12).forEach((m,i)=>{const b=document.createElement("button");b.type="button";b.className="ai-history-item";b.innerHTML=`<span>▣</span><span>${escapeAIHtml(String(m.content||"Cuộc trò chuyện").slice(0,38))}</span>`;b.title=m.content||"";b.onclick=()=>{input.value=m.content||"";input.focus();};host.appendChild(b);});};
+    make(groups[0],today); make(groups[1],prev);
+  };
+  window.__smartParkRenderAIHistory=renderHistorySidebar;
+  renderHistorySidebar();
   const open=()=>{
     panel.classList.remove("hidden","closing");
     panel.classList.add("ai-v50-fullscreen","ai-v51");
@@ -220,6 +218,13 @@ function initAISupport(){
     setTimeout(()=>panel.classList.add("hidden"),280);
   };
   window.__smartParkCloseAI=shut;
+  document.getElementById("aiNewChat")?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();renderHistorySidebar();input.value="";input.focus();});
+  document.getElementById("aiSidebarCollapse")?.addEventListener("click",()=>panel.classList.toggle("ai-sidebar-collapsed"));
+  document.getElementById("aiSidebarExpand")?.addEventListener("click",()=>panel.classList.remove("ai-sidebar-collapsed"));
+  document.getElementById("aiChatSearch")?.addEventListener("input",e=>{const q=String(e.target.value||"").toLowerCase();document.querySelectorAll(".ai-history-item").forEach(b=>b.style.display=(!q||b.textContent.toLowerCase().includes(q))?"flex":"none");});
+  document.getElementById("aiThemeToggle")?.addEventListener("click",()=>panel.classList.toggle("ai-studio-dark"));
+  document.getElementById("aiShareChat")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(aiSupportHistory.map(x=>`${x.role}: ${x.content}`).join("\n"));toast("Đã sao chép hội thoại");}catch(_){toast("Không thể sao chép trên trình duyệt này","error");}});
+  document.getElementById("aiStudioSend")?.addEventListener("click",()=>form.requestSubmit());
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
   close?.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();shut();});
   focus?.addEventListener("click",()=>input.focus());
@@ -228,8 +233,6 @@ function initAISupport(){
     window.__smartParkAICloseBound=true;
   }
   clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
-  const mobileMenu=panel.querySelector(".ai-mobile-menu"), sidebar=panel.querySelector(".ai-studio-sidebar");
-  mobileMenu?.addEventListener("click",()=>sidebar?.classList.toggle("mobile-open"));
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
     e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
@@ -243,6 +246,7 @@ function initAISupport(){
       typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
+  input.addEventListener("input",()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,130)+"px";});
   input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 }
 initAISupport();
