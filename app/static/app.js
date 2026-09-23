@@ -76,78 +76,33 @@ function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",m
 function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
   const welcome=box.querySelector(".ai-welcome-card"); if(welcome) welcome.remove();
-
-  const row=document.createElement("div");
-  row.className=`ai-msg ai-msg-${role}`;
-
-  const avatar=document.createElement("div");
-  avatar.className="ai-msg-avatar";
-  avatar.innerHTML=role==="user"?'<span>U</span>':'<span>✦</span><i></i>';
-
-  const wrap=document.createElement("div");
-  wrap.className="ai-msg-wrap";
-
-  const meta=document.createElement("div");
-  meta.className="ai-msg-meta";
-  meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>${role==="bot"?'<em>✓</em>':''}`;
-
-  const body=document.createElement("div");
-  body.className="ai-msg-body";
-  body.textContent=String(text||"");
-
+  const row=document.createElement("div"); row.className=`ai-msg ai-msg-${role}`;
+  const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent=role==="user"?"B":"✦";
+  const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
+  const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
+  const body=document.createElement("div"); body.className="ai-msg-body"; body.textContent=text;
   wrap.append(meta,body);
-
   if(role==="bot" && (Array.isArray(sources) && sources.length || webMeta?.searched || webMeta?.fetched)){
-    const src=document.createElement("div");
-    src.className="ai-web-sources ai-source-card";
-
-    const head=document.createElement("div");
-    head.className="ai-source-head";
-    head.innerHTML=`<div><span class="ai-source-icon">↗</span><div><b>Nguồn tham khảo</b><small>${webMeta?.fetched?"Đã tìm kiếm và đối chiếu nội dung":"Nguồn web được AI đối chiếu"}</small></div></div><span class="ai-source-count">${Math.min(5, sources.length)} nguồn</span>`;
-    src.appendChild(head);
-
-    const list=document.createElement("div");
-    list.className="ai-source-list";
+    const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
+    const heading=document.createElement("div"); heading.className="ai-source-heading";
+    const label=document.createElement("span"); label.textContent=webMeta?.fetched?"🌐 Nguồn đã đọc và đối chiếu":"🌐 Nguồn tham khảo";
+    const count=document.createElement("span"); count.textContent=sources.length?`${Math.min(sources.length,5)} nguồn`:"Web Search";
+    heading.append(label,count); src.appendChild(heading);
     sources.slice(0,5).forEach((s,i)=>{
-      const a=document.createElement("a");
-      a.className="ai-source-item";
-      a.href=s.url||"#"; a.target="_blank"; a.rel="noopener noreferrer";
-      const domain=(()=>{try{return new URL(s.url).hostname.replace(/^www\./,"")}catch(_){return s.source||""}})();
-      a.innerHTML=`<span class="ai-source-number">${i+1}</span><span class="ai-source-info"><b>${String(s.title||"Nguồn tham khảo")}</b><small>${domain}</small></span><span class="ai-source-open">↗</span>`;
-      list.appendChild(a);
+      const a=document.createElement("a"); a.className="ai-web-source-item"; a.href=s.url||"#"; a.target="_blank"; a.rel="noopener noreferrer";
+      const n=document.createElement("span"); n.className="ai-web-source-num"; n.textContent=String(i+1);
+      const info=document.createElement("span"); info.className="ai-web-source-info";
+      const title=document.createElement("span"); title.className="ai-web-source-title"; title.textContent=s.title||s.url||"Nguồn web";
+      let domain=""; try{domain=new URL(s.url).hostname.replace(/^www\./,"")}catch(_){domain=s.url||""}
+      const dom=document.createElement("span"); dom.className="ai-web-source-domain"; dom.textContent=domain;
+      info.append(title,dom); const open=document.createElement("span"); open.className="ai-web-source-open"; open.textContent="↗";
+      a.append(n,info,open); src.appendChild(a);
     });
-    if(!sources.length){
-      const empty=document.createElement("div"); empty.className="ai-source-empty"; empty.textContent="AI đã tìm kiếm web nhưng chưa có liên kết nguồn để hiển thị."; list.appendChild(empty);
-    }
-    src.appendChild(list);
-
-    const foot=document.createElement("div");
-    foot.className="ai-source-foot";
-    foot.innerHTML=`<span>🌐 ${webMeta?.fetched?"Web Search + Fetch":"Web Search"}</span>${webMeta?.remaining!=null?`<span>Còn ${webMeta.remaining} lượt hôm nay</span>`:""}<span class="ai-source-foot-right">Mở nguồn ↗</span>`;
-    src.appendChild(foot);
-
     wrap.appendChild(src);
   }
-
-  if(role==="bot"){
-    const actions=document.createElement("div");
-    actions.className="ai-msg-actions";
-    actions.innerHTML='<button type="button" title="Hữu ích">♡</button><button type="button" title="Không hữu ích">◌</button><button type="button" title="Sao chép">▢</button>';
-    const copyBtn=actions.lastElementChild;
-    copyBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(String(text||""));copyBtn.textContent="✓";setTimeout(()=>copyBtn.textContent="▢",1000)}catch(_){}});
-    wrap.appendChild(actions);
-  }
-
-  row.append(avatar,wrap);
-  box.appendChild(row);
-  box.scrollTop=box.scrollHeight;
-
-  if(persist && (role==="user" || role==="bot")){
-    aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});
-    saveAISupportHistory();
-  }
+  row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight;
+  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});saveAISupportHistory();}
 }
-
 function setAISupportBusy(busy){
   const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
   if(input) input.disabled=busy;
