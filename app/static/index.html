@@ -1,132 +1,128 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SmartPark · Đăng nhập hệ thống</title>
-<link rel="stylesheet" href="/static/style.css?v=v51-layout-20260923">
-<link rel="stylesheet" href="/static/ai-fullscreen-v51.css?v=20260923-1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPark AI Assistant</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<div id="loginView" class="login-page">
-  <div class="login-frame">
-  <section class="login-showcase" aria-hidden="true">
-    <div class="showcase-orb orb-one"></div><div class="showcase-orb orb-two"></div>
-    <div class="showcase-grid"></div>
-    <div class="showcase-top"><div class="showcase-brand"><span class="showcase-logo">P</span><div><b>SmartPark</b><small>HỆ THỐNG QUẢN LÝ BÃI ĐỖ XE THÔNG MINH</small></div></div><span class="live-badge"><i></i> HỆ THỐNG HOẠT ĐỘNG</span></div>
-    <div class="showcase-copy">
-      <div class="showcase-kicker">SMART PARKING CONTROL CENTER</div>
-      <h2>Quản lý bãi xe<br><span>thông minh hơn mỗi ngày</span></h2>
-      <p>Giải pháp hiện đại giúp tối ưu vận hành, tiết kiệm thời gian và nâng cao trải nghiệm cho người dùng.</p>
-      <div class="showcase-chips"><span>▥ Theo dõi doanh thu</span><span>◈ An toàn bảo mật</span><span>⚙ Vận hành hiệu quả</span></div>
-    </div>
-    <div class="parking-visual">
-      <div class="visual-head"><span><i></i> LIVE PARKING MAP</span><b>KHU A · KHU B</b></div>
-      <div class="road road-main"></div><div class="road road-cross"></div>
-      <div class="parking-lane lane-a"><span class="slot free">A01</span><span class="slot busy">A02</span><span class="slot free">A03</span><span class="slot free">A04</span><span class="slot busy">A05</span><span class="slot free">A06</span></div>
-      <div class="parking-lane lane-b"><span class="slot busy">B01</span><span class="slot free">B02</span><span class="slot free">B03</span><span class="slot busy">B04</span><span class="slot free">B05</span><span class="slot free">B06</span></div>
-      <div class="visual-car car-one">🚗</div><div class="visual-car car-two">🚙</div>
-    </div>
-    <div class="showcase-stats">
-      <div><b>24/7</b><span>Hỗ trợ vận hành</span></div><div><b>AI</b><span>Phân tích thông minh</span></div><div><b>100%</b><span>Dữ liệu an toàn</span></div>
-    </div>
-  </section>
-  <div class="login-card">
-    <div class="login-head"><div class="brand-mark">P</div></div>
-    <div class="eyebrow">SMART PARKING</div>
-    <h1>Chào mừng trở lại!</h1>
-    <p>Đăng nhập để tiếp tục quản lý hệ thống</p>
-    <form id="loginForm" autocomplete="off">
-      <label>Tài khoản<div class="field-wrap"><span class="field-icon">⌾</span><input id="username" name="login_username" autocomplete="off" placeholder="Nhập tài khoản"></div></label>
-      <label>Mật khẩu<div class="field-wrap"><span class="field-icon">▣</span><input id="password" name="login_password" class="has-toggle" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"><button type="button" class="pass-toggle" data-target="password" aria-label="Hiện mật khẩu">👁</button></div></label>
-      <div class="forgot-link"><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
-      <button class="primary wide" id="loginSubmit">Đăng nhập <span class="login-arrow">→</span></button>
-      <div id="loginError" class="error"></div>
-    </form>
-    <div class="guest-register-link"><span>Khách mới?</span> <button type="button" id="showRegister" class="link-btn">Tạo tài khoản chỉ để xem chỗ trống</button></div>
-    <form id="registerForm" class="hidden" autocomplete="off">
-      <label>Họ tên<div class="field-wrap"><span class="field-icon">🧾</span><input id="registerName" autocomplete="name" placeholder="Nguyễn Văn A"></div></label>
-      <label>Tài khoản<div class="field-wrap"><span class="field-icon">👤</span><input id="registerUsername" autocomplete="username" placeholder="khach01"></div></label>
-      <label>Số điện thoại<div class="field-wrap"><span class="field-icon">📱</span><input id="registerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></div></label>
-      <label>Mật khẩu<div class="field-wrap"><span class="field-icon">🔒</span><input id="registerPassword" class="has-toggle" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"><button type="button" class="pass-toggle" data-target="registerPassword" aria-label="Hiện mật khẩu">👁</button></div></label>
-      <button class="primary wide" id="registerSubmit">Đăng ký tài khoản khách</button>
-      <div id="registerError" class="error"></div>
-      <button type="button" id="cancelRegister" class="btn wide">Quay lại đăng nhập</button>
-    </form>
-    <form id="forgotForm" class="hidden" autocomplete="off">
-      <div class="form-note">Nhập tài khoản và số điện thoại đã đăng ký. Hệ thống sẽ gửi mã OTP 6 số về điện thoại.</div>
-      <label>Tài khoản<div class="field-wrap"><span class="field-icon">👤</span><input id="forgotUsername" autocomplete="username" placeholder="Tài khoản khách"></div></label>
-      <label>Số điện thoại<div class="field-wrap"><span class="field-icon">📱</span><input id="forgotPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="09xxxxxxxx"></div></label>
-      <button type="button" class="primary wide" id="sendOtp">Gửi mã OTP</button>
-      <label>Mã OTP<div class="field-wrap"><span class="field-icon">🔑</span><input id="resetOtp" inputmode="numeric" maxlength="6" placeholder="6 chữ số"></div></label>
-      <label>Mật khẩu mới<div class="field-wrap"><span class="field-icon">🔒</span><input id="resetPassword" class="has-toggle" type="password" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự"><button type="button" class="pass-toggle" data-target="resetPassword" aria-label="Hiện mật khẩu">👁</button></div></label>
-      <button type="submit" class="primary wide" id="forgotSubmit">Đặt lại mật khẩu</button>
-      <div id="forgotError" class="error"></div>
-      <button type="button" id="cancelForgot" class="btn wide">Quay lại đăng nhập</button>
-    </form>
-    <div class="login-security"><span>🔒</span><div><b>Kết nối bảo mật</b><small>Dữ liệu được bảo vệ trong suốt phiên đăng nhập</small></div></div>
-  </div>
-  </div>
-</div>
 
-<div id="appView" class="app hidden">
-  <aside class="sidebar">
-    <div class="logo"><span>P</span><div><b>Quản lý bãi đỗ xe</b><small>PRO CONTROL</small></div></div>
-    <nav id="nav">
-      <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
-      <button data-page="parking">▣ <span>Xe vào / Xe ra</span></button>
-      <button data-page="slots">◈ <span>Vị trí đỗ</span></button>
-      <button data-page="history">◷ <span>Lịch sử</span></button>
-      <button data-page="vehicles">🚗 <span>Phương tiện</span></button>
-      <button data-page="pricing" class="manager-only">₫ <span>Bảng giá</span></button>
-      <button data-page="areas" class="manager-only">▦ <span>Khu vực</span></button>
-      <button data-page="ai" class="manager-only">✦ <span>AI phân tích</span></button><button data-page="monthly" class="manager-only">▣ <span>Vé tháng</span></button><button data-page="ai-center" class="manager-only">◉ <span>AI Center</span></button>
-      <button data-page="reports" class="manager-only">▥ <span>Báo cáo doanh thu</span></button>
-      <button data-page="users" class="manager-only">♙ <span>Tài khoản</span></button>
-      <button data-page="activity" class="manager-only">⌁ <span>Nhật ký hoạt động</span></button>
-      <button data-page="settings" class="manager-only">⚙ <span>Cài đặt doanh nghiệp</span></button>
-    </nav>
-    <div class="sidebar-bottom">
-      <div class="storage" id="sidebarUser"><i></i><span><b id="sidebarUserName">Quản lý hệ thống</b><br><small id="sidebarUserRole">Quản trị viên</small></span></div>
-      <button id="logout" class="logout">↪ Đăng xuất</button>
-    </div>
-  </aside>
-
-  <main class="main">
-    <header class="topbar">
-      <div><div class="eyebrow">PARKING OPERATIONS</div><h2 id="pageTitle">Tổng quan</h2></div>
-      <div class="topbar-actions"><button id="sidebarToggle" class="icon-btn sidebar-toggle" title="Ẩn / hiện thanh menu" aria-label="Thu gọn thanh bên" aria-expanded="true">☰</button><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
-    </header>
-    <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
-  <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
-</div>
-  <div id="aiSupport" class="ai-support" aria-live="polite">
-    <button id="aiSupportToggle" class="ai-support-fab" aria-label="Mở chatbot AI" title="Mở trợ lý AI"><span class="ai-fab-orb">✦</span><span class="ai-fab-label">Ask AI</span><i class="ai-fab-ping"></i></button>
-    <section id="aiSupportPanel" class="ai-support-panel ai-v51 hidden" aria-label="Trợ lý AI hỗ trợ">
-      <header class="ai-support-head">
-        <div class="ai-support-brand">
-          <div class="ai-support-avatar"><span>✦</span><i></i></div>
-          <div class="ai-brand-copy"><div class="ai-title-line"><strong>SmartPark AI</strong><span class="ai-pro-badge">ASSISTANT</span></div><small>Trợ lý thông minh cho bãi xe</small></div>
-        </div>
-        <div class="ai-support-head-actions"><span class="ai-online"><i></i> Online</span><button id="aiSupportClear" class="ai-head-btn" aria-label="Xóa cuộc trò chuyện" title="Xóa cuộc trò chuyện">⌫</button><button id="aiSupportClose" class="ai-support-close" aria-label="Đóng" title="Đóng" type="button" onclick="window.__smartParkCloseAI&&window.__smartParkCloseAI()">×</button></div>
-      </header>
-      <div class="ai-context-strip"><span class="ai-context-dot">◉</span><span>Smart data · Chỉ hiển thị nguồn đang dùng</span><span class="ai-context-live">LIVE</span></div>
-      <div id="aiSupportMessages" class="ai-support-messages">
-        <div class="ai-welcome-card">
-          <div class="ai-welcome-icon">✦</div>
-          <div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div>
-          <div class="ai-welcome-chips"><span>🅿️ Bãi xe</span><span>🌐 Web</span><span>✨ AI</span></div>
-        </div>
+  <!-- Top Header Bar -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo">
+        <i class="fa-solid fa-sparkles"></i>
       </div>
-      <div class="ai-support-suggestions-wrap"><div class="ai-suggest-label">Gợi ý</div><div class="ai-support-suggestions"><button data-ai-q="Hiện còn bao nhiêu chỗ trống?">🚗 Chỗ trống</button><button data-ai-q="Khu A còn bao nhiêu chỗ?">A Khu A</button><button data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?">💳 Mức phí</button><button data-ai-q="Vé tháng có được miễn phí không?">🎫 Vé tháng</button></div></div>
-      <div class="ai-input-shell">
-        <form id="aiSupportForm" class="ai-support-form"><button type="button" class="ai-input-action" id="aiSupportFocus" aria-label="Tập trung ô nhập" title="Nhập câu hỏi">＋</button><input id="aiSupportInput" autocomplete="off" placeholder="Nhắn tin cho SmartPark AI..." maxlength="500"><button type="submit" aria-label="Gửi" class="ai-send-btn"><span>➤</span></button></form>
-        <div class="ai-input-meta"><span>AI phân biệt dữ liệu bãi xe và thông tin Web</span><span>Enter ↵</span></div>
+      <div class="title-container">
+        <div class="title-row">
+          <span class="app-name">SmartPark AI</span>
+          <span class="badge">ASSISTANT</span>
+        </div>
+        <span class="subtitle">Trợ lý thông minh cho bãi xe</span>
       </div>
-    </section>
+    </div>
+    <div class="header-right">
+      <span class="status-online">• Online</span>
+      <button class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </header>
+
+  <!-- Sub Header / Mode Bar -->
+  <div class="sub-header">
+    <span class="mode-text">• Smart data • Web Search</span>
+    <span class="live-badge">LIVE</span>
   </div>
 
-<script src="/static/app.js?v=v51-layout-20260923"></script>
+  <!-- Chat Area Container -->
+  <main class="chat-container">
 
+    <!-- User Message -->
+    <div class="message-row user">
+      <div class="user-bubble">
+        giá đất tại hà nội
+      </div>
+    </div>
+
+    <!-- AI Response Card -->
+    <div class="ai-card">
+      <div class="ai-card-title">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Kết quả chính</span>
+      </div>
+      <p class="ai-description">
+        Giá đất Hà Nội năm 2026 được quy định theo bảng giá đất Nhà nước và cần phân biệt với giá giao dịch thực tế.
+      </p>
+
+      <!-- Table Section -->
+      <div class="section-heading">
+        <span class="icon">📊</span> <strong>1. Một số mức giá đáng chú ý</strong>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Khu vực / vị trí</th>
+              <th>Giá đất</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Một số tuyến trung tâm</td>
+              <td><strong>702,194 triệu đồng/m²</strong></td>
+            </tr>
+            <tr>
+              <td>Tây Hồ Tây, đường 60m</td>
+              <td><strong>114,223 triệu đồng/m²</strong></td>
+            </tr>
+            <tr>
+              <td>Tây Hồ Tây, đường 40m</td>
+              <td><strong>106,860 triệu đồng/m²</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bullet List Section -->
+      <div class="section-heading">
+        <span class="icon">🏠</span> <strong>2. Giá mua bán thực tế</strong>
+      </div>
+      <ul class="bullet-list">
+        <li>Phụ thuộc quận/huyện</li>
+        <li>Mặt đường hay trong ngõ</li>
+      </ul>
+    </div>
+
+  </main>
+
+  <!-- Footer Input Area -->
+  <footer class="footer">
+    <!-- Quick Suggestions -->
+    <div class="suggestions-label">
+      <i class="fa-solid fa-lightbulb"></i> Gợi ý nhanh
+    </div>
+    <div class="suggestions-chips">
+      <button class="chip">Giá vàng hôm nay</button>
+      <button class="chip">Thời tiết Hà Nội</button>
+      <button class="chip">Tỷ giá USD</button>
+      <button class="chip">Giá nhà Hà Nội</button>
+    </div>
+
+    <!-- Input Form -->
+    <div class="input-wrapper">
+      <button class="add-btn"><i class="fa-solid fa-plus"></i></button>
+      <input type="text" id="userInput" placeholder="Nhập câu hỏi cho SmartPark AI..." />
+      <button class="send-btn" id="sendBtn">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+
+    <div class="disclaimer">
+      AI có thể trả lời dựa trên dữ liệu bãi xe và thông tin công khai trên web
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
