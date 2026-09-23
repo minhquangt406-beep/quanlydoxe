@@ -4919,3 +4919,201 @@ input:focus,select:focus,textarea:focus{background:#fff}
  .ai-support-fab{right:14px!important;bottom:14px!important}
 }
 @media(prefers-reduced-motion:reduce){.ai-support-panel,.ai-support.fullscreen-open:before,.ai-support-fab{animation:none!important;transition:none!important}}
+
+/* =========================================================
+   SMARTPARK AI V50 — FINAL FULLSCREEN REFERENCE LAYOUT
+   Overrides legacy compact/popup rules that previously limited
+   the conversation column to 430–650px.
+   ========================================================= */
+.ai-support.fullscreen-open #aiSupportPanel,
+.ai-support-panel.ai-v50-fullscreen {
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  min-width:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#f6f8fc!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+.ai-support.fullscreen-open .ai-support-messages,
+.ai-support-panel.ai-v50-fullscreen .ai-support-messages {
+  flex:1 1 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:32px max(32px,calc((100vw - 1180px)/2)) 28px!important;
+  background:#f6f8fc!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+.ai-support.fullscreen-open .ai-msg,
+.ai-support-panel.ai-v50-fullscreen .ai-msg {
+  width:100%!important;
+  max-width:1180px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  box-sizing:border-box!important;
+}
+.ai-support.fullscreen-open .ai-msg-wrap,
+.ai-support-panel.ai-v50-fullscreen .ai-msg-wrap {
+  width:min(100%,1120px)!important;
+  max-width:1120px!important;
+  min-width:0!important;
+  flex:1 1 auto!important;
+  box-sizing:border-box!important;
+}
+.ai-support.fullscreen-open .ai-msg-user .ai-msg-wrap,
+.ai-support-panel.ai-v50-fullscreen .ai-msg-user .ai-msg-wrap {
+  width:min(100%,760px)!important;
+  max-width:760px!important;
+  flex:0 1 760px!important;
+}
+.ai-support.fullscreen-open .ai-msg-body,
+.ai-support.panel.ai-v50-fullscreen .ai-msg-body,
+.ai-support-panel.ai-v50-fullscreen .ai-msg-body {
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  font-size:16px!important;
+  line-height:1.78!important;
+  padding:22px 24px!important;
+  border-radius:18px!important;
+}
+.ai-support.fullscreen-open .ai-msg-user .ai-msg-body,
+.ai-support-panel.ai-v50-fullscreen .ai-msg-user .ai-msg-body {
+  width:auto!important;
+  max-width:100%!important;
+  font-size:15px!important;
+  line-height:1.55!important;
+  padding:13px 18px!important;
+}
+.ai-support.fullscreen-open .ai-support-suggestions-wrap,
+.ai-support-panel.ai-v50-fullscreen .ai-support-suggestions-wrap {
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:14px max(32px,calc((100vw - 1180px)/2))!important;
+  background:#fff!important;
+  border-top:1px solid #e8ecf2!important;
+}
+.ai-support.fullscreen-open .ai-support-suggestions,
+.ai-support-panel.ai-v50-fullscreen .ai-support-suggestions {
+  width:100%!important;
+  max-width:1180px!important;
+  margin:0 auto!important;
+}
+.ai-support.fullscreen-open .ai-input-shell,
+.ai-support-panel.ai-v50-fullscreen .ai-input-shell {
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:12px max(32px,calc((100vw - 1180px)/2)) 18px!important;
+  background:#fff!important;
+}
+.ai-support.fullscreen-open .ai-input-shell .ai-support-form,
+.ai-support.panel.ai-v50-fullscreen .ai-input-shell .ai-support-form,
+.ai-support-panel.ai-v50-fullscreen .ai-input-shell .ai-support-form {
+  width:100%!important;
+  max-width:1180px!important;
+  height:62px!important;
+  margin:0 auto!important;
+  border-radius:19px!important;
+}
+.ai-support.fullscreen-open .ai-input-shell .ai-input-meta,
+.ai-support-panel.ai-v50-fullscreen .ai-input-shell .ai-input-meta {
+  width:100%!important;
+  max-width:1180px!important;
+  margin:6px auto 0!important;
+}
+.ai-support.fullscreen-open .ai-answer-section,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-section {
+  margin-bottom:20px!important;
+}
+.ai-support.fullscreen-open .ai-section-title,
+.ai-support-panel.ai-v50-fullscreen .ai-section-title {
+  font-size:19px!important;
+  line-height:1.35!important;
+  margin-bottom:9px!important;
+}
+.ai-support.fullscreen-open .ai-answer-section p,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-section p,
+.ai-support.fullscreen-open .ai-answer-list li,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-list li {
+  font-size:16px!important;
+  line-height:1.78!important;
+}
+.ai-support.fullscreen-open .ai-answer-heading,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-heading {
+  font-size:18px!important;
+}
+.ai-support.fullscreen-open .ai-answer-table,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-table {
+  font-size:14px!important;
+}
+.ai-support.fullscreen-open .ai-answer-table th,
+.ai-support.fullscreen-open .ai-answer-table td,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-table th,
+.ai-support-panel.ai-v50-fullscreen .ai-answer-table td {
+  padding:11px 13px!important;
+}
+.ai-support.fullscreen-open .ai-web-sources.ai-source-card,
+.ai-support-panel.ai-v50-fullscreen .ai-web-sources.ai-source-card {
+  width:100%!important;
+  max-width:none!important;
+  padding:14px!important;
+  margin-top:18px!important;
+}
+.ai-support.fullscreen-open .ai-web-source-item,
+.ai-support-panel.ai-v50-fullscreen .ai-web-source-item {
+  grid-template-columns:32px minmax(0,1fr) 34px!important;
+  min-height:48px!important;
+  height:auto!important;
+  padding:8px 10px!important;
+}
+.ai-support.fullscreen-open .ai-web-source-num,
+.ai-support.fullscreen-open .ai-web-source-open,
+.ai-support-panel.ai-v50-fullscreen .ai-web-source-num,
+.ai-support-panel.ai-v50-fullscreen .ai-web-source-open {
+  width:32px!important;
+  height:32px!important;
+}
+.ai-support.fullscreen-open .ai-web-source-title,
+.ai-support-panel.ai-v50-fullscreen .ai-web-source-title {
+  font-size:13px!important;
+}
+.ai-support.fullscreen-open .ai-web-source-domain,
+.ai-support-panel.ai-v50-fullscreen .ai-web-source-domain {
+  font-size:10px!important;
+}
+@media(max-width:700px){
+  .ai-support.fullscreen-open .ai-support-messages,
+  .ai-support-panel.ai-v50-fullscreen .ai-support-messages{padding:18px 12px 16px!important}
+  .ai-support.fullscreen-open .ai-msg,
+  .ai-support-panel.ai-v50-fullscreen .ai-msg{max-width:100%!important}
+  .ai-support.fullscreen-open .ai-msg-wrap,
+  .ai-support.panel.ai-v50-fullscreen .ai-msg-wrap,
+  .ai-support-panel.ai-v50-fullscreen .ai-msg-wrap{width:min(100%,calc(100vw - 54px))!important;max-width:calc(100vw - 54px)!important}
+  .ai-support.fullscreen-open .ai-msg-user .ai-msg-wrap,
+  .ai-support-panel.ai-v50-fullscreen .ai-msg-user .ai-msg-wrap{width:min(92%,calc(100vw - 36px))!important;max-width:92%!important}
+  .ai-support.fullscreen-open .ai-msg-body,
+  .ai-support.panel.ai-v50-fullscreen .ai-msg-body,
+  .ai-support-panel.ai-v50-fullscreen .ai-msg-body{font-size:15px!important;line-height:1.7!important;padding:16px!important}
+  .ai-support.fullscreen-open .ai-section-title,
+  .ai-support-panel.ai-v50-fullscreen .ai-section-title{font-size:17px!important}
+  .ai-support.fullscreen-open .ai-answer-section p,
+  .ai-support.panel.ai-v50-fullscreen .ai-answer-section p,
+  .ai-support-panel.ai-v50-fullscreen .ai-answer-section p,
+  .ai-support.fullscreen-open .ai-answer-list li,
+  .ai-support.panel.ai-v50-fullscreen .ai-answer-list li,
+  .ai-support-panel.ai-v50-fullscreen .ai-answer-list li{font-size:15px!important;line-height:1.7!important}
+  .ai-support.fullscreen-open .ai-support-suggestions-wrap,
+  .ai-support.panel.ai-v50-fullscreen .ai-support-suggestions-wrap,
+  .ai-support-panel.ai-v50-fullscreen .ai-support-suggestions-wrap{padding:9px 12px!important}
+  .ai-support.fullscreen-open .ai-input-shell,
+  .ai-support.panel.ai-v50-fullscreen .ai-input-shell,
+  .ai-support-panel.ai-v50-fullscreen .ai-input-shell{padding:9px 12px 12px!important}
+}

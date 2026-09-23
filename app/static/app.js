@@ -186,6 +186,7 @@ function initAISupport(){
   loadAISupportHistory(); renderAISupportHistory();
   const open=()=>{
     panel.classList.remove("hidden","closing");
+    panel.classList.add("ai-v50-fullscreen");
     document.getElementById("aiSupport")?.classList.add("fullscreen-open");
     toggle.classList.add("open");
     document.body.classList.add("ai-chat-open");
@@ -196,6 +197,7 @@ function initAISupport(){
   const shut=()=>{
     const host=document.getElementById("aiSupport");
     panel.classList.remove("closing");
+    panel.classList.remove("ai-v50-fullscreen");
     panel.classList.add("closing");
     host?.classList.remove("fullscreen-open");
     toggle.classList.remove("open");
