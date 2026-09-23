@@ -160,7 +160,7 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text)),time:Date.now()});saveAISupportHistory();window.__smartParkRenderAIHistory?.();}
 }
 function setAISupportBusy(busy){
-  const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
+  const input=$("#aiSupportInput"), btn=$("#aiSupportSend");
   if(input) input.disabled=busy;
   if(btn){btn.disabled=busy;btn.innerHTML=busy?'<span class="ai-send-spinner"></span>':'<span>➤</span>';btn.setAttribute("aria-busy",busy?"true":"false");}
 }
@@ -174,13 +174,68 @@ function showAITyping(web=false){
   wrap.append(meta,body); row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight; return row;
 }
 function renderAISupportHistory(){
-  const box=$("#aiSupportMessages"); if(!box) return; box.innerHTML="";
+  const box=$("#aiSupportMessages"); if(!box) return;
+  box.innerHTML="";
   if(!aiSupportHistory.length){
-    box.innerHTML='<div class="ai-welcome-card"><div class="ai-welcome-icon">✦</div><div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div><div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div></div>'; return;
+    box.innerHTML='<div id="aiWelcome" class="ai-studio-welcome"><div class="ai-welcome-icon">✦</div><h2>Tôi có thể giúp gì cho bạn hôm nay?</h2><p>Tra cứu bãi xe, mức phí, vé tháng hoặc tìm kiếm thông tin mới nhất trên Web.</p><div class="ai-starter-grid"><button type="button" class="ai-starter" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><span>🚗</span><b>Kiểm tra chỗ trống</b><small>Xem số chỗ còn lại trong bãi</small></button><button type="button" class="ai-starter" data-ai-q="Khu A còn bao nhiêu chỗ?"><span>▦</span><b>Tra cứu khu vực</b><small>Xem tình trạng từng khu</small></button><button type="button" class="ai-starter" data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?"><span>₫</span><b>Tra cứu mức phí</b><small>Phí gửi xe theo loại phương tiện</small></button><button type="button" class="ai-starter" data-ai-q="Vé tháng có được miễn phí không?"><span>🎫</span><b>Kiểm tra vé tháng</b><small>Quy định và trạng thái vé tháng</small></button></div></div>';
+  } else {
+    aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
   }
-  aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
+  renderAIStudioHistory();
+  bindAIStudioStarters();
+}
+function renderAIStudioHistory(filter=""){
+  const today=$("#history-today"), previous=$("#history-previous"); if(!today||!previous) return;
+  today.innerHTML=""; previous.innerHTML="";
+  const seen=new Set(); const users=aiSupportHistory.filter(m=>m.role==="user").slice().reverse();
+  const q=String(filter||"").toLowerCase().trim();
+  users.forEach((m,i)=>{const title=String(m.content||"Góc chat").trim(); if(seen.has(title)) return; if(q&&!title.toLowerCase().includes(q)) return; seen.add(title); const el=document.createElement("div"); el.className="ai-history-item"; el.innerHTML=`<span>▣</span><span>${escapeAIHtml(title.slice(0,32))}${title.length>32?"…":""}</span>`; el.title=title; el.onclick=()=>{const input=$("#aiSupportInput");if(input){input.value=title;input.focus();}}; today.appendChild(el);});
+  if(!today.children.length) today.innerHTML='<div class="ai-history-empty">Chưa có cuộc trò chuyện</div>';
+  previous.innerHTML='<div class="ai-history-empty">Các cuộc trò chuyện cũ sẽ hiển thị tại đây</div>';
+}
+function bindAIStudioStarters(){
+  $$("[data-ai-q]").forEach(b=>{if(b.dataset.aiBound)return;b.dataset.aiBound="1";b.addEventListener("click",()=>{const input=$("#aiSupportInput"),form=$("#aiSupportForm");if(input&&form){input.value=b.dataset.aiQ||"";form.requestSubmit();}});});
 }
 function initAISupport(){
+  const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
+  if(!toggle||!panel||!form||!input) return;
+  const sidebar=$("#aiStudioSidebar"), sidebarToggle=$("#aiSidebarToggle"), expand=$("#aiExpandSidebar"), theme=$("#aiThemeToggle"), newChat=$("#aiNewChat"), share=$("#aiSupportShare"), search=$("#aiHistorySearch"), modelBtn=$("#aiModelButton"), modelMenu=$("#aiModelMenu"), modelName=$("#aiCurrentModel");
+  loadAISupportHistory(); renderAISupportHistory();
+  const open=()=>{panel.classList.remove("hidden","closing");panel.classList.add("ai-opening");document.getElementById("aiSupport")?.classList.add("fullscreen-open");document.body.classList.add("ai-chat-open");document.body.style.overflow="hidden";panel.setAttribute("aria-hidden","false");setTimeout(()=>input.focus(),120);};
+  const shut=()=>{panel.classList.add("hidden");panel.classList.remove("ai-opening");document.getElementById("aiSupport")?.classList.remove("fullscreen-open");document.body.classList.remove("ai-chat-open");document.body.style.overflow="";panel.setAttribute("aria-hidden","true");};
+  window.__smartParkCloseAI=shut;
+  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
+  close?.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();shut();});
+  focus?.addEventListener("click",()=>input.focus());
+  sidebarToggle?.addEventListener("click",()=>panel.classList.toggle("ai-collapsed"));
+  expand?.addEventListener("click",()=>panel.classList.remove("ai-collapsed"));
+  theme?.addEventListener("click",()=>document.documentElement.classList.toggle("dark"));
+  newChat?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.value="";input.focus();});
+  clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
+  share?.addEventListener("click",()=>{if(aiSupportHistory.length){copyToClipboard(location.href);showToast("Đã sao chép liên kết chia sẻ!","success");}else showToast("Chưa có tin nhắn để chia sẻ","error")});
+  search?.addEventListener("input",()=>renderAIStudioHistory(search.value));
+  modelBtn?.addEventListener("click",e=>{e.stopPropagation();modelMenu?.classList.toggle("hidden")});
+  modelMenu?.querySelectorAll("button[data-ai-model]").forEach(b=>b.addEventListener("click",()=>{if(modelName)modelName.textContent=b.dataset.aiModel;modelMenu.classList.add("hidden")}));
+  document.addEventListener("click",()=>modelMenu?.classList.add("hidden"));
+  $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
+  form.addEventListener("submit",async e=>{
+    e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
+    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; autoResizeAIInput(); setAISupportBusy(true); const typingEl=showAITyping(/https?:\/\/|hôm nay|mới nhất|thời tiết|tin tức|ai là|giá |tỷ giá|xếp hạng|hiện nay|hiện tại|latest|today|news|richest/i.test(q));
+    try{
+      const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000); let d;
+      try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}finally{clearTimeout(timer)}
+      typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[],{searched:!!d.web_search,fetched:!!d.web_fetched,remaining:d.web_search_remaining_today});
+    }catch(err){
+      typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
+    }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();renderAIStudioHistory();}
+  });
+  input.addEventListener("input",autoResizeAIInput);
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
+}
+function autoResizeAIInput(){const input=$("#aiSupportInput");if(!input)return;input.style.height="auto";input.style.height=Math.min(input.scrollHeight,130)+"px";}
+initAISupport();
+{
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();

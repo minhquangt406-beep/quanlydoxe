@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SmartPark · Đăng nhập hệ thống</title>
 <link rel="stylesheet" href="/static/style.css?v=v51-layout-20260923">
-<link rel="stylesheet" href="/static/ai-fullscreen-v51.css?v=20260923-3">
+<link rel="stylesheet" href="/static/ai-fullscreen-v51.css?v=20260923-4">
+<link rel="stylesheet" href="/static/ai-studio-v55.css?v=20260923-55">
 </head>
 <body>
 <div id="loginView" class="login-page">
@@ -100,68 +101,77 @@
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
 </div>
-  <div id="aiSupport" class="ai-support" aria-live="polite">
-    <button id="aiSupportToggle" class="ai-support-fab" aria-label="Mở chatbot AI" title="Mở trợ lý AI"><span class="ai-fab-orb">✦</span><span class="ai-fab-label">Ask AI</span><i class="ai-fab-ping"></i></button>
-    <section id="aiSupportPanel" class="ai-support-panel ai-v51 hidden" aria-label="SmartPark AI" aria-hidden="true">
-      <aside class="ai-studio-sidebar" id="aiStudioSidebar">
+  <div id="aiSupport" class="ai-studio-host" aria-live="polite">
+    <button id="aiSupportToggle" class="ai-studio-fab" aria-label="Mở chatbot AI" title="Mở trợ lý AI"><span>✦</span><b>Ask AI</b></button>
+
+    <section id="aiSupportPanel" class="ai-studio-panel hidden" aria-label="SmartPark AI" aria-hidden="true">
+      <aside id="aiStudioSidebar" class="ai-studio-sidebar">
         <div class="ai-sidebar-head">
-          <button type="button" id="aiNewChat" class="ai-new-chat"><span>＋</span><b>Chat mới</b></button>
-          <button type="button" id="aiSidebarCollapse" class="ai-sidebar-icon" title="Thu gọn sidebar">‹</button>
+          <button id="aiNewChat" type="button" class="ai-new-chat"><span>＋</span><b>Chat mới</b></button>
+          <button id="aiSidebarToggle" type="button" class="ai-icon-btn" title="Thu gọn sidebar" aria-label="Thu gọn sidebar">‹</button>
         </div>
-        <div class="ai-sidebar-search"><span>⌕</span><input id="aiChatSearch" type="search" placeholder="Tìm kiếm đoạn chat..." autocomplete="off"></div>
-        <div class="ai-history" id="aiChatHistory">
-          <div class="ai-history-group"><div class="ai-history-title">HÔM NAY</div><div id="aiHistoryToday"></div></div>
-          <div class="ai-history-group"><div class="ai-history-title">7 NGÀY TRƯỚC</div><div id="aiHistoryPrevious"></div></div>
+        <div class="ai-history-search"><span>⌕</span><input id="aiHistorySearch" type="text" placeholder="Tìm kiếm đoạn chat..."></div>
+        <div class="ai-history" id="aiHistoryContainer">
+          <div class="ai-history-group"><h4>HÔM NAY</h4><div id="history-today"></div></div>
+          <div class="ai-history-group"><h4>7 NGÀY TRƯỚC</h4><div id="history-previous"></div></div>
         </div>
         <div class="ai-sidebar-footer">
-          <button type="button" id="aiThemeToggle" class="ai-sidebar-row"><span>☾</span><span>Chế độ tối / sáng</span></button>
-          <div class="ai-user-row"><div class="ai-user-avatar">A</div><div><b>SmartPark</b><small>Trợ lý vận hành</small></div></div>
+          <button id="aiThemeToggle" type="button" class="ai-sidebar-action"><span>◐</span><span>Chế độ tối / sáng</span></button>
+          <div class="ai-profile"><div class="ai-profile-avatar">A</div><div><b>SmartPark</b><small>Trợ lý vận hành</small></div></div>
         </div>
       </aside>
 
       <main class="ai-studio-main">
-        <header class="ai-studio-topbar">
-          <div class="ai-studio-top-left">
-            <button type="button" id="aiSidebarExpand" class="ai-sidebar-expand" title="Mở sidebar">☰</button>
-            <div class="ai-model-select"><span>✦</span><b id="aiModelName">xKiro · DeepSeek V4 Pro</b><small>⌄</small></div>
+        <header class="ai-studio-header">
+          <div class="ai-header-left">
+            <button id="aiExpandSidebar" type="button" class="ai-header-icon hidden" title="Mở sidebar">☰</button>
+            <div class="ai-model-wrap">
+              <button id="aiModelButton" type="button" class="ai-model-button"><span>✦</span><b id="aiCurrentModel">xKiro · DeepSeek V4 Pro</b><small>⌄</small></button>
+              <div id="aiModelMenu" class="ai-model-menu hidden">
+                <div class="ai-model-label">CHỌN AI MODEL</div>
+                <button type="button" data-ai-model="xKiro · DeepSeek V4 Pro">xKiro · DeepSeek V4 Pro <em>WEB</em></button>
+                <button type="button" data-ai-model="xKiro · DeepSeek V4 Pro · Web">xKiro · DeepSeek V4 Pro · Web <em>SEARCH</em></button>
+              </div>
+            </div>
           </div>
-          <div class="ai-studio-actions">
-            <span class="ai-engine-status"><i></i> Online</span>
-            <button type="button" id="aiShareChat" title="Chia sẻ">↗</button>
-            <button type="button" id="aiSupportClear" title="Xóa cuộc trò chuyện">⌫</button>
-            <button type="button" id="aiSupportClose" class="ai-studio-close" aria-label="Đóng" title="Đóng">×</button>
+          <div class="ai-header-actions">
+            <span class="ai-online"><i></i> Online</span>
+            <button id="aiSupportShare" type="button" class="ai-header-icon" title="Chia sẻ">↗</button>
+            <button id="aiSupportClear" type="button" class="ai-header-icon" title="Xóa cuộc trò chuyện">⌫</button>
+            <button id="aiSupportClose" type="button" class="ai-header-icon ai-close" aria-label="Đóng AI" title="Đóng">×</button>
           </div>
         </header>
 
         <div id="aiSupportMessages" class="ai-studio-stream">
-          <div class="ai-welcome-card ai-studio-welcome">
+          <div id="aiWelcome" class="ai-studio-welcome">
             <div class="ai-welcome-icon">✦</div>
-            <div class="ai-welcome-copy"><strong>Tôi có thể giúp gì cho bạn hôm nay?</strong><p>Tra cứu bãi xe theo dữ liệu thực tế hoặc tìm kiếm thông tin mới nhất trên Web.</p></div>
+            <h2>Tôi có thể giúp gì cho bạn hôm nay?</h2>
+            <p>Tra cứu bãi xe, mức phí, vé tháng hoặc tìm kiếm thông tin mới nhất trên Web.</p>
             <div class="ai-starter-grid">
-              <button type="button" class="ai-starter" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><b>⌗ Chỗ trống</b><small>Kiểm tra số vị trí còn trống</small></button>
-              <button type="button" class="ai-starter" data-ai-q="Khu A còn bao nhiêu chỗ?"><b>▦ Khu vực</b><small>Xem số chỗ theo khu</small></button>
-              <button type="button" class="ai-starter" data-ai-q="Mức phí gửi xe máy hiện tại là bao nhiêu?"><b>₫ Mức phí</b><small>Tra cứu bảng giá hiện tại</small></button>
-              <button type="button" class="ai-starter" data-ai-q="Vé tháng có được miễn phí không?"><b>▣ Vé tháng</b><small>Kiểm tra chính sách vé tháng</small></button>
+              <button type="button" class="ai-starter" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><span>🚗</span><b>Kiểm tra chỗ trống</b><small>Xem số chỗ còn lại trong bãi</small></button>
+              <button type="button" class="ai-starter" data-ai-q="Khu A còn bao nhiêu chỗ?"><span>▦</span><b>Tra cứu khu vực</b><small>Xem tình trạng từng khu</small></button>
+              <button type="button" class="ai-starter" data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?"><span>₫</span><b>Tra cứu mức phí</b><small>Phí gửi xe theo loại phương tiện</small></button>
+              <button type="button" class="ai-starter" data-ai-q="Vé tháng có được miễn phí không?"><span>🎫</span><b>Kiểm tra vé tháng</b><small>Quy định và trạng thái vé tháng</small></button>
             </div>
           </div>
         </div>
 
         <div class="ai-studio-input-area">
-          <div class="ai-studio-input-box">
-            <textarea id="aiSupportInput" rows="1" maxlength="500" placeholder="Hỏi AI bất cứ điều gì..."></textarea>
-            <div class="ai-studio-input-bottom">
-              <div><button type="button" id="aiSupportFocus" title="Tập trung ô nhập">＋</button><span>Enter để gửi · Shift + Enter xuống dòng</span></div>
-              <button type="button" id="aiStudioSend" class="ai-studio-send" title="Gửi">↑</button>
+          <div class="ai-input-box">
+            <textarea id="aiSupportInput" rows="1" autocomplete="off" maxlength="1000" placeholder="Hỏi AI bất cứ điều gì..."></textarea>
+            <div class="ai-input-tools">
+              <div class="ai-input-hint"><button id="aiSupportFocus" type="button" title="Tập trung ô nhập">＋</button><span>Enter để gửi · Shift + Enter xuống dòng</span></div>
+              <button id="aiSupportSend" type="submit" form="aiSupportForm" class="ai-send-btn" aria-label="Gửi">↑</button>
             </div>
           </div>
-          <p>AI có thể mắc sai sót. Hãy kiểm tra lại thông tin quan trọng.</p>
+          <form id="aiSupportForm" class="ai-hidden-form"></form>
+          <p class="ai-disclaimer">AI có thể mắc sai sót. Hãy kiểm tra lại thông tin quan trọng.</p>
         </div>
-        <form id="aiSupportForm" class="ai-hidden-form"><button type="submit" aria-hidden="true" tabindex="-1">Gửi</button></form>
       </main>
     </section>
   </div>
 
-<script src="/static/app.js?v=v51-layout-20260923"></script>
+<script src="/static/app.js?v=v54-layout-20260923"></script>
 
 </body>
 </html>
