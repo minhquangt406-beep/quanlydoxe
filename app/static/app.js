@@ -74,7 +74,27 @@ function loadAISupportHistory(){
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
 function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
 function escapeAIHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#039;");}
-function formatAIText(v){let s=escapeAIHtml(v).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");let lines=s.split(/\r?\n/);let out="",inList=false;for(const line of lines){const t=line.trim();if(/^[-*•]\s+/.test(t)){if(!inList){out+="<ul>";inList=true}out+="<li>"+t.replace(/^[-*•]\s+/,"")+"</li>";}else{if(inList){out+="</ul>";inList=false}if(t)out+="<p>"+t+"</p>";}}if(inList)out+="</ul>";return out||"<p></p>";}
+function formatAIText(v){
+  let s=escapeAIHtml(v).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
+  s=s.replace(/<p>\s*(Nguồn\s*:?\s*.*)<\/p>/gi,"");
+  const lines=s.split(/\r?\n/); let out="",inList=false,section=0;
+  const flush=()=>{if(inList){out+="</ul>";inList=false}};
+  for(const line of lines){
+    const t=line.trim(); if(!t) continue;
+    if(/^[-*•]\s+/.test(t)){if(!inList){out+="<ul>";inList=true}out+="<li>"+t.replace(/^[-*•]\s+/,"")+"</li>";continue;}
+    flush();
+    const lower=t.toLowerCase();
+    let label="";
+    if(section===0) label="KẾT QUẢ CHÍNH";
+    else if(/^(lưu ý|lưu ý:|ghi chú|chú ý)/i.test(t)) label="LƯU Ý";
+    else if(/^(nguồn|nguồn tham khảo|tham khảo)/i.test(t)) label="NGUỒN";
+    else if(/^(chi tiết|thông tin chi tiết|cụ thể)/i.test(t)) label="CHI TIẾT";
+    if(label){ out+=`<div class="ai-answer-section"><div class="ai-section-label">${label}</div><p>${t.replace(/^(lưu ý|lưu ý:|ghi chú|chú ý|nguồn tham khảo|nguồn|tham khảo|chi tiết|thông tin chi tiết|cụ thể)\s*:??\s*/i,"")}</p></div>`; }
+    else out+=section===0?`<div class="ai-answer-section ai-answer-primary"><div class="ai-section-label">KẾT QUẢ CHÍNH</div><p>${t}</p></div>`:`<div class="ai-answer-section"><p>${t}</p></div>`;
+    section++;
+  }
+  flush(); return out||"<p></p>";
+}
 function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
   const welcome=box.querySelector(".ai-welcome-card"); if(welcome) welcome.remove();
@@ -139,7 +159,13 @@ function initAISupport(){
   loadAISupportHistory(); renderAISupportHistory();
   const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");document.body.classList.add("ai-chat-open");setTimeout(()=>input.focus(),80)};
   const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open")};
-  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut(); close?.addEventListener("click",shut); focus?.addEventListener("click",()=>input.focus());
+  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
+  close?.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();shut();});
+  focus?.addEventListener("click",()=>input.focus());
+  if(!window.__smartParkAICloseBound){
+    document.addEventListener("click",(e)=>{const b=e.target.closest?.("#aiSupportClose");if(b){e.preventDefault();e.stopPropagation();panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open");}} ,true);
+    window.__smartParkAICloseBound=true;
+  }
   clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
