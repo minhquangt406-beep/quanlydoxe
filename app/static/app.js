@@ -176,7 +176,20 @@ function showAITyping(web=false){
 function renderAISupportHistory(){
   const box=$("#aiSupportMessages"); if(!box) return; box.innerHTML="";
   if(!aiSupportHistory.length){
-    box.innerHTML='<div class="ai-welcome-card"><div class="ai-welcome-icon">✦</div><div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div><div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div></div>'; return;
+    box.innerHTML=`<div class="ai-studio-welcome">
+      <div class="ai-welcome-logo">✦</div>
+      <h1>Xin chào! Tôi là <span>SmartPark AI</span></h1>
+      <p>Tôi có thể giúp bạn tra cứu bãi xe, mức phí, vé tháng và tìm kiếm thông tin mới nhất trên Web.</p>
+      <div class="ai-capability-row"><span>🅿️ Dữ liệu bãi xe</span><span>🌐 Web Search</span><span>✨ AI Analysis</span></div>
+      <div class="ai-starter-grid">
+        <button type="button" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><b>🅿️ Chỗ trống</b><small>Kiểm tra số vị trí còn trống</small></button>
+        <button type="button" data-ai-q="Khu A còn bao nhiêu chỗ?"><b>▣ Khu vực</b><small>Xem tình trạng khu A</small></button>
+        <button type="button" data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?"><b>💳 Mức phí</b><small>Tra cứu giá gửi xe</small></button>
+        <button type="button" data-ai-q="Vé tháng có được miễn phí không?"><b>🎫 Vé tháng</b><small>Kiểm tra chính sách vé tháng</small></button>
+      </div>
+    </div>`;
+    $$('.ai-starter-grid [data-ai-q]').forEach(b=>b.addEventListener('click',()=>{const input=$('#aiSupportInput'),form=$('#aiSupportForm');if(input){input.value=b.dataset.aiQ||'';input.focus();form?.requestSubmit();}}));
+    return;
   }
   aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
 }
@@ -215,6 +228,8 @@ function initAISupport(){
     window.__smartParkAICloseBound=true;
   }
   clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
+  const mobileMenu=panel.querySelector(".ai-mobile-menu"), sidebar=panel.querySelector(".ai-studio-sidebar");
+  mobileMenu?.addEventListener("click",()=>sidebar?.classList.toggle("mobile-open"));
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
     e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
