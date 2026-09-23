@@ -83,7 +83,14 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
   const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
   const body=document.createElement("div"); body.className="ai-msg-body"; body.innerHTML=formatAIText(text);
-  wrap.append(meta,body);
+  wrap.append(meta);
+  if(role==="bot"){
+    const badge=document.createElement("div");
+    badge.className="ai-data-badge "+(webMeta?.searched||webMeta?.fetched?"is-web":"is-parking");
+    badge.innerHTML=(webMeta?.searched||webMeta?.fetched)?"<span>🌐</span> Web Search":"<span>🅿️</span> Dữ liệu bãi xe";
+    wrap.appendChild(badge);
+  }
+  wrap.append(body);
   if(role==="bot" && (Array.isArray(sources) && sources.length || webMeta?.searched || webMeta?.fetched)){
     const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
     const heading=document.createElement("div"); heading.className="ai-source-heading";
