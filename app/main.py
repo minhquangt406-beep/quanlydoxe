@@ -1375,6 +1375,12 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
+    # Monthly pass is a business rule and must be answered directly before generic pricing logic.
+    if any(k in q for k in ["vé tháng", "ve thang", "vé tháng còn hiệu lực", "ve thang con hieu luc"]):
+        if any(k in q for k in ["miễn phí", "mien phi", "có được miễn", "co duoc mien", "có miễn", "co mien"]):
+            return "Có. Vé tháng còn hiệu lực được miễn phí tiền gửi xe và không tính phí lượt gửi vào doanh thu."
+        return "Bãi xe có hỗ trợ vé tháng. Vé tháng còn hiệu lực được miễn phí tiền gửi xe."
+
     parking_price_context = any(k in q for k in [
         "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
         "giá gửi", "phí gửi", "tiền gửi", "bảng giá gửi", "phí đỗ",

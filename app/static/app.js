@@ -76,49 +76,51 @@ function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",m
 function escapeAIHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#039;");}
 function formatAIText(v){
   let s=escapeAIHtml(v).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-  s=s.replace(/<p>\s*(Nguồn\s*:?.*)<\/p>/gi,"");
-  const lines=s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  let out="", list=false, table=false, firstContent=true;
+  const rawLines=s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  let out="", list=false, table=false, first=true, sectionOpen=false;
   const closeList=()=>{if(list){out+="</ul>";list=false}};
   const closeTable=()=>{if(table){out+="</tbody></table></div>";table=false}};
+  const openSection=(title, cls="")=>{closeList();closeTable(); if(sectionOpen) out+="</section>"; out+=`<section class="ai-answer-section ${cls}"><div class="ai-section-title">${title}</div>`; sectionOpen=true;};
   const isTableLine=t=>/^\|.*\|$/.test(t);
   const cells=t=>t.replace(/^\||\|$/g,"").split("|").map(x=>x.trim());
-  for(let i=0;i<lines.length;i++){
-    const t=lines[i];
+  for(let i=0;i<rawLines.length;i++){
+    const t=rawLines[i];
     if(/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(t)) continue;
     if(isTableLine(t)){
       closeList();
       const c=cells(t);
-      if(!table){
-        table=true; out+='<div class="ai-answer-table-wrap"><table class="ai-answer-table"><thead><tr>'+c.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
-      }else out+='<tr>'+c.map(x=>`<td>${x}</td>`).join('')+'</tr>';
-      continue;
+      if(!table){ table=true; out+='<div class="ai-answer-table-wrap"><table class="ai-answer-table"><thead><tr>'+c.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>'; }
+      else out+='<tr>'+c.map(x=>`<td>${x}</td>`).join('')+'</tr>';
+      first=false; continue;
     }
     closeTable();
-    if(/^[-*•]\s+/.test(t)){
-      if(!list){out+='<ul class="ai-answer-list">';list=true}
-      out+='<li>'+t.replace(/^[-*•]\s+/,'')+'</li>'; continue;
-    }
-    closeList();
     if(/^#{1,3}\s+/.test(t)){
-      out+=`<div class="ai-answer-heading">${t.replace(/^#{1,3}\s+/,'')}</div>`; firstContent=false; continue;
+      openSection(t.replace(/^#{1,3}\s+/,'')); first=false; continue;
     }
     if(/^\d+[.)]\s+/.test(t)){
-      out+=`<div class="ai-answer-heading">${t}</div>`; firstContent=false; continue;
+      openSection(t.replace(/^\d+[.)]\s+/,'')); first=false; continue;
     }
     if(/^(lưu ý|ghi chú|chú ý)\s*:?/i.test(t)){
-      out+=`<div class="ai-answer-note"><div class="ai-note-title">⚠ Lưu ý</div><p>${t.replace(/^(lưu ý|ghi chú|chú ý)\s*:?\s*/i,'')}</p></div>`; firstContent=false; continue;
+      closeList();
+      if(sectionOpen) out+='</section>'; sectionOpen=false;
+      out+=`<section class="ai-answer-section ai-note-section"><div class="ai-section-title">⚠ Lưu ý</div><p>${t.replace(/^(lưu ý|ghi chú|chú ý)\s*:?\s*/i,'')}</p></section>`;
+      first=false; continue;
     }
     if(/^(nguồn|nguồn tham khảo|tham khảo)\s*:?/i.test(t)) continue;
-    if(firstContent){
-      out+=`<div class="ai-answer-primary"><div class="ai-section-label">⌕ Kết quả chính</div><p>${t}</p></div>`;
-      firstContent=false;
+    if(/^[-*•]\s+/.test(t)){
+      if(!list){list=true; out+='<ul class="ai-answer-list">';}
+      out+='<li>'+t.replace(/^[-*•]\s+/,'')+'</li>'; first=false; continue;
+    }
+    if(first){
+      openSection('Kết quả chính','ai-main-section');
+      out+=`<p>${t}</p>`; first=false;
     }else{
-      out+=`<p class="ai-answer-paragraph">${t}</p>`;
+      if(!sectionOpen) openSection('Chi tiết');
+      out+=`<p>${t}</p>`;
     }
   }
-  closeList(); closeTable();
-  return out||"<p></p>";
+  closeList(); closeTable(); if(sectionOpen) out+='</section>';
+  return out||'<p></p>';
 }
 function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
@@ -183,7 +185,8 @@ function initAISupport(){
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
   const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");document.body.classList.add("ai-chat-open");setTimeout(()=>input.focus(),80)};
-  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open")};
+  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open");panel.setAttribute("aria-hidden","true")};
+  window.__smartParkCloseAI=shut;
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
   close?.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();shut();});
   focus?.addEventListener("click",()=>input.focus());

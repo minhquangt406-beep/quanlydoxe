@@ -37,7 +37,11 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - QUY TẮC NGHIỆP VỤ VÉ THÁNG: xe có vé tháng còn hiệu lực được miễn phí tiền gửi xe; không yêu cầu chọn phương thức thanh toán và không tính phí lượt gửi vào doanh thu. Nếu người dùng hỏi "vé tháng có được miễn phí không" hoặc câu tương đương, trả lời ngay: "Có. Xe có vé tháng còn hiệu lực được miễn phí tiền gửi xe." Sau đó chỉ giải thích thêm nếu cần.
 - Với câu hỏi về MỨC PHÍ GỬI XE, chỉ trả lời các mức phí hiện có trong PARKING_CONTEXT.pricing, nêu rõ loại xe và VNĐ/giờ; không chuyển sang chủ đề khác.
 - Với câu hỏi về CHỖ TRỐNG/KHU VỰC, ưu tiên các số liệu parking trong context và trả lời bằng số liệu trước, không kể dài dòng.
-- Mỗi câu trả lời phải đi thẳng vào ý chính trong 1-2 câu đầu; phần giải thích thêm chỉ dùng khi thực sự cần.
+- Mỗi câu trả lời phải đi thẳng vào ý chính trong 1-2 câu đầu; chỉ trả lời đúng thông tin mà người dùng đang hỏi, không tự mở rộng sang chủ đề khác.
+- Nếu câu hỏi yêu cầu nhiều thông tin, chia rõ thành các phần ngắn bằng tiêu đề Markdown (ví dụ: ## Kết quả chính, ## Chi tiết, ## Lưu ý). Khi có dữ liệu dạng danh sách hoặc so sánh, ưu tiên bullet hoặc bảng Markdown.
+- Với câu hỏi chỉ cần một giá trị hoặc một trạng thái, trả lời 1-3 câu, không tạo bảng tổng quan.
+- Nếu câu hỏi là vé tháng, phải trả lời trực tiếp về việc miễn phí trước khi giải thích.
+- Nếu câu hỏi là mức phí, chỉ đưa đúng mức phí liên quan đến loại xe hoặc toàn bộ bảng giá nếu người dùng hỏi bảng giá.
 - Không tiết lộ mật khẩu, token, API key, dữ liệu kỹ thuật nội bộ hoặc cách hệ thống chọn AI.
 - Không tự nhận là con người.`;
 
@@ -76,7 +80,7 @@ function buildPrompt(body, webResults = [], fetchedPages = []) {
   }
   return {
     history,
-    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nQUY TẮC NGHIỆP VỤ ƯU TIÊN:\n- ${businessRules.join("\n- ")}\n\nCÂU HỎI:\n${q}\n\nQUY TẮC TÌM KIẾM: Nếu câu hỏi không hỏi dữ liệu riêng của bãi xe SmartPark, hãy ưu tiên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu câu hỏi yêu cầu thông tin hiện tại, xếp hạng, người giàu nhất, giá thị trường hoặc tin mới, chỉ kết luận dựa trên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu nguồn chưa đủ hoặc mâu thuẫn, nói rõ mức độ chưa xác minh thay vì khẳng định hoặc suy đoán. Trả lời trực tiếp ý chính trước, không lan sang chủ đề khác.`
+    prompt: `PARKING_CONTEXT:\n${JSON.stringify(context)}${webBlock}${fetchBlock}\n\nQUY TẮC NGHIỆP VỤ ƯU TIÊN:\n- ${businessRules.join("\n- ")}\n\nCÂU HỎI:\n${q}\n\nQUY TẮC TÌM KIẾM: Nếu câu hỏi không hỏi dữ liệu riêng của bãi xe SmartPark, hãy ưu tiên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu câu hỏi yêu cầu thông tin hiện tại, xếp hạng, người giàu nhất, giá thị trường hoặc tin mới, chỉ kết luận dựa trên WEB_RESULTS/WEB_PAGE_CONTENT. Nếu nguồn chưa đủ hoặc mâu thuẫn, nói rõ mức độ chưa xác minh thay vì khẳng định hoặc suy đoán. Trả lời đúng thực thể, địa điểm, thời gian và con số mà người dùng hỏi. Không được biến câu hỏi cụ thể thành một bài tổng quan chung. Nếu người dùng hỏi một con số, đưa con số đó ngay câu đầu.`
   };
 }
 
