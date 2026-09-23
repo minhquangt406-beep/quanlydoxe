@@ -184,14 +184,32 @@ function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
-  const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");document.body.classList.add("ai-chat-open");setTimeout(()=>input.focus(),80)};
-  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open");panel.setAttribute("aria-hidden","true")};
+  const open=()=>{
+    panel.classList.remove("hidden","closing");
+    document.getElementById("aiSupport")?.classList.add("fullscreen-open");
+    toggle.classList.add("open");
+    document.body.classList.add("ai-chat-open");
+    document.body.style.overflow="hidden";
+    panel.setAttribute("aria-hidden","false");
+    requestAnimationFrame(()=>setTimeout(()=>input.focus(),120));
+  };
+  const shut=()=>{
+    const host=document.getElementById("aiSupport");
+    panel.classList.remove("closing");
+    panel.classList.add("closing");
+    host?.classList.remove("fullscreen-open");
+    toggle.classList.remove("open");
+    document.body.classList.remove("ai-chat-open");
+    document.body.style.overflow="";
+    panel.setAttribute("aria-hidden","true");
+    setTimeout(()=>panel.classList.add("hidden"),280);
+  };
   window.__smartParkCloseAI=shut;
   toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
   close?.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();shut();});
   focus?.addEventListener("click",()=>input.focus());
   if(!window.__smartParkAICloseBound){
-    document.addEventListener("click",(e)=>{const b=e.target.closest?.("#aiSupportClose");if(b){e.preventDefault();e.stopPropagation();panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open");}} ,true);
+    document.addEventListener("click",(e)=>{const b=e.target.closest?.("#aiSupportClose");if(b){e.preventDefault();e.stopPropagation();shut();}} ,true);
     window.__smartParkAICloseBound=true;
   }
   clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
