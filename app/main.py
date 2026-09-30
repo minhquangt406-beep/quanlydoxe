@@ -1272,7 +1272,7 @@ def auto_slot(vehicle_type: str = Query("Xe máy"), db: Session = Depends(get_db
 
 @app.get("/api/monthly")
 def monthly(db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
-    rows=db.query(MonthlyPass).order_by(MonthlyPass.expires_at.asc()).all(); out=[]
+    rows=db.query(MonthlyPass).filter(MonthlyPass.active.is_(True)).order_by(MonthlyPass.expires_at.asc()).all(); out=[]
     for x in rows:
         v=db.get(Vehicle,x.vehicle_id)
         out.append({"id":x.id,"license_plate":v.license_plate if v else "","vehicle_type":x.vehicle_type,"customer_name":x.customer_name,"phone":x.phone,"started_at":x.started_at.isoformat(),"expires_at":x.expires_at.isoformat(),"price":x.price,"active":x.active,"expired":x.expires_at < now_vn()})
@@ -1288,6 +1288,18 @@ def create_monthly(data: MonthlyPassIn, db: Session = Depends(get_db), user: Use
     row=MonthlyPass(vehicle_id=v.id,customer_name=data.customer_name.strip(),phone=data.phone.strip(),vehicle_type=data.vehicle_type,started_at=start,expires_at=expiry,price=data.price*months,active=True)
     db.add(row); audit(db,user,"CREATE_MONTHLY_PASS",f"Tạo vé tháng {plate}, hết hạn {expiry:%d/%m/%Y}"); db.commit(); db.refresh(row)
     return {"message":"Đã tạo vé tháng","id":row.id,"expires_at":expiry.isoformat()}
+
+@app.delete("/api/monthly/{monthly_id}")
+def delete_monthly(monthly_id: int, db: Session = Depends(get_db), user: User = Depends(manager_only)):
+    row = db.get(MonthlyPass, monthly_id)
+    if not row or not row.active:
+        raise HTTPException(404, "Không tìm thấy vé tháng đang hoạt động")
+    vehicle = db.get(Vehicle, row.vehicle_id)
+    plate = vehicle.license_plate if vehicle else ""
+    row.active = False
+    audit(db, user, "DELETE_MONTHLY_PASS", f"Xóa vé tháng {plate}, mã vé {monthly_id}")
+    db.commit()
+    return {"message": "Đã xóa vé tháng", "id": monthly_id}
 
 @app.get("/api/ticket/qr/{record_id}")
 def ticket_qr(record_id:int, db:Session=Depends(get_db), user:User=Depends(current_user)):
@@ -1331,8 +1343,8 @@ def _clean_ai_history(history):
     return cleaned
 
 
-# Quyền hỏi AI được kiểm tra ở backend, không chỉ ẩn nút trên giao diện.
-# Như vậy người dùng không thể vượt quyền bằng cách gọi thẳng /api/ai/support.
+
+
 AI_MANAGER_ONLY_PATTERNS = [
     r"\bdoanh thu\b", r"báo cáo doanh thu", r"lịch sử doanh thu", r"doanh thu theo",
     r"nhật ký hoạt động", r"audit", r"tài khoản", r"người dùng", r"nhân viên",
