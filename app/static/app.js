@@ -73,55 +73,6 @@ function loadAISupportHistory(){
 }
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
 function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
-function escapeAIHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#039;");}
-function formatAIText(v){
-  let s=escapeAIHtml(v).replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>");
-  const rawLines=s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  let out="", list=false, table=false, first=true, sectionOpen=false;
-  const closeList=()=>{if(list){out+="</ul>";list=false}};
-  const closeTable=()=>{if(table){out+="</tbody></table></div>";table=false}};
-  const openSection=(title, cls="")=>{closeList();closeTable(); if(sectionOpen) out+="</section>"; out+=`<section class="ai-answer-section ${cls}"><div class="ai-section-title">${title}</div>`; sectionOpen=true;};
-  const isTableLine=t=>/^\|.*\|$/.test(t);
-  const cells=t=>t.replace(/^\||\|$/g,"").split("|").map(x=>x.trim());
-  for(let i=0;i<rawLines.length;i++){
-    const t=rawLines[i];
-    if(/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(t)) continue;
-    if(isTableLine(t)){
-      closeList();
-      const c=cells(t);
-      if(!table){ table=true; out+='<div class="ai-answer-table-wrap"><table class="ai-answer-table"><thead><tr>'+c.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>'; }
-      else out+='<tr>'+c.map(x=>`<td>${x}</td>`).join('')+'</tr>';
-      first=false; continue;
-    }
-    closeTable();
-    if(/^#{1,3}\s+/.test(t)){
-      openSection(t.replace(/^#{1,3}\s+/,'')); first=false; continue;
-    }
-    if(/^\d+[.)]\s+/.test(t)){
-      openSection(t.replace(/^\d+[.)]\s+/,'')); first=false; continue;
-    }
-    if(/^(lưu ý|ghi chú|chú ý)\s*:?/i.test(t)){
-      closeList();
-      if(sectionOpen) out+='</section>'; sectionOpen=false;
-      out+=`<section class="ai-answer-section ai-note-section"><div class="ai-section-title">⚠ Lưu ý</div><p>${t.replace(/^(lưu ý|ghi chú|chú ý)\s*:?\s*/i,'')}</p></section>`;
-      first=false; continue;
-    }
-    if(/^(nguồn|nguồn tham khảo|tham khảo)\s*:?/i.test(t)) continue;
-    if(/^[-*•]\s+/.test(t)){
-      if(!list){list=true; out+='<ul class="ai-answer-list">';}
-      out+='<li>'+t.replace(/^[-*•]\s+/,'')+'</li>'; first=false; continue;
-    }
-    if(first){
-      openSection('Kết quả chính','ai-main-section');
-      out+=`<p>${t}</p>`; first=false;
-    }else{
-      if(!sectionOpen) openSection('Chi tiết');
-      out+=`<p>${t}</p>`;
-    }
-  }
-  closeList(); closeTable(); if(sectionOpen) out+='</section>';
-  return out||'<p></p>';
-}
 function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta=null){
   const box=$("#aiSupportMessages"); if(!box) return;
   const welcome=box.querySelector(".ai-welcome-card"); if(welcome) welcome.remove();
@@ -129,35 +80,17 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   const avatar=document.createElement("div"); avatar.className="ai-msg-avatar"; avatar.textContent=role==="user"?"B":"✦";
   const wrap=document.createElement("div"); wrap.className="ai-msg-wrap";
   const meta=document.createElement("div"); meta.className="ai-msg-meta"; meta.innerHTML=`<b>${role==="user"?"Bạn":"SmartPark AI"}</b><span>${aiTime()}</span>`;
-  const body=document.createElement("div"); body.className="ai-msg-body"; body.innerHTML=role==="user"?`<p class="ai-user-question">${escapeAIHtml(text)}</p>`:formatAIText(text);
-  wrap.append(meta);
-  if(role==="bot"){
-    const badge=document.createElement("div");
-    badge.className="ai-data-badge "+(webMeta?.searched||webMeta?.fetched?"is-web":"is-parking");
-    badge.innerHTML=(webMeta?.searched||webMeta?.fetched)?"<span>🌐</span> Web Search":"<span>🅿️</span> Dữ liệu bãi xe";
-    wrap.appendChild(badge);
-  }
-  wrap.append(body);
+  const body=document.createElement("div"); body.className="ai-msg-body"; body.textContent=text;
+  wrap.append(meta,body);
   if(role==="bot" && (Array.isArray(sources) && sources.length || webMeta?.searched || webMeta?.fetched)){
     const src=document.createElement("div"); src.className="ai-web-sources ai-source-card";
-    const heading=document.createElement("div"); heading.className="ai-source-heading";
-    const label=document.createElement("span"); label.textContent=webMeta?.fetched?"🌐 Nguồn đã đọc":"🌐 Nguồn web";
-    const count=document.createElement("span"); count.textContent=sources.length?`${Math.min(sources.length,3)} nguồn`:"Đã tìm web";
-    heading.append(label,count); src.appendChild(heading);
-    sources.filter(s=>s&&/^https?:\/\//i.test(s.url||"")).slice(0,3).forEach((s,i)=>{
-      const a=document.createElement("a"); a.className="ai-web-source-item"; a.href=s.url||"#"; a.target="_blank"; a.rel="noopener noreferrer";
-      const n=document.createElement("span"); n.className="ai-web-source-num"; n.textContent=String(i+1);
-      const info=document.createElement("span"); info.className="ai-web-source-info";
-      const title=document.createElement("span"); title.className="ai-web-source-title"; title.textContent=s.title||s.url||"Nguồn web";
-      let domain=""; try{domain=new URL(s.url).hostname.replace(/^www\./,"")}catch(_){domain=s.url||""}
-      const dom=document.createElement("span"); dom.className="ai-web-source-domain"; dom.textContent=domain;
-      info.append(title,dom); const open=document.createElement("span"); open.className="ai-web-source-open"; open.textContent="↗";
-      a.append(n,info,open); src.appendChild(a);
-    });
+    const title=document.createElement("small"); title.textContent=webMeta?.fetched?"🌐 Đã tìm web + đọc nội dung trang":"🌐 Nguồn web được AI đối chiếu"; src.appendChild(title);
+    if(webMeta?.remaining!=null){const q=document.createElement("em"); q.textContent=` còn ${webMeta.remaining} lượt tìm hôm nay`; src.appendChild(q);}
+    sources.slice(0,5).forEach((s,i)=>{const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.dataset.num=String(i+1);const label=document.createElement("span");label.textContent=s.title||s.url;a.appendChild(label);a.title=s.url;src.appendChild(a);});
     wrap.appendChild(src);
   }
   row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight;
-  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text)),time:Date.now()});saveAISupportHistory();window.__smartParkRenderAIHistory?.();}
+  if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text))});saveAISupportHistory();}
 }
 function setAISupportBusy(busy){
   const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
@@ -184,54 +117,9 @@ function initAISupport(){
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
-  const renderHistorySidebar=()=>{
-    const today=document.getElementById("aiHistoryToday"), prev=document.getElementById("aiHistoryPrevious"); if(!today||!prev)return;
-    today.innerHTML=""; prev.innerHTML="";
-    const users=aiSupportHistory.filter(x=>x.role==="user");
-    const now=Date.now();
-    const groups=[[],[]]; users.slice().reverse().forEach((m,i)=>{ const obj={...m,idx:i}; (now-(m.time||now)<7*86400000?groups[0]:groups[1]).push(obj); });
-    const make=(arr,host)=>{ if(!arr.length){host.innerHTML='<div class="ai-history-empty">Chưa có cuộc trò chuyện</div>';return;} arr.slice(0,12).forEach((m,i)=>{const b=document.createElement("button");b.type="button";b.className="ai-history-item";b.innerHTML=`<span>▣</span><span>${escapeAIHtml(String(m.content||"Cuộc trò chuyện").slice(0,38))}</span>`;b.title=m.content||"";b.onclick=()=>{input.value=m.content||"";input.focus();};host.appendChild(b);});};
-    make(groups[0],today); make(groups[1],prev);
-  };
-  window.__smartParkRenderAIHistory=renderHistorySidebar;
-  renderHistorySidebar();
-  const open=()=>{
-    panel.classList.remove("hidden","closing");
-    panel.classList.add("ai-v50-fullscreen","ai-v51");
-    document.getElementById("aiSupport")?.classList.add("fullscreen-open");
-    toggle.classList.add("open");
-    document.body.classList.add("ai-chat-open");
-    document.body.style.overflow="hidden";
-    panel.setAttribute("aria-hidden","false");
-    requestAnimationFrame(()=>setTimeout(()=>input.focus(),120));
-  };
-  const shut=()=>{
-    const host=document.getElementById("aiSupport");
-    panel.classList.remove("closing");
-    panel.classList.remove("ai-v50-fullscreen");
-    panel.classList.add("closing");
-    host?.classList.remove("fullscreen-open");
-    toggle.classList.remove("open");
-    document.body.classList.remove("ai-chat-open");
-    document.body.style.overflow="";
-    panel.setAttribute("aria-hidden","true");
-    setTimeout(()=>panel.classList.add("hidden"),280);
-  };
-  window.__smartParkCloseAI=shut;
-  document.getElementById("aiNewChat")?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();renderHistorySidebar();input.value="";input.focus();});
-  document.getElementById("aiSidebarCollapse")?.addEventListener("click",()=>panel.classList.toggle("ai-sidebar-collapsed"));
-  document.getElementById("aiSidebarExpand")?.addEventListener("click",()=>panel.classList.remove("ai-sidebar-collapsed"));
-  document.getElementById("aiChatSearch")?.addEventListener("input",e=>{const q=String(e.target.value||"").toLowerCase();document.querySelectorAll(".ai-history-item").forEach(b=>b.style.display=(!q||b.textContent.toLowerCase().includes(q))?"flex":"none");});
-  document.getElementById("aiThemeToggle")?.addEventListener("click",()=>panel.classList.toggle("ai-studio-dark"));
-  document.getElementById("aiShareChat")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(aiSupportHistory.map(x=>`${x.role}: ${x.content}`).join("\n"));toast("Đã sao chép hội thoại");}catch(_){toast("Không thể sao chép trên trình duyệt này","error");}});
-  document.getElementById("aiStudioSend")?.addEventListener("click",()=>form.requestSubmit());
-  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
-  close?.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();shut();});
-  focus?.addEventListener("click",()=>input.focus());
-  if(!window.__smartParkAICloseBound){
-    document.addEventListener("click",(e)=>{const b=e.target.closest?.("#aiSupportClose");if(b){e.preventDefault();e.stopPropagation();shut();}} ,true);
-    window.__smartParkAICloseBound=true;
-  }
+  const open=()=>{panel.classList.remove("hidden");toggle.classList.add("open");document.body.classList.add("ai-chat-open");setTimeout(()=>input.focus(),80)};
+  const shut=()=>{panel.classList.add("hidden");toggle.classList.remove("open");document.body.classList.remove("ai-chat-open")};
+  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut(); close?.addEventListener("click",shut); focus?.addEventListener("click",()=>input.focus());
   clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
   $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
   form.addEventListener("submit",async e=>{
@@ -246,7 +134,6 @@ function initAISupport(){
       typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
-  input.addEventListener("input",()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,130)+"px";});
   input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 }
 initAISupport();
