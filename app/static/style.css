@@ -4478,5 +4478,3 @@ body.dark-mode .login-card .field-wrap input:-webkit-autofill:focus{background:#
   -webkit-box-shadow:0 0 0 1000px #162337 inset!important;
   box-shadow:0 0 0 1000px #162337 inset!important;
 }
-
-.login-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:#8290a8;font-size:12px}.login-divider:before,.login-divider:after{content:"";height:1px;flex:1;background:rgba(148,163,184,.22)}.google-login-wrap{display:flex;justify-content:center;min-height:44px}.google-login-status{min-height:18px;text-align:center;margin-top:6px;color:#8fa1bc;font-size:11px}.google-login-wrap iframe{max-width:100%}@media(max-width:640px){.google-login-wrap{width:100%}.google-login-wrap iframe{width:100%!important}.login-divider{margin:12px 0}}
