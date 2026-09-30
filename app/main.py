@@ -1375,10 +1375,23 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
+    # Monthly-pass questions must be handled BEFORE the generic "phí/giá" rule.
+    # Otherwise a question such as "Vé tháng có được miễn phí không?" is
+    # incorrectly interpreted as a request for the hourly tariff table.
+    if any(k in q for k in ["vé tháng", "ve thang", "monthly"]):
+        if any(k in q for k in ["miễn phí", "mien phi", "không mất phí", "khong mat phi",
+                                "có mất phí", "co mat phi", "có tính tiền", "co tinh tien",
+                                "được miễn", "duoc mien", "free", "0 đồng", "0đ", "0 vnđ"]):
+            return ("Có. Nếu xe có vé tháng còn hiệu lực thì được miễn phí gửi xe trong thời gian vé có hiệu lực: "
+                    "phí lúc xe ra là 0 VNĐ và không cần chọn phương thức thanh toán. "
+                    "Lưu ý: đây là miễn phí gửi xe, không có nghĩa bản thân vé tháng luôn miễn phí.")
+        return ("Bãi xe có hỗ trợ vé tháng. Xe có vé tháng còn hiệu lực sẽ không bị tính phí gửi xe "
+                "khi ra bãi. Bạn có thể hỏi 'Vé tháng còn hiệu lực đến khi nào?' để kiểm tra cụ thể.")
+
     parking_price_context = any(k in q for k in [
         "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
         "giá gửi", "phí gửi", "tiền gửi", "bảng giá gửi", "phí đỗ",
-        "xe máy", "ô tô", "xe đạp", "vé tháng"
+        "xe máy", "ô tô", "xe đạp"
     ])
     if parking_price_context and any(k in q for k in ["giá", "phí", "bao nhiêu", "nhiêu", "bảng giá", "hết bao nhiêu", "giá gửi", "phí gửi"]):
         prices = db.query(Pricing).order_by(Pricing.id).all()
@@ -1389,9 +1402,15 @@ def local_ai_support(db: Session, question: str, user: User):
         if wanted:
             row = next((x for x in prices if x.vehicle_type.lower() == wanted.lower()), None)
             if row:
-                return f"Mức phí hiện tại cho {row.vehicle_type.lower()} là {float(row.price_per_hour):,.0f} VNĐ/giờ."
+                return f"Mức phí gửi {row.vehicle_type.lower()} hiện tại là {float(row.price_per_hour):,.0f} VNĐ/giờ."
             return f"Hiện chưa có mức phí được cấu hình cho {wanted.lower()}."
-        return "Bảng giá hiện tại: " + "; ".join(f"{x.vehicle_type}: {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices) if prices else "Chưa có bảng giá được cấu hình."
+        if not prices:
+            return "Hiện chưa có bảng giá gửi xe được cấu hình."
+        order = {"Xe máy": 1, "Ô tô": 2, "Xe đạp": 3}
+        prices = sorted(prices, key=lambda x: (order.get(x.vehicle_type, 99), x.vehicle_type))
+        return "Bảng giá gửi xe hiện tại: " + "; ".join(
+            f"{x.vehicle_type} {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices
+        ) + "."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
     if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ", "tầm ", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h", "21h", "22h"]):
         # Fallback remains conversational even when the LLM is temporarily unavailable.
@@ -1411,7 +1430,13 @@ def local_ai_support(db: Session, question: str, user: User):
             return f"Khoảng {hour:02d}:00 {verdict} theo dữ liệu 14 ngày gần đây. Giờ cao điểm gần nhất là khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. Hiện bãi còn {empty} vị trí trống."
         return (f"Theo dữ liệu 14 ngày gần đây, giờ cao điểm của bãi khoảng {peak:02d}:00–{(peak+1)%24:02d}:00. " if peak is not None else "") + f"Hiện bãi còn {empty} vị trí trống. Nếu bạn nói rõ giờ dự định đến, mình có thể đánh giá cụ thể."
     if any(k in q for k in ["vé tháng", "ve thang", "tháng", "monthly"]):
-        return "Bãi xe có hỗ trợ vé tháng. Nếu bạn muốn, mình có thể hướng dẫn cách đăng ký hoặc kiểm tra thông tin vé tháng."
+        if any(k in q for k in ["miễn phí", "mien phi", "không mất phí", "khong mat phi",
+                                "có mất phí", "co mat phi", "có tính tiền", "co tinh tien",
+                                "được miễn", "duoc mien", "free", "0 đồng", "0đ", "0 vnđ"]):
+            return ("Có. Xe có vé tháng còn hiệu lực được miễn phí gửi xe khi ra bãi, "
+                    "phí gửi xe là 0 VNĐ và không cần chọn phương thức thanh toán. "
+                    "Lưu ý: miễn phí gửi xe không đồng nghĩa vé tháng luôn miễn phí.")
+        return "Bãi xe có hỗ trợ vé tháng. Xe có vé tháng còn hiệu lực sẽ không bị tính phí gửi xe khi ra bãi."
     if any(k in q for k in ["mở cửa", "đóng cửa", "giờ hoạt động", "giờ mở", "giờ đóng"]):
         return "Bạn có thể xem giờ hoạt động được cấu hình trong thông tin doanh nghiệp của bãi xe. Nếu hệ thống chưa cấu hình, mình sẽ báo là chưa có dữ liệu thay vì đoán."
     if any(k in q for k in ["thanh toán", "qr", "chuyển khoản", "tiền mặt"]):
