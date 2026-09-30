@@ -4416,3 +4416,22 @@ body.dark-mode .guest-entry-note{background:rgba(59,130,246,.08)!important;borde
 @media(max-width:900px){
   body.dark-mode .ai-support-panel{background:#0c1524!important}
 }
+
+.dark-mode .login-card{background:#0f1b2d!important;border-color:#334155!important;box-shadow:0 35px 100px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.04) inset!important;color:#eef4ff!important}
+.dark-mode .login-card h1{color:#f4f7ff!important}
+.dark-mode .login-card>p{color:#aab7cc!important}
+.dark-mode .login-card label{color:#dbe5f5!important}
+.dark-mode .login-card input,.dark-mode .login-card select,.dark-mode .login-card textarea{background:#162337!important;color:#f5f8ff!important;border-color:#34465f!important}
+.dark-mode .login-card input::placeholder{color:#7f8da4!important;opacity:1!important}
+.dark-mode .login-card input:focus{background:#19283e!important;color:#fff!important;border-color:#818cf8!important;box-shadow:0 0 0 4px rgba(99,102,241,.16)!important}
+.dark-mode .login-card input:-webkit-autofill,.dark-mode .login-card input:-webkit-autofill:hover,.dark-mode .login-card input:-webkit-autofill:focus{-webkit-text-fill-color:#f5f8ff!important;caret-color:#fff!important;-webkit-box-shadow:0 0 0 1000px #162337 inset!important;box-shadow:0 0 0 1000px #162337 inset!important;transition:background-color 9999s ease-in-out 0s!important}
+.dark-mode .login-card .field-icon{color:#91a2bb!important}
+.dark-mode .login-card .pass-toggle{color:#aebbd0!important;background:transparent!important}
+.dark-mode .secure-pill{background:#162337!important;border-color:#304159!important;color:#aebbd0!important}
+.dark-mode .login-security{background:#162337!important;border-color:#2d3e57!important;color:#9eacc0!important}
+.dark-mode .login-security b{color:#dce6f5!important}
+.dark-mode .login-security small{color:#8493a8!important}
+.dark-mode .login-card .guest-register-link{color:#91a0b5!important}
+.dark-mode .login-card .link-btn{color:#82a5ff!important}
+.dark-mode .login-card .demo{color:#91a0b5!important}
+.dark-mode .login-card .error{color:#ff8b9a!important}
