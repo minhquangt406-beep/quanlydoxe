@@ -1757,25 +1757,10 @@ QUY TẮC HIỂN THỊ:
 - Không nói rằng bạn đang kiểm tra "tool" hay "database"; chỉ trình bày kết quả cho khách.
 - Khi chưa chắc chắn, ưu tiên nói thật thay vì suy đoán."""
     messages=[{"role":"system","content":system}]+history+[{"role":"user","content":question}]
-    # For live operational questions, answer from the database first.
-    # IMPORTANT: resolve specific intents before broad words such as "hiện tại"
-    # or "đang". A question like "Mức phí gửi xe hiện tại là bao nhiêu?"
-    # must return the tariff table, not the number of vehicles in the lot.
-    normalized_question = normalize_vietnamese_question(question)
-    monthly_question = any(k in normalized_question for k in ["vé tháng", "ve thang", "monthly"])
-    price_question = (
-        any(k in normalized_question for k in ["mức phí", "bảng giá", "giá gửi", "phí gửi", "tiền gửi", "tính tiền", "bao nhiêu tiền"])
-        or ("phí" in normalized_question and any(k in normalized_question for k in ["gửi", "đỗ", "đậu", "bãi"]))
-        or ("giá" in normalized_question and any(k in normalized_question for k in ["gửi", "đỗ", "đậu", "bãi"]))
-    )
-    parking_context = any(k in normalized_question for k in [
-        "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
-        "giá gửi", "phí gửi", "tiền gửi", "mức phí", "bảng giá"
-    ])
+    # For live operational questions, answer from the database first. This prevents
+    # an LLM from inventing or misunderstanding simple Vietnamese chat shorthand.
     intent = detect_parking_intent(question)
-    if monthly_question or (price_question and parking_context):
-        return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
-    if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalized_question):
+    if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalize_vietnamese_question(question)):
         return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
     if NODE_AI_URL:
         try:
