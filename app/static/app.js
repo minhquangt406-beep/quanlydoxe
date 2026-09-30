@@ -560,7 +560,37 @@ $$(".pass-toggle").forEach(b=>b.addEventListener("click",()=>{
 }));
 
 const showRegister=document.getElementById("showRegister"), registerForm=document.getElementById("registerForm"), loginFormEl=document.getElementById("loginForm"), cancelRegister=document.getElementById("cancelRegister"), showForgot=document.getElementById("showForgot"), forgotForm=document.getElementById("forgotForm"), cancelForgot=document.getElementById("cancelForgot");
-function showAuthForm(name){[loginFormEl,registerForm,forgotForm].forEach(x=>x?.classList.add("hidden"));document.querySelector(".guest-register-link")?.classList.toggle("hidden",name!=="login");const target=document.getElementById(name+"Form");target?.classList.remove("hidden");target?.querySelector("input")?.focus();}
+async function initGoogleLogin(){
+  const wrap=document.getElementById("googleLoginButton"),status=document.getElementById("googleLoginStatus");
+  if(!wrap)return;
+  try{
+    const cfg=await api("/api/auth/google/config");
+    if(!cfg.enabled){status.textContent="Đăng nhập Google sẽ hoạt động sau khi cấu hình GOOGLE_CLIENT_ID.";return;}
+    const render=()=>{
+      if(!window.google?.accounts?.id)return;
+      google.accounts.id.initialize({client_id:cfg.client_id,callback:handleGoogleCredential,ux_mode:"popup"});
+      wrap.innerHTML="";
+      google.accounts.id.renderButton(wrap,{theme:"outline",size:"large",shape:"rectangular",text:"signin_with",width:360,locale:"vi"});
+      status.textContent="";
+    };
+    if(window.google?.accounts?.id)render();else{
+      const timer=setInterval(()=>{if(window.google?.accounts?.id){clearInterval(timer);render();}},100);
+      setTimeout(()=>clearInterval(timer),10000);
+    }
+  }catch(e){status.textContent="Không tải được đăng nhập Google.";}
+}
+async function handleGoogleCredential(response){
+  const err=document.getElementById("loginError");
+  const status=document.getElementById("googleLoginStatus");
+  err.textContent="";status.textContent="Đang xác thực Google…";
+  try{
+    const d=await api("/api/auth/google",{method:"POST",body:{credential:response.credential}});
+    token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot();
+  }catch(e){err.textContent=e.message;status.textContent="";}
+}
+
+function showAuthForm(name){[loginFormEl,registerForm,forgotForm].forEach(x=>x?.classList.add("hidden"));document.querySelector(".guest-register-link")?.classList.toggle("hidden",name!=="login");const target=document.getElementById(name+"Form");target?.classList.remove("hidden");target?.querySelector("input")?.focus();if(name==="login")setTimeout(initGoogleLogin,50);}
+setTimeout(initGoogleLogin,100);
 showRegister?.addEventListener("click",()=>{showAuthForm("register");document.getElementById("registerError").textContent="";document.getElementById("registerError").className="error";});
 cancelRegister?.addEventListener("click",()=>showAuthForm("login"));
 showForgot?.addEventListener("click",()=>{showAuthForm("forgot");document.getElementById("forgotError").textContent="";document.getElementById("forgotError").className="error";});

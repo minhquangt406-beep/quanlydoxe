@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, func, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
@@ -49,6 +51,7 @@ AI_SUPPORT_TIMEOUT_SECONDS = float(os.getenv("AI_SUPPORT_TIMEOUT_SECONDS", "60")
 XKIRO_API_KEY = os.getenv("XKIRO_API_KEY", "").strip()
 XKIRO_MODEL = os.getenv("XKIRO_MODEL", "deepseek/deepseek-v4-pro:free")
 XKIRO_BASE_URL = os.getenv("XKIRO_BASE_URL", "https://api.xkiro.com/v1").strip().rstrip("/")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 AI_SUPPORT_RATE_LIMIT = int(os.getenv("AI_SUPPORT_RATE_LIMIT", "20"))
 AI_SUPPORT_WINDOW_SECONDS = int(os.getenv("AI_SUPPORT_WINDOW_SECONDS", "60"))
 _ai_support_rate = {}
@@ -91,6 +94,8 @@ class User(Base):
     role = Column(String(20), nullable=False, default="staff")
     full_name = Column(String(100), nullable=False, default="Nhân viên")
     phone = Column(String(30), nullable=False, default="")
+    email = Column(String(255), nullable=False, default="")
+    google_sub = Column(String(255), nullable=False, default="")
 
 class Area(Base):
     __tablename__ = "areas"
@@ -225,6 +230,8 @@ def ensure_auth_schema():
             
 
     add_column_if_missing("users", "phone", "ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''")
+    add_column_if_missing("users", "email", "ALTER TABLE users ADD COLUMN email VARCHAR(255) NOT NULL DEFAULT ''")
+    add_column_if_missing("users", "google_sub", "ALTER TABLE users ADD COLUMN google_sub VARCHAR(255) NOT NULL DEFAULT ''")
     add_column_if_missing("revenue_resets", "amount_before", "ALTER TABLE revenue_resets ADD COLUMN amount_before FLOAT NOT NULL DEFAULT 0")
     add_column_if_missing("revenue_resets", "reset_by", "ALTER TABLE revenue_resets ADD COLUMN reset_by INTEGER")
     
@@ -285,6 +292,9 @@ def non_guest_user(user: User = Depends(current_user)):
 class LoginIn(BaseModel):
     username: str
     password: str
+
+class GoogleLoginIn(BaseModel):
+    credential: str
 
 class VehicleIn(BaseModel):
     license_plate: str
@@ -478,6 +488,46 @@ def detect_parking_intent(text):
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else "general"
 
+
+@app.get("/api/auth/google/config")
+def google_config():
+    return {"enabled": bool(GOOGLE_CLIENT_ID), "client_id": GOOGLE_CLIENT_ID}
+
+@app.post("/api/auth/google")
+def google_login(data: GoogleLoginIn, db: Session = Depends(get_db)):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Đăng nhập Google chưa được cấu hình. Hãy thêm GOOGLE_CLIENT_ID vào biến môi trường.")
+    try:
+        info = google_id_token.verify_oauth2_token(data.credential, google_requests.Request(), GOOGLE_CLIENT_ID)
+    except Exception:
+        raise HTTPException(401, "Không thể xác thực tài khoản Google")
+    if info.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+        raise HTTPException(401, "Token Google không hợp lệ")
+    google_sub = str(info.get("sub", "")).strip()
+    email = str(info.get("email", "")).strip().lower()
+    full_name = str(info.get("name", "Khách Google")).strip() or "Khách Google"
+    if not google_sub or not email:
+        raise HTTPException(401, "Tài khoản Google không cung cấp đủ thông tin")
+    user = db.query(User).filter(User.google_sub == google_sub).first()
+    if not user:
+        user = db.query(User).filter(func.lower(User.email) == email).first()
+    if user:
+        user.google_sub = google_sub
+        if not user.email:
+            user.email = email
+        if not user.full_name or user.full_name in ("Nhân viên", "Khách Google"):
+            user.full_name = full_name
+    else:
+        base = "google_" + re.sub(r"[^a-z0-9]", "", email.split("@", 1)[0].lower())[:32]
+        username = base or "google_user"
+        if db.query(User).filter(User.username == username).first():
+            username = username[:42] + "_" + secrets.token_hex(3)
+        user = User(username=username, password_hash=hash_password(secrets.token_urlsafe(32)), role="guest", full_name=full_name[:100], phone="", email=email[:255], google_sub=google_sub)
+        db.add(user)
+    audit(db, user, "LOGIN_GOOGLE", "Đăng nhập bằng Google")
+    db.commit()
+    db.refresh(user)
+    return {"access_token": token_for(user), "token_type": "bearer", "user": {"id": user.id, "username": user.username, "role": user.role, "full_name": user.full_name}}
 
 @app.post("/api/auth/login")
 def login(data: LoginIn, db: Session = Depends(get_db)):

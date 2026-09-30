@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SmartPark · Đăng nhập hệ thống</title>
 <link rel="stylesheet" href="/static/style.css?v=v35-dashboard-sidebar-20260916">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div id="loginView" class="login-page">
@@ -39,6 +40,9 @@
       <label>Mật khẩu<div class="field-wrap"><span class="field-icon">▣</span><input id="password" name="login_password" class="has-toggle" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu"><button type="button" class="pass-toggle" data-target="password" aria-label="Hiện mật khẩu">👁</button></div></label>
       <div class="forgot-link"><button type="button" id="showForgot" class="link-btn">Quên mật khẩu?</button></div>
       <button class="primary wide" id="loginSubmit">Đăng nhập <span class="login-arrow">→</span></button>
+      <div class="login-divider"><span>hoặc</span></div>
+      <div id="googleLoginButton" class="google-login-wrap" aria-label="Đăng nhập bằng Google"></div>
+      <div id="googleLoginStatus" class="form-note google-login-status"></div>
       <div id="loginError" class="error"></div>
     </form>
     <div class="guest-register-link"><span>Khách mới?</span> <button type="button" id="showRegister" class="link-btn">Tạo tài khoản chỉ để xem chỗ trống</button></div>

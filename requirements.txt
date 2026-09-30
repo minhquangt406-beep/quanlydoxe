@@ -7,3 +7,5 @@ python-dotenv==1.1.1
 openai>=1.109.0,<3
 psycopg2-binary==2.9.10
 qrcode[pil]==8.2
+
+google-auth==2.58.1
