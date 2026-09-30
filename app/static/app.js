@@ -709,9 +709,11 @@ function emptyIcon(){return '<svg class="empty-svg" viewBox="0 0 64 64" aria-lab
 async function boot(){
   if(!token)return false;
   try{
+    // Authentication and dashboard loading are intentionally separated.
+    // A dashboard/AI API error must never invalidate a valid login session.
     me=await api("/api/me");
-    $("#loginView").classList.add("hidden");
-    $("#appView").classList.remove("hidden");
+    $("#loginView")?.classList.add("hidden");
+    $("#appView")?.classList.remove("hidden");
     const isManager=me.role==="manager"||me.role==="admin",isGuest=me.role==="guest";
     $("#userName").textContent=me.full_name;
     $("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");
@@ -725,16 +727,25 @@ async function boot(){
     $$(".sidebar nav button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
     $("#mobileBottomNav")?.classList.toggle("manager",isManager);
     $("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
-    if(isGuest){await renderGuestDashboard()}else{await navigate("dashboard")};
     maybeReturnToAdmin();
+
+    // Do not log the user out when a secondary API fails.
+    try{
+      if(isGuest) await renderGuestDashboard(); else await navigate("dashboard");
+    }catch(e){
+      console.error("SmartPark dashboard load error:",e);
+      toast(`Đã đăng nhập. Không tải được dữ liệu tổng quan: ${e.message||"Lỗi máy chủ"}`,"error");
+      $("#content").innerHTML=`<div class="panel"><div class="empty-state"><h3>Đăng nhập thành công</h3><p>Phiên làm việc đang hoạt động nhưng dữ liệu tổng quan chưa tải được.</p><button class="primary" id="retryDashboard">↻ Thử tải lại</button></div></div>`;
+      $("#retryDashboard")?.addEventListener("click",()=>navigate("dashboard").catch(err=>toast(err.message,"error")));
+    }
     return true;
   }catch(e){
-    console.error("SmartPark boot error:",e);
+    console.error("SmartPark authentication error:",e);
     clearAuth();
     $("#loginView")?.classList.remove("hidden");
     $("#appView")?.classList.add("hidden");
     const err=$("#loginError");
-    if(err) err.textContent=`Đăng nhập thành công nhưng không tải được phiên làm việc: ${e.message||"Lỗi máy chủ"}`;
+    if(err) err.textContent=`Không thể xác thực phiên đăng nhập: ${e.message||"Lỗi máy chủ"}`;
     return false;
   }
 }
@@ -798,18 +809,30 @@ forgotForm?.addEventListener("submit",async e=>{
 });
 
 $("#loginForm").onsubmit=async e=>{
-  e.preventDefault();const err=$("#loginError"),btn=$("#loginSubmit");
-  err.textContent="";setBtnBusy(btn,true,"Đang đăng nhập…");
+  e.preventDefault();
+  const err=$("#loginError"),btn=$("#loginSubmit");
+  err.textContent=""; err.className="error"; setBtnBusy(btn,true,"Đang đăng nhập…");
+  const username=$("#username").value.trim(), password=$("#password").value;
+  if(!username||!password){err.textContent="Vui lòng nhập đầy đủ tài khoản và mật khẩu.";setBtnBusy(btn,false);return;}
   try{
-    let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value.trim(),password:$("#password").value}});
+    // Never attach an old/expired Bearer token to the login request.
+    const r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({username,password})});
+    const raw=await r.text(); let d={}; try{d=raw?JSON.parse(raw):{}}catch(_){d={detail:raw}};
+    if(!r.ok) throw new Error(d.detail||`Đăng nhập thất bại (${r.status})`);
     if(!d.access_token) throw new Error("Máy chủ không trả về phiên đăng nhập");
     token=d.access_token;
     localStorage.setItem("parking_token",token);
-    refreshLastSeen();
+    localStorage.setItem("parking_last_seen",String(Date.now()));
     const ok=await boot();
-    if(!ok) throw new Error("Không thể khởi tạo phiên làm việc");
-  }catch(e){err.textContent=e.message;setBtnBusy(btn,false);}
+    if(!ok) throw new Error("Không thể xác thực phiên đăng nhập");
+  }catch(e){
+    console.error("Login error:",e);
+    err.textContent=e.message||"Không thể đăng nhập. Vui lòng thử lại.";
+    err.className="error";
+    setBtnBusy(btn,false);
+  }
 };
+
 $("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
 
