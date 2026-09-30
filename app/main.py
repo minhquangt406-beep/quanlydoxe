@@ -18,8 +18,8 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/parking.db")
-# Render/Postgres may provide postgres:// or postgresql://. SQLAlchemy with
-# psycopg2 needs the explicit postgresql+psycopg2 driver.
+
+
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = "postgresql+psycopg2://" + DATABASE_URL[len("postgres://"): ]
 elif DATABASE_URL.startswith("postgresql://"):
@@ -66,8 +66,8 @@ def ai_support_rate_ok(user_id: int):
         _ai_support_rate[user_id] = bucket
         return True
 
-# Parking timestamps are stored as naive local Vietnam time so the displayed
-# check-in/check-out time matches the operator's clock on Render/Linux too.
+
+
 def now_vn():
     return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
@@ -212,8 +212,8 @@ def ensure_auth_schema():
                 with engine.begin() as conn:
                     conn.execute(text(ddl))
         except Exception as exc:
-            # Retry once with PostgreSQL's IF NOT EXISTS syntax.  This also
-            # handles races where another worker upgraded the schema first.
+            
+            
             if engine.dialect.name == "postgresql":
                 try:
                     with engine.begin() as conn:
@@ -221,14 +221,14 @@ def ensure_auth_schema():
                     return
                 except Exception:
                     pass
-            # Keep startup alive; endpoints below use defensive schema repair
-            # and will return the real database error if a deployment is broken.
+            
+            
 
     add_column_if_missing("users", "phone", "ALTER TABLE users ADD COLUMN phone VARCHAR(30) NOT NULL DEFAULT ''")
     add_column_if_missing("revenue_resets", "amount_before", "ALTER TABLE revenue_resets ADD COLUMN amount_before FLOAT NOT NULL DEFAULT 0")
     add_column_if_missing("revenue_resets", "reset_by", "ALTER TABLE revenue_resets ADD COLUMN reset_by INTEGER")
-    # Old versions used a 20-character period label.  New manual reset labels
-    # are intentionally kept below that limit, so no destructive ALTER is needed.
+    
+    
     Base.metadata.create_all(bind=engine)
 
 ensure_auth_schema()
@@ -270,9 +270,9 @@ def current_user(credentials: HTTPAuthorizationCredentials = Depends(security), 
         raise HTTPException(status_code=401, detail="Phiên đăng nhập không hợp lệ")
 
 def manager_only(user: User = Depends(current_user)):
-    # Accept the legacy ``admin`` role as a manager too. Older databases may
-    # still store the administrator role as ``admin`` even though the UI
-    # displays it as Quản lý.
+    
+    
+    
     if user.role not in ("manager", "admin"):
         raise HTTPException(status_code=403, detail="Chỉ Quản lý được sử dụng chức năng này")
     return user
@@ -304,8 +304,8 @@ class PriceIn(BaseModel):
 
 class CheckIn(BaseModel):
     license_plate: str
-    # Nhân viên/quản lý có thể gửi loại xe; tài khoản khách chỉ gửi biển số
-    # và hệ thống sẽ tự nhận diện loại xe từ biển số.
+    
+    
     vehicle_type: str = "Xe máy"
     slot_id: Optional[int] = None
 
@@ -346,7 +346,7 @@ def format_license_plate(plate: str) -> str:
     import re
     raw = str(plate or "").upper()
     p = re.sub(r"[^A-Z0-9]", "", raw)
-    # Recover accidental duplicated first digit from older frontend formatter.
+    
     if re.fullmatch(r"(\d)\1\d[A-Z]\d{5}", p):
         p = p[0] + p[2:]
     m = re.fullmatch(r"(\d{2})([A-Z](?:\d|[A-Z]))(\d{5})", p)
@@ -360,10 +360,10 @@ def format_license_plate(plate: str) -> str:
 def infer_vehicle_type(plate: str) -> Optional[str]:
     import re
     p = re.sub(r"[^A-Z0-9]", "", str(plate or "").upper())
-    # Xe máy: 29B1-123.45 / 29AD-123.45 và các mã tương tự.
+    
     if re.fullmatch(r"\d{2}(?:[A-Z]\d|[A-Z]{2})\d{5}", p):
         return "Xe máy"
-    # Ô tô: 29A-123.45 (sau chuẩn hóa thành 29A12345).
+    
     if re.fullmatch(r"\d{2}[A-Z]\d{5}", p):
         return "Ô tô"
     return None
@@ -394,7 +394,7 @@ def seed():
         db.close()
 
 
-# Natural-language intent rules for Vietnamese parking questions.
+
 NATURAL_CHAT_INTENT_RULES = {
     "occupancy": [
         "đông", "vắng", "chỗ trống", "chỗ nào trống", "còn chỗ", "còn slot",
@@ -429,7 +429,7 @@ def normalize_vietnamese_question(text):
     s = re.sub(r"\s+", " ", s)
     for a, b in replacements.items():
         s = re.sub(rf"(?<!\w){re.escape(a)}(?!\w)", b, s)
-    # Normalize common unaccented Vietnamese words used in short chat messages.
+    
     accent = str.maketrans({
         "a":"a", "e":"e", "i":"i", "o":"o", "u":"u",
     })
@@ -437,9 +437,9 @@ def normalize_vietnamese_question(text):
 
 def detect_parking_intent(text):
     s = normalize_vietnamese_question(text)
-    # IMPORTANT: generic words such as "giá", "hôm nay", "hiện tại" are not
-    # enough to classify a question as a parking question. Otherwise questions
-    # such as "giá vàng hôm nay" get answered with the parking tariff.
+    
+    
+    
     external_only = [
         "giá vàng", "giá bạc", "giá bitcoin", "giá cổ phiếu", "giá chứng khoán",
         "tỷ giá", "tỉ giá", "giá usd", "giá đô", "thời tiết", "tin tức",
@@ -458,14 +458,14 @@ def detect_parking_intent(text):
     has_parking_context = any(term in s for term in parking_context)
 
     scores = {k: sum(1 for term in terms if term in s) for k, terms in NATURAL_CHAT_INTENT_RULES.items()}
-    # Vehicle type is context, not an intent by itself.
+    
     if scores["vehicle"] and (scores["price"] or any(x in s for x in ["giá", "phí", "bao nhiêu", "nhiêu", "gửi"])):
         return "price"
     if scores["zone"] and scores["occupancy"]:
         return "occupancy"
 
-    # Price/contact/active/occupancy intents require explicit parking context
-    # when the wording is otherwise generic.
+    
+    
     if scores["price"] and not has_parking_context:
         return "general"
     if scores["contact"] and not has_parking_context:
@@ -616,12 +616,12 @@ def ensure_monthly_revenue_period(db: Session):
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     exists = db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
     if not exists:
-        # Archive the previous month's revenue before starting the new counter.
+        
         prev_amount = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
             ParkingRecord.time_out.is_not(None),
             ParkingRecord.time_out >= month_start
         ).scalar() or 0
-        # This marker is the start of the current month, so amount_before is informational.
+        
         db.add(RevenueReset(reset_at=month_start, period_label=month_label, amount_before=0, reset_by=None))
         db.commit()
     return db.query(RevenueReset).filter(RevenueReset.period_label == month_label).first()
@@ -639,8 +639,8 @@ def current_revenue(db: Session):
     month_label = now.strftime("%Y-%m")
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # Pick the newest marker inside the current month. This includes both the
-    # automatic month-start marker and any later manual reset marker.
+    
+    
     marker = (db.query(RevenueReset)
                 .filter(RevenueReset.reset_at >= month_start, RevenueReset.reset_at <= now)
                 .order_by(RevenueReset.reset_at.desc(), RevenueReset.id.desc())
@@ -653,9 +653,9 @@ def current_revenue(db: Session):
         ParkingRecord.time_out > marker.reset_at,
         ParkingRecord.time_out <= now
     ).scalar() or 0
-    # Monthly-pass sales are revenue at the moment the pass is created. They are
-    # intentionally separate from ParkingRecord.fee because a vehicle with an
-    # active monthly pass is free when it checks out.
+    
+    
+    
     monthly_total = db.query(func.coalesce(func.sum(MonthlyPass.price), 0)).filter(
         MonthlyPass.started_at > marker.reset_at,
         MonthlyPass.started_at <= now
@@ -723,10 +723,10 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user: User = Depend
     if not target:
         raise HTTPException(404, "Tài khoản không tồn tại")
 
-    # Keep the account-management screen fully functional on PostgreSQL too.
-    # Older deployments have foreign keys from audit/OTP/revenue-reset rows
-    # back to users, so a direct DELETE can fail. Preserve audit history by
-    # detaching nullable references, and remove only disposable OTP rows.
+    
+    
+    
+    
     username = target.username
     db.query(AuditLog).filter(AuditLog.user_id == target.id).update(
         {AuditLog.user_id: None}, synchronize_session=False
@@ -773,9 +773,9 @@ def revenue_summary(db: Session = Depends(get_db), user: User = Depends(non_gues
 
 @app.post("/api/revenue/reset")
 def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_only)):
-    # A reset is a new immutable baseline, not deletion of payment history.
-    # Capture the current total first, then insert a marker at the exact same
-    # database time used by the revenue query.
+    
+    
+    
     now = now_vn()
     total, _ = current_revenue(db)
     snapshot = RevenueReset(
@@ -789,8 +789,8 @@ def revenue_reset(db: Session = Depends(get_db), user: User = Depends(manager_on
     db.commit()
     db.refresh(snapshot)
 
-    # Do not rely on a second marker lookup that could select the monthly
-    # marker. Calculate strictly from this new baseline.
+    
+    
     fresh_total = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(
         ParkingRecord.time_out.is_not(None),
         ParkingRecord.time_out > snapshot.reset_at,
@@ -843,8 +843,8 @@ def reports(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_db), 
         daily[key] = daily.get(key, 0.0) + amount
         area = db.get(Area, s.area_id); name = area.name if area else "Không xác định"
         by_area[name] = by_area.get(name, 0.0) + amount; total += amount
-    # Monthly passes are sales and must appear in revenue reports even though
-    # their vehicles pay 0 VNĐ on each subsequent checkout.
+    
+    
     monthly_rows = db.query(MonthlyPass).filter(MonthlyPass.started_at >= since).all()
     for mp in monthly_rows:
         key = mp.started_at.strftime("%Y-%m-%d")
@@ -968,8 +968,8 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
     slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area_id).all()
     slot_ids = [s.id for s in slots]
 
-    # Xác định xe đang gửi bằng bản ghi chưa có giờ ra, thay vì chỉ dựa vào
-    # cột status của vị trí. Điều này tránh trường hợp status cũ bị kẹt.
+    
+    
     active_records = []
     if slot_ids:
         active_records = db.query(ParkingRecord).filter(
@@ -983,8 +983,8 @@ def delete_area(area_id: int, db: Session = Depends(get_db), user: User = Depend
         )
 
     try:
-        # Xóa toàn bộ dữ liệu phụ thuộc vào các vị trí của khu.
-        # Không có xe đang gửi nên việc xóa lịch sử cũ là an toàn theo yêu cầu quản lý khu.
+        
+        
         if slot_ids:
             records = db.query(ParkingRecord).filter(
                 ParkingRecord.slot_id.in_(slot_ids)
@@ -1059,7 +1059,7 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(non_guest_user)
 
 @app.post("/api/checkin")
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    # Tài khoản khách chỉ được xem tình trạng bãi, không được ghi nhận xe.
+    
     if user.role == "guest":
         raise HTTPException(403, "Tài khoản khách chỉ được xem tình trạng chỗ trống")
     is_guest = False
@@ -1073,12 +1073,12 @@ def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(c
         if not plate:
             raise HTTPException(400, "Biển số xe không hợp lệ")
         detected_type = infer_vehicle_type(plate)
-        # Khách không được tự chọn loại xe. Nếu không nhận diện được thì
-        # mặc định là xe máy để vẫn giữ quy trình nhập chỉ bằng biển số.
+        
+        
         vehicle_type = detected_type or "Xe máy"
     elif requested_type == "Xe đạp":
-        # Xe đạp không có biển số. Hệ thống chỉ tạo mã nội bộ để quản lý dữ liệu;
-        # mã này không được hiển thị như biển số trên giao diện.
+        
+        
         plate = ""
         vehicle_type = "Xe đạp"
     else:
@@ -1156,7 +1156,7 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
     price_per_hour = float(price.price_per_hour) if price else 0
     vehicle_type = vehicle.vehicle_type if vehicle else ""
     monthly_active, monthly_pass = has_active_monthly_pass(db, vehicle.id, time_out) if vehicle else (False, None)
-    # Xe đạp không có biển số, nên dùng nội dung chuyển khoản riêng và duy nhất theo mã lượt.
+    
     transfer_content = f"VE-XEDAP-{record.id}" if vehicle_type == "Xe đạp" else f"VE-{(vehicle.license_plate if vehicle else '')}"
     return {
         "record_id": record.id,
@@ -1185,7 +1185,7 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
     vehicle = db.get(Vehicle, record.vehicle_id)
     monthly_active, monthly_pass = has_active_monthly_pass(db, vehicle.id, time_out) if vehicle else (False, None)
     method = data.payment_method if data.payment_method in ("Tiền mặt","Chuyển khoản","QR ngân hàng","Miễn phí") else "Tiền mặt"
-    # Xe có vé tháng còn hiệu lực luôn được miễn phí, bất kể phương thức thanh toán frontend gửi lên.
+    
     if monthly_active:
         fee = 0
         method = "Miễn phí"
@@ -1220,7 +1220,7 @@ def delete_history(record_id: int, db: Session = Depends(get_db), user: User = D
     record = db.get(ParkingRecord, record_id)
     if not record:
         raise HTTPException(404, "Lượt gửi không tồn tại")
-    # Nếu lượt này vẫn đang hoạt động, trả ô đỗ về trạng thái trống trước khi xóa.
+    
     if record.time_out is None:
         slot = db.get(ParkingSlot, record.slot_id)
         if slot:
@@ -1335,9 +1335,9 @@ def local_ai_support(db: Session, question: str, user: User):
     """Deterministic fallback. It answers common operational questions from live DB data."""
     q = normalize_vietnamese_question(question)
 
-    # HIGH PRIORITY INTENTS: resolve these before every generic live-status rule.
-    # This prevents words such as "hiện tại" / "đang" from accidentally
-    # routing a tariff question to the active-vehicle answer.
+    
+    
+    
     is_monthly_question = any(k in q for k in ["vé tháng", "ve thang", "monthly"])
     is_monthly_free_question = is_monthly_question and any(k in q for k in [
         "miễn phí", "mien phi", "không mất phí", "khong mat phi",
@@ -1394,10 +1394,10 @@ def local_ai_support(db: Session, question: str, user: User):
     oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
               .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None))
               .order_by(ParkingRecord.time_in.asc()).first())
-    # Area questions must also understand short follow-ups such as
-    # "Khu B thì sao?", "Còn khu B?" or simply "Khu B". These are
-    # unambiguous requests for the live status of that area, even when
-    # the words "chỗ/trống/vị trí" are omitted.
+    
+    
+    
+    
     m = re.search(r"(?:khu|khu vực)\s*([a-z])", q)
     area_followup = any(k in q for k in ["thì sao", "thi sao", "thế nào", "the nao", "ra sao", "còn khu", "còn không"])
     if m and (any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ", "đậu"]) or area_followup or q.strip() in {f"khu {m.group(1)}", f"khu vực {m.group(1)}"}):
@@ -1436,9 +1436,9 @@ def local_ai_support(db: Session, question: str, user: User):
     if any(k in q for k in ["đang gửi", "đang đỗ", "trong bãi", "xe hiện tại"]): return f"Hiện hệ thống ghi nhận {active} xe đang ở trong bãi."
     if any(k in q for k in ["địa chỉ", "ở đâu", "địa điểm"]): return f"Địa chỉ bãi xe: {company.address if company and company.address else 'Chưa được cấu hình'}."
     if any(k in q for k in ["số điện thoại", "liên hệ", "hotline", "gọi"]): return f"Số liên hệ: {company.phone if company and company.phone else 'Chưa được cấu hình'}."
-    # Monthly-pass questions must be handled BEFORE the generic "phí/giá" rule.
-    # Otherwise a question such as "Vé tháng có được miễn phí không?" is
-    # incorrectly interpreted as a request for the hourly tariff table.
+    
+    
+    
     if any(k in q for k in ["vé tháng", "ve thang", "monthly"]):
         if any(k in q for k in ["miễn phí", "mien phi", "không mất phí", "khong mat phi",
                                 "có mất phí", "co mat phi", "có tính tiền", "co tinh tien",
@@ -1474,7 +1474,7 @@ def local_ai_support(db: Session, question: str, user: User):
         ) + "."
     if any(k in q for k in ["cảm ơn", "thanks"]): return "Rất vui được hỗ trợ bạn! 😊"
     if any(k in q for k in ["giờ nào", "khi nào", "thời điểm nào", "nên đỗ", "tầm ", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h", "20h", "21h", "22h"]):
-        # Fallback remains conversational even when the LLM is temporarily unavailable.
+        
         rows = db.query(ParkingRecord.time_in).filter(ParkingRecord.time_in >= now_vn()-timedelta(days=14)).all()
         counts = {}
         for (dtv,) in rows:
@@ -1590,7 +1590,7 @@ def _call_openai_responses(api_key: str, model: str, instructions: str, input_it
                 return answer
             raise RuntimeError("OpenAI Responses trả về phản hồi rỗng")
 
-        # Preserve the model's function-call items, then append our tool outputs.
+        
         for item in output_items:
             if hasattr(item, "model_dump"):
                 current_input.append(item.model_dump(exclude_none=True))
@@ -1782,7 +1782,7 @@ def ai_support_user(request: Request, credentials: HTTPAuthorizationCredentials 
                 return user
         except Exception:
             pass
-    # Keep a separate in-memory rate-limit bucket per client without storing IPs.
+    
     client_host = request.client.host if request.client else "anonymous"
     guest = type("GuestAIUser", (), {})()
     guest.role = "guest"
@@ -1818,10 +1818,10 @@ QUY TẮC HIỂN THỊ:
 - Không nói rằng bạn đang kiểm tra "tool" hay "database"; chỉ trình bày kết quả cho khách.
 - Khi chưa chắc chắn, ưu tiên nói thật thay vì suy đoán."""
     messages=[{"role":"system","content":system}]+history+[{"role":"user","content":question}]
-    # For live operational questions, answer from the database first.
-    # IMPORTANT: resolve specific intents before broad words such as "hiện tại"
-    # or "đang". A question like "Mức phí gửi xe hiện tại là bao nhiêu?"
-    # must return the tariff table, not the number of vehicles in the lot.
+    
+    
+    
+    
     normalized_question = normalize_vietnamese_question(question)
     monthly_question = any(k in normalized_question for k in ["vé tháng", "ve thang", "monthly"])
     price_question = (
@@ -1893,7 +1893,7 @@ def local_ai(db: Session, question: str):
     peak = max(counts, key=counts.get) if counts else None
     peak_text = f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "chưa xác định"
 
-    # Match the question first. Only return the requested metric.
+    
     if any(k in q for k in ["trống", "còn bao nhiêu chỗ", "còn chỗ", "vị trí trống"]):
         return f"Hiện còn {empty} vị trí trống trên tổng {total_slots} vị trí."
     if any(k in q for k in ["đang gửi", "đang trong bãi", "trong bãi", "xe hiện tại", "xe đang đỗ"]):

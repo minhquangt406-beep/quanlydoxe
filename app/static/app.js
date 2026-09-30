@@ -44,8 +44,8 @@ window.addEventListener("pageshow",()=>{
   }
   refreshLastSeen();
 });
-// Ghi nhận chính xác thời điểm người dùng rời khỏi web.
-// Khi quay lại sau >= 30 phút, phiên đăng nhập sẽ bị xóa tự động.
+
+
 window.addEventListener("pagehide",()=>{
   if(token) localStorage.setItem("parking_last_seen",String(Date.now()));
 });
@@ -143,17 +143,17 @@ function toast(msg,type="success"){const el=$("#toast");if(!el)return;el.textCon
 function activityMeta(action){const a=String(action||"").toUpperCase();if(a==="CHECKIN")return {cls:"checkin",icon:"↓",label:"CHECK IN"};if(a==="CHECKOUT")return {cls:"checkout",icon:"↑",label:"CHECK OUT"};if(a==="LOGIN")return {cls:"login",icon:"↪",label:"LOGIN"};return {cls:"other",icon:"•",label:String(action||"KHÁC")};}
 function activityItem(x){const m=activityMeta(x.action);return `<div class="activity-item activity-${m.cls}"><div class="activity-main"><span class="activity-badge ${m.cls}"><span>${m.icon}</span>${m.label}</span><div class="activity-detail">${x.detail}</div></div><span class="activity-meta">${dt(x.created_at)} · ${x.username}</span></div>`}
 const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
-// Chuẩn hóa biển số Việt Nam khi người dùng nhập: 29B112345 -> 29B1-123.45
-// Hỗ trợ cả 29AD12345 -> 29AD-123.45 và 29A12345 -> 29A-123.45.
+
+
 const displayPlate = (plate, vehicleType) => vehicleType === "Xe đạp" ? "XE ĐẠP" : (formatPlate(plate)||"—");
 
 const formatPlate = (rawPlate) => {
   let clean = String(rawPlate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!clean) return "";
-  // Recover the old formatter's accidental duplicated first digit: 330A09123 -> 30A09123.
+  
   if (/^(\d)\1\d[A-Z]\d{5}$/.test(clean)) clean = clean[0] + clean.slice(2);
-  // Việt Nam: 2 số tỉnh + seri 1 hoặc 2 ký tự + tối đa 5 số.
-  // Khi đủ dữ liệu, tự đặt dấu - và .; khi đang gõ cũng định dạng dần.
+  
+  
   let prefixLen = 3;
   if (clean.length >= 9 && /^\d{2}[A-Z][A-Z0-9]/.test(clean)) prefixLen = 4;
   const prefix = clean.slice(0, prefixLen);
@@ -165,18 +165,18 @@ const formatPlate = (rawPlate) => {
   return out;
 };
 
-// Tự nhận diện loại xe theo cấu trúc biển số.
+
 const detectVehicleType = (rawPlate) => {
-  // Chuẩn hóa biển số: bỏ khoảng trắng, dấu gạch và dấu chấm để nhận diện ổn định
-  // Ví dụ: 29B1-123.45 -> 29B112345, 29AD-123.45 -> 29AD12345, 29A-123.45 -> 29A12345
+  
+  
   const plate = String(rawPlate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!plate) return null;
 
-  // Việt Nam: sau mã tỉnh (2 số), biển xe máy thường có mã 2 ký tự
-  // dạng B1 / C1 / D1... hoặc 2 chữ như AD, AE...
+  
+  
   if (/^\d{2}(?:[A-Z]\d|[A-Z]{2})\d{5}$/.test(plate)) return "Xe máy";
 
-  // Ô tô: 2 số tỉnh + 1 chữ + 5 số seri
+  
   if (/^\d{2}[A-Z]\d{5}$/.test(plate)) return "Ô tô";
 
   return null;
@@ -187,8 +187,8 @@ const bindVehicleTypeDetection=(plateSelector,typeSelector)=>{
   if(!plateInput||!typeSelect||plateInput.dataset.typeDetectionBound) return;
   plateInput.dataset.typeDetectionBound="1";
   const update=()=>{
-    // Only detect while typing. Never rewrite the input value here; doing so
-    // can duplicate characters when the user types quickly (e.g. 30A -> 330A).
+    
+    
     const raw=plateInput.value;
     const detected=detectVehicleType(raw);
     if(detected){
@@ -470,7 +470,6 @@ async function openPaymentModal(recordId){
 
     modal.classList.remove("hidden");
     document.body.classList.add("modal-open");
-    // Ẩn nút đóng mặc định của modal để không bị trùng với nút X của giao diện thanh toán.
     const outerClose=document.querySelector("#modalClose");
     if(outerClose) outerClose.style.display="none";
 
@@ -915,7 +914,6 @@ async function renderGuestDashboard(){
 boot();
 initSidebarToggle();
 
-// Premium UI helpers
 (function(){
   const clockEl=document.getElementById('clock');
   const refresh=document.getElementById('refreshBtn');
@@ -932,7 +930,6 @@ initSidebarToggle();
 })();
 
 
-// Ultra Premium v3 micro-interactions
 (function(){
   document.addEventListener('click',function(e){
     const target=e.target.closest('.primary,.icon-btn,.sidebar nav button,.real-slot');
@@ -945,7 +942,6 @@ initSidebarToggle();
 })();
 
 
-// ===== ULTRA PREMIUM V4 EXPERIENCE =====
 (function(){
   const body=document.body;
   const themeBtn=document.getElementById('themeToggle');
@@ -1013,7 +1009,6 @@ initSidebarToggle();
     }
     if(e.key==='Escape') document.querySelector('#slotModal:not(.hidden) .pay-close, #slotModal:not(.hidden) .slot-close')?.click();
   });
-  // Subtle page entrance animation whenever content is replaced.
   const content=document.getElementById('content');
   if(content){
     const observer=new MutationObserver(()=>{
@@ -1024,10 +1019,8 @@ initSidebarToggle();
 })();
 
 
-// QR ticket helper
 document.addEventListener('click', async (e)=>{ const b=e.target.closest('.qr-ticket'); if(!b) return; try{ const d=await api('/api/ticket/qr/'+b.dataset.id); const w=window.open('','_blank'); w.document.write(`<html><head><title>Vé QR #${d.record_id}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>Vé gửi xe #${d.record_id}</h2><h3>${displayPlate(d.license_plate, d.vehicle_type)}</h3><p>${d.area} · ${d.slot}</p>${d.qr_data?`<img src="${d.qr_data}" width="260">`:`<pre>${d.qr_text||''}</pre>`}<p>${dt(d.time_in)}</p><button onclick="window.print()">In vé</button></body></html>`); w.document.close(); }catch(err){toast(err.message,'error')} });
 
-// Global plate formatter: works for both main "add vehicle" and slot quick-add inputs.
 document.addEventListener("input", function(e){
   const el=e.target;
   if(!el || el.tagName!=="INPUT") return;
@@ -1035,9 +1028,6 @@ document.addEventListener("input", function(e){
   const isPlate=name.includes("plate") || name.includes("license") || name.includes("bien");
   if(!isPlate) return;
 
-  // Do NOT insert punctuation while the user is still entering the plate.
-  // Keep only letters/numbers, uppercase them, and detect vehicle type.
-  // Formatting is applied on blur / submit so "30A" never becomes "330A".
   const raw=String(el.value||"");
   const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
   if(raw!==clean){
@@ -1079,7 +1069,6 @@ document.addEventListener("submit", function(e){
 }, true);
 
 
-/* ===== Mobile sidebar touch controller ===== */
 (function(){
   const getSidebar=()=>document.querySelector(".sidebar,#sidebar,.app-sidebar");
   const getBackdrop=()=>document.querySelector(".sidebar-backdrop,.mobile-sidebar-backdrop");
