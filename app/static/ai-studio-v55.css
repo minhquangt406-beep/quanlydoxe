@@ -25,3 +25,9 @@
 .ai-studio-panel.ai-opening{animation:aiOpen .22s ease-out both}@keyframes aiOpen{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media(max-width:720px){.ai-studio-panel{grid-template-columns:1fr!important}.ai-studio-sidebar{position:absolute;inset:0 auto 0 0;width:256px;min-width:256px;z-index:20;transform:translateX(-100%);transition:transform .22s ease}.ai-studio-panel.ai-mobile-sidebar .ai-studio-sidebar{transform:translateX(0);box-shadow:12px 0 35px rgba(0,0,0,.35)}.ai-studio-main{width:100%}.ai-studio-header{padding:0 10px}.ai-studio-stream{padding:18px 12px 20px}.ai-studio-welcome h2{font-size:21px}.ai-starter-grid{grid-template-columns:1fr;gap:8px;margin-top:20px}.ai-starter{min-height:80px}.ai-msg-wrap{max-width:calc(100% - 45px)}.ai-msg-user .ai-msg-wrap{max-width:calc(100% - 45px)}.ai-studio-input-area{padding:8px 10px 10px}.ai-input-hint span{display:none}.ai-header-actions .ai-online{display:none}.ai-model-button b{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ai-studio-panel.ai-collapsed{grid-template-columns:1fr!important}.ai-studio-panel.ai-collapsed .ai-studio-sidebar{width:256px;min-width:256px}.ai-studio-panel.ai-collapsed .ai-studio-sidebar{transform:translateX(-100%)}.ai-studio-panel.ai-collapsed.ai-mobile-sidebar .ai-studio-sidebar{transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.ai-studio-panel.ai-opening{animation:none}.ai-starter{transition:none}}
+
+/* V56 LOGIN ISOLATION: the new AI UI must never intercept the login screen. */
+body:has(#loginView:not(.hidden)) .ai-studio-host{z-index:0!important;pointer-events:none!important}
+body:has(#loginView:not(.hidden)) .ai-studio-fab{pointer-events:none!important}
+#loginView{position:relative!important;z-index:200000!important}
+#loginView input,#loginView button,#loginView form{position:relative;z-index:200001}

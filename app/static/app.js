@@ -706,7 +706,38 @@ function vehicleIcon(type){
 }
 function emptyIcon(){return '<svg class="empty-svg" viewBox="0 0 64 64" aria-label="Chỗ trống"><rect x="14" y="14" width="36" height="36" rx="4" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="7 6"/></svg>'}
 
-async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");const isManager=me.role==="manager",isGuest=me.role==="guest";$("#userName").textContent=me.full_name;$("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");$("#avatar").textContent=(me.full_name||"K")[0];$("#sidebarUserName").textContent=me.full_name;$("#sidebarUserRole").textContent=isManager?"Quản trị viên":(isGuest?"Khách · Chỉ xem chỗ trống":"Nhân viên bãi xe");$("#sidebarUser")?.classList.toggle("manager-profile",isManager);$("#sidebarUser")?.classList.toggle("staff-profile",!isManager&&!isGuest);$("#sidebarUser")?.classList.toggle("guest-profile",isGuest);$$('.manager-only').forEach(x=>x.style.display=isManager?"flex":"none");$$('.sidebar nav button').forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});$("#mobileBottomNav")?.classList.toggle("manager",isManager);$("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});if(isGuest){await renderGuestDashboard()}else{await navigate("dashboard")};maybeReturnToAdmin()}catch(e){clearAuth()}}
+async function boot(){
+  if(!token)return false;
+  try{
+    me=await api("/api/me");
+    $("#loginView").classList.add("hidden");
+    $("#appView").classList.remove("hidden");
+    const isManager=me.role==="manager"||me.role==="admin",isGuest=me.role==="guest";
+    $("#userName").textContent=me.full_name;
+    $("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");
+    $("#avatar").textContent=(me.full_name||"K")[0];
+    $("#sidebarUserName").textContent=me.full_name;
+    $("#sidebarUserRole").textContent=isManager?"Quản trị viên":(isGuest?"Khách · Chỉ xem chỗ trống":"Nhân viên bãi xe");
+    $("#sidebarUser")?.classList.toggle("manager-profile",isManager);
+    $("#sidebarUser")?.classList.toggle("staff-profile",!isManager&&!isGuest);
+    $("#sidebarUser")?.classList.toggle("guest-profile",isGuest);
+    $$(".manager-only").forEach(x=>x.style.display=isManager?"flex":"none");
+    $$(".sidebar nav button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
+    $("#mobileBottomNav")?.classList.toggle("manager",isManager);
+    $("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
+    if(isGuest){await renderGuestDashboard()}else{await navigate("dashboard")};
+    maybeReturnToAdmin();
+    return true;
+  }catch(e){
+    console.error("SmartPark boot error:",e);
+    clearAuth();
+    $("#loginView")?.classList.remove("hidden");
+    $("#appView")?.classList.add("hidden");
+    const err=$("#loginError");
+    if(err) err.textContent=`Đăng nhập thành công nhưng không tải được phiên làm việc: ${e.message||"Lỗi máy chủ"}`;
+    return false;
+  }
+}
 
 function setBtnBusy(btn,busy,busyText){
   if(!btn) return;
@@ -771,8 +802,12 @@ $("#loginForm").onsubmit=async e=>{
   err.textContent="";setBtnBusy(btn,true,"Đang đăng nhập…");
   try{
     let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value.trim(),password:$("#password").value}});
-    token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot();
-    if(!token){err.textContent="Không thể tải thông tin tài khoản. Vui lòng thử lại.";setBtnBusy(btn,false);}
+    if(!d.access_token) throw new Error("Máy chủ không trả về phiên đăng nhập");
+    token=d.access_token;
+    localStorage.setItem("parking_token",token);
+    refreshLastSeen();
+    const ok=await boot();
+    if(!ok) throw new Error("Không thể khởi tạo phiên làm việc");
   }catch(e){err.textContent=e.message;setBtnBusy(btn,false);}
 };
 $("#logout").onclick=()=>{clearAuth();location.reload()};
