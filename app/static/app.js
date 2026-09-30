@@ -141,7 +141,7 @@ function initAISupport(){
       try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}finally{clearTimeout(timer)}
       typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[],{searched:!!d.web_search,fetched:!!d.web_fetched,remaining:d.web_search_remaining_today});
     }catch(err){
-      typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("403")?em.replace(/^403:?\s*/i,""):(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."))); addAISupportMessage(msg,"bot");
+      typingEl?.remove(); const em=String(err.message||""); let msg="Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."; if(err.name==="AbortError") msg="AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé."; else if(em.includes("403")) msg=em.replace(/^403:?\s*/i,""); else if(em.includes("429")) msg="Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại."; else if(em) msg=em; addAISupportMessage(msg,"bot");
     }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();}
   });
   input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
