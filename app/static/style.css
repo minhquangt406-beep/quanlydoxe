@@ -4278,3 +4278,212 @@ body{background:var(--demo-bg)!important;color:var(--demo-ink)}
   .ai-support{right:12px!important;bottom:calc(74px + env(safe-area-inset-bottom))!important}
   .ai-support-panel{width:calc(100vw - 16px)!important;height:min(72dvh,680px)!important;bottom:67px!important;border-radius:21px!important}
 }
+
+/* ===== AI CHAT — cleaner conversation layout ===== */
+.ai-support-messages{padding:16px 14px 10px!important}
+.ai-msg{gap:7px!important;margin-bottom:14px!important;align-items:flex-start!important}
+.ai-msg-avatar{width:24px!important;height:24px!important;flex:0 0 24px!important;border-radius:8px!important;font-size:9px!important;margin-top:18px!important;box-shadow:none!important}
+.ai-msg-bot .ai-msg-avatar{background:#eef2ff!important;color:#4f46e5!important;border:1px solid #dfe5ff!important}
+.ai-msg-user .ai-msg-avatar{display:none!important}
+.ai-msg-wrap{max-width:calc(100% - 31px)!important}
+.ai-msg-user .ai-msg-wrap{max-width:84%!important}
+.ai-msg-meta{margin:0 3px 4px!important;min-height:10px!important;font-size:8px!important;color:#a0a8b8!important}
+.ai-msg-meta b{display:none!important}
+.ai-msg-user .ai-msg-meta{justify-content:flex-end!important;margin-right:2px!important}
+.ai-msg-user .ai-msg-meta span{color:#8b95a8!important}
+.ai-msg-body{padding:10px 12px!important;border-radius:14px 14px 14px 5px!important;font-size:11.5px!important;line-height:1.58!important;box-shadow:0 4px 14px rgba(15,23,42,.035)!important}
+.ai-msg-user .ai-msg-body{border-radius:14px 5px 14px 14px!important;padding:10px 13px!important;box-shadow:0 7px 17px rgba(79,70,229,.14)!important}
+.ai-msg-bot .ai-msg-body{background:#fff!important;border-color:#e5e9f1!important}
+.ai-msg-bot .ai-msg-meta span:before{content:'AI  •  ';color:#64748b;font-weight:800}
+.ai-msg-user .ai-msg-meta span:before{content:'Bạn  •  ';color:#6366f1;font-weight:800}
+.ai-msg-typing .ai-msg-avatar{margin-top:18px!important}
+.ai-msg-typing .ai-msg-meta span:before{content:'AI  •  ';color:#64748b;font-weight:800}
+@media(max-width:600px){
+  .ai-msg-body{font-size:11px!important;line-height:1.58!important}
+  .ai-msg-user .ai-msg-wrap{max-width:86%!important}
+}
+
+/* =========================================================
+   DARK MODE FINAL PATCH — Demo UI + SmartPark AI
+   Fixes late demo-theme rules overriding the original dark theme.
+   ========================================================= */
+body.dark-mode{
+  --demo-bg:#070d18;
+  --demo-card:#0f1726;
+  --demo-ink:#edf3ff;
+  --demo-muted:#91a0b8;
+  --demo-line:#24334b;
+  background:radial-gradient(900px 480px at 72% -8%,rgba(99,91,255,.18),transparent 62%),#070d18!important;
+  color:var(--demo-ink)!important;
+}
+body.dark-mode .app{
+  background:linear-gradient(135deg,#080f1c 0%,#0b1322 100%)!important;
+}
+body.dark-mode .main{color:var(--demo-ink)!important}
+body.dark-mode .topbar{
+  background:rgba(8,14,25,.88)!important;
+  border-bottom-color:#1f2c42!important;
+}
+body.dark-mode .topbar h2,
+body.dark-mode .panel h3,
+body.dark-mode .card .label,
+body.dark-mode .card .metric,
+body.dark-mode .panel-head,
+body.dark-mode .userbox,
+body.dark-mode .userbox b{
+  color:var(--demo-ink)!important;
+}
+body.dark-mode .topbar .eyebrow,
+body.dark-mode .card .sub,
+body.dark-mode .muted,
+body.dark-mode .userbox small{
+  color:var(--demo-muted)!important;
+}
+body.dark-mode .card,
+body.dark-mode .panel{
+  background:linear-gradient(145deg,rgba(16,25,41,.96),rgba(12,20,34,.96))!important;
+  border-color:#22324a!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.025)!important;
+}
+body.dark-mode .userbox,
+body.dark-mode .icon-btn,
+body.dark-mode .btn{
+  background:#111c2d!important;
+  border-color:#263750!important;
+  color:#e8efff!important;
+}
+body.dark-mode .icon-btn:hover,
+body.dark-mode .btn:hover{background:#17243a!important}
+body.dark-mode .sidebar{
+  background:linear-gradient(180deg,#080f20 0%,#0a1428 58%,#0b1529 100%)!important;
+  box-shadow:14px 0 35px rgba(0,0,0,.24)!important;
+}
+body.dark-mode .sidebar nav button{color:#aebbd0!important}
+body.dark-mode .sidebar nav button:hover{background:rgba(255,255,255,.055)!important;color:#f4f7ff!important}
+body.dark-mode .sidebar nav button.active{color:#fff!important}
+body.dark-mode .storage{background:rgba(255,255,255,.045)!important;border-color:#263750!important}
+body.dark-mode .logout{border-color:#2a3b57!important;color:#d7e1f2!important}
+
+/* Dashboard controls / tables */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea,
+body.dark-mode .search-box,
+body.dark-mode .search-input{
+  background:#0b1525!important;
+  color:#edf3ff!important;
+  border-color:#263750!important;
+}
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder{color:#6f8099!important}
+body.dark-mode .table{color:#dce6f7!important}
+body.dark-mode .table thead th{color:#91a0b8!important;border-bottom-color:#263750!important}
+body.dark-mode .table tbody td{border-bottom-color:#1d2b40!important}
+body.dark-mode .table tbody tr:hover{background:#111e31!important}
+body.dark-mode .notice{background:linear-gradient(90deg,#121f36,#191c39)!important;border-color:#2c3c64!important;color:#c7d2ff!important}
+body.dark-mode .business-badge{border-color:#2a3a54!important;color:#cdd8ea!important;background:#0d1727!important}
+
+/* Parking map */
+body.dark-mode .parking-map{
+  background:linear-gradient(180deg,#151f2d,#0e1724)!important;
+  border-color:#263750!important;
+}
+body.dark-mode .map-zone.zone-a{background:linear-gradient(145deg,#191f3b,#121a31)!important;border-color:#4d58ca!important}
+body.dark-mode .map-zone.zone-b{background:linear-gradient(145deg,#123027,#0e241e)!important;border-color:#2c7d63!important}
+body.dark-mode .real-slot{
+  background:linear-gradient(145deg,#172334,#101a28)!important;
+  border-color:#2b3d56!important;
+  color:#dce6f5!important;
+}
+body.dark-mode .real-slot.empty{background:linear-gradient(145deg,#12271f,#0d1d18)!important;border-color:#27503f!important}
+body.dark-mode .real-slot.occupied{background:linear-gradient(145deg,#2a1a22,#1d1319)!important;border-color:#60333e!important}
+body.dark-mode .real-slot .slot-name,
+body.dark-mode .real-slot .slot-status{color:#9eb0c7!important}
+body.dark-mode .real-slot.occupied .plate{background:#f2f5f9!important;color:#111827!important}
+body.dark-mode .map-zone h4,
+body.dark-mode .map-zone .zone-meta{color:#e8effb!important}
+
+/* SmartPark AI — all white surfaces become proper dark surfaces */
+body.dark-mode .ai-support-panel{
+  background:#0c1524!important;
+  border-color:#263750!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.48),0 8px 28px rgba(79,70,229,.10)!important;
+}
+body.dark-mode .ai-support-head{
+  background:linear-gradient(135deg,#101b2d 0%,#111a32 100%)!important;
+  color:#edf3ff!important;
+  border-bottom-color:#22334c!important;
+}
+body.dark-mode .ai-support-head strong{color:#f1f5ff!important}
+body.dark-mode .ai-support-head small{color:#8fa0b8!important}
+body.dark-mode .ai-head-btn,
+body.dark-mode .ai-support-close{
+  background:#172338!important;
+  color:#c5d1e3!important;
+  border-color:#2a3c57!important;
+}
+body.dark-mode .ai-online{background:#0d2a20!important;color:#6ee7b7!important;border-color:#195f49!important}
+body.dark-mode .ai-pro-badge{background:#1a2144!important;color:#aeb5ff!important;border-color:#303a73!important}
+body.dark-mode .ai-context-strip{
+  background:#0a1321!important;color:#8191aa!important;border-bottom-color:#1d2c42!important;
+}
+body.dark-mode .ai-support-messages{
+  background:linear-gradient(180deg,#0b1423 0%,#0c1625 55%,#0a1321 100%)!important;
+}
+body.dark-mode .ai-welcome-card{
+  background:linear-gradient(145deg,#111d32,#101a2b)!important;
+  border-color:#273955!important;
+  color:#dbe6f7!important;
+}
+body.dark-mode .ai-msg-bot .ai-msg-avatar{
+  background:#18244a!important;color:#aab3ff!important;border-color:#303e73!important;
+}
+body.dark-mode .ai-msg-meta,
+body.dark-mode .ai-msg-meta span{color:#7f90a9!important}
+body.dark-mode .ai-msg-bot .ai-msg-meta span:before{color:#9ca9bc!important}
+body.dark-mode .ai-msg-user .ai-msg-meta span:before{color:#9ea5ff!important}
+body.dark-mode .ai-msg-body{
+  background:#111d2e!important;
+  color:#dce7f7!important;
+  border-color:#273953!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.18)!important;
+}
+body.dark-mode .ai-msg-body strong{color:#c9d2ff!important}
+body.dark-mode .ai-msg-body a{color:#aeb8ff!important;border-bottom-color:#4652a1!important}
+body.dark-mode .ai-msg-user .ai-msg-body{
+  background:linear-gradient(135deg,#4f46e5,#355fd8)!important;
+  color:#fff!important;
+  border-color:transparent!important;
+}
+body.dark-mode .ai-support-suggestions-wrap{background:#0c1524!important;border-top-color:#1e2d43!important}
+body.dark-mode .ai-suggest-label{color:#8392a8!important}
+body.dark-mode .ai-support-suggestions button{
+  background:#111e31!important;color:#cbd7e8!important;border-color:#2a3b55!important;
+}
+body.dark-mode .ai-support-suggestions button:hover{background:#192943!important;border-color:#44577a!important}
+body.dark-mode .ai-input-shell{background:#0c1524!important;border-top-color:#1e2d43!important}
+body.dark-mode .ai-support-form{
+  background:#0a1321!important;border-color:#30415d!important;box-shadow:0 8px 22px rgba(0,0,0,.2)!important;
+}
+body.dark-mode .ai-support-form input{background:transparent!important;color:#edf3ff!important;border:0!important}
+body.dark-mode .ai-support-form input::placeholder{color:#71839c!important}
+body.dark-mode .ai-source-card{background:#101b2d!important;border-color:#283a55!important}
+body.dark-mode .ai-source-card a{background:#111e31!important;color:#d8e3f4!important;border-color:#2a3d59!important}
+body.dark-mode .ai-source-card a:hover{background:#192943!important;border-color:#465b80!important}
+body.dark-mode .ai-typing-bubble{background:#111d2e!important;border-color:#293b56!important;color:#dce7f7!important}
+body.dark-mode .ai-box{background:#0c1524!important;color:#dce7f7!important}
+
+/* Modals / quick check-in */
+body.dark-mode .modal-card{background:#101a2b!important;color:#edf3ff!important;border-color:#2a3b55!important}
+body.dark-mode .modal-card label{color:#aebbd0!important}
+body.dark-mode .modal-close{background:#1b293e!important;color:#e8effa!important}
+body.dark-mode .detail-item{background:#0b1525!important;border-color:#263750!important;color:#dce7f7!important}
+body.dark-mode .quick-checkin{background:linear-gradient(135deg,rgba(99,102,241,.13),rgba(139,92,246,.09))!important;border-color:#303f72!important}
+body.dark-mode .quick-title{color:#b1b9ff!important}
+body.dark-mode .quick-sub{color:#8fa0b8!important}
+body.dark-mode .guest-entry-note{background:rgba(59,130,246,.08)!important;border-color:#284a73!important;color:#dce7f7!important}
+
+/* Mobile AI panel */
+@media(max-width:900px){
+  body.dark-mode .ai-support-panel{background:#0c1524!important}
+}
