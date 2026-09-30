@@ -349,10 +349,11 @@ function openSlotModal(slot){
 
     const submit=async()=>{
       const plate=plateInput.value.trim();
-      if(!plate){toast("Vui lòng nhập biển số xe","error");plateInput.focus();return;}
-      const formatted=formatPlate(plate);
       const vehicleType=isGuest ? undefined : (typeSelect.value||"Xe máy");
-      const finalType=isGuest ? (detectVehicleType(formatted)||"Xe máy") : (vehicleType === "Xe đạp" ? "Xe đạp" : (detectVehicleType(formatted)||vehicleType));
+      const isBike=!isGuest && vehicleType === "Xe đạp";
+      if(!plate && !isBike){toast("Vui lòng nhập biển số xe","error");plateInput.focus();return;}
+      const formatted=isBike ? "" : formatPlate(plate);
+      const finalType=isGuest ? (detectVehicleType(formatted)||"Xe máy") : (isBike ? "Xe đạp" : (detectVehicleType(formatted)||vehicleType));
       const btn=$("#modalCheckin");
       btn.disabled=true;btn.textContent=isGuest?"Đang ghi nhận...":"Đang thêm xe...";
       try{
@@ -360,7 +361,7 @@ function openSlotModal(slot){
         if(!isGuest) body.vehicle_type=finalType;
         await api("/api/checkin",{method:"POST",body});
         close();
-        toast(`✓ ${formatted} đã vào ${slot.name}`);
+        toast(`✓ ${isBike ? "Xe đạp" : formatted} đã vào ${slot.name}`);
         await navigate("dashboard");
       }catch(e){
         toast(e.message,"error");
@@ -846,7 +847,7 @@ dashboard:async()=>{
  window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);
 },
 parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");$("#content").innerHTML=`
-<div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
+<div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option><option>Xe đạp</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
 <div class="panel"><div class="panel-head"><h3>Xe đang gửi</h3><span class="muted">${active.length} xe</span></div><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Biển số</th><th>Vị trí</th><th>Thời gian</th><th></th></tr></thead><tbody>${active.map(x=>`<tr><td>#${x.id}</td><td><b>${displayPlate(x.license_plate, x.vehicle_type)}</b></td><td>${x.slot}</td><td>${dt(x.time_in)}</td><td><button class="btn checkout" data-id="${x.id}">Tính phí & xe ra</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty-state">Không có xe</td></tr>`}</tbody></table></div></div></div>`;
 bindVehicleTypeDetection("#plate","#vtype");$("#checkin").onclick=async()=>{try{let d=await api("/api/checkin",{method:"POST",body:{license_plate:$("#plate").value,vehicle_type:$("#vtype").value,slot_id:+$("#slot").value}});$("#parkingMsg").innerHTML=`<div class="notice">✓ ${d.message} · Mã lượt <b>#${d.record_id}</b> · ${d.slot}</div>`;await pages.parking()}catch(e){$("#parkingMsg").innerHTML=`<div class="error">${e.message}</div>`}};
 $("#areaFilter").onchange=()=>{const area=$("#areaFilter").value; $$("#slot option").forEach(o=>o.hidden=area!=="all" && o.dataset.area!==area); const first=$$("#slot option").find(o=>!o.hidden); if(first) $("#slot").value=first.value;};
