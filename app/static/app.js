@@ -160,7 +160,7 @@ function addAISupportMessage(text, role="bot", persist=true, sources=[], webMeta
   if(persist && (role==="user" || role==="bot")){aiSupportHistory.push({role:role==="bot"?"assistant":"user",content:normalizeNaturalQuestion(String(text)),time:Date.now()});saveAISupportHistory();window.__smartParkRenderAIHistory?.();}
 }
 function setAISupportBusy(busy){
-  const input=$("#aiSupportInput"), btn=$("#aiSupportSend");
+  const input=$("#aiSupportInput"), btn=$("#aiSupportForm .ai-send-btn");
   if(input) input.disabled=busy;
   if(btn){btn.disabled=busy;btn.innerHTML=busy?'<span class="ai-send-spinner"></span>':'<span>➤</span>';btn.setAttribute("aria-busy",busy?"true":"false");}
 }
@@ -174,68 +174,13 @@ function showAITyping(web=false){
   wrap.append(meta,body); row.append(avatar,wrap); box.appendChild(row); box.scrollTop=box.scrollHeight; return row;
 }
 function renderAISupportHistory(){
-  const box=$("#aiSupportMessages"); if(!box) return;
-  box.innerHTML="";
+  const box=$("#aiSupportMessages"); if(!box) return; box.innerHTML="";
   if(!aiSupportHistory.length){
-    box.innerHTML='<div id="aiWelcome" class="ai-studio-welcome"><div class="ai-welcome-icon">✦</div><h2>Tôi có thể giúp gì cho bạn hôm nay?</h2><p>Tra cứu bãi xe, mức phí, vé tháng hoặc tìm kiếm thông tin mới nhất trên Web.</p><div class="ai-starter-grid"><button type="button" class="ai-starter" data-ai-q="Hiện còn bao nhiêu chỗ trống?"><span>🚗</span><b>Kiểm tra chỗ trống</b><small>Xem số chỗ còn lại trong bãi</small></button><button type="button" class="ai-starter" data-ai-q="Khu A còn bao nhiêu chỗ?"><span>▦</span><b>Tra cứu khu vực</b><small>Xem tình trạng từng khu</small></button><button type="button" class="ai-starter" data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?"><span>₫</span><b>Tra cứu mức phí</b><small>Phí gửi xe theo loại phương tiện</small></button><button type="button" class="ai-starter" data-ai-q="Vé tháng có được miễn phí không?"><span>🎫</span><b>Kiểm tra vé tháng</b><small>Quy định và trạng thái vé tháng</small></button></div></div>';
-  } else {
-    aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
+    box.innerHTML='<div class="ai-welcome-card"><div class="ai-welcome-icon">✦</div><div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div><div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div></div>'; return;
   }
-  renderAIStudioHistory();
-  bindAIStudioStarters();
-}
-function renderAIStudioHistory(filter=""){
-  const today=$("#history-today"), previous=$("#history-previous"); if(!today||!previous) return;
-  today.innerHTML=""; previous.innerHTML="";
-  const seen=new Set(); const users=aiSupportHistory.filter(m=>m.role==="user").slice().reverse();
-  const q=String(filter||"").toLowerCase().trim();
-  users.forEach((m,i)=>{const title=String(m.content||"Góc chat").trim(); if(seen.has(title)) return; if(q&&!title.toLowerCase().includes(q)) return; seen.add(title); const el=document.createElement("div"); el.className="ai-history-item"; el.innerHTML=`<span>▣</span><span>${escapeAIHtml(title.slice(0,32))}${title.length>32?"…":""}</span>`; el.title=title; el.onclick=()=>{const input=$("#aiSupportInput");if(input){input.value=title;input.focus();}}; today.appendChild(el);});
-  if(!today.children.length) today.innerHTML='<div class="ai-history-empty">Chưa có cuộc trò chuyện</div>';
-  previous.innerHTML='<div class="ai-history-empty">Các cuộc trò chuyện cũ sẽ hiển thị tại đây</div>';
-}
-function bindAIStudioStarters(){
-  $$("[data-ai-q]").forEach(b=>{if(b.dataset.aiBound)return;b.dataset.aiBound="1";b.addEventListener("click",()=>{const input=$("#aiSupportInput"),form=$("#aiSupportForm");if(input&&form){input.value=b.dataset.aiQ||"";form.requestSubmit();}});});
+  aiSupportHistory.forEach(m=>addAISupportMessage(m.content,m.role==="assistant"?"bot":"user",false));
 }
 function initAISupport(){
-  const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
-  if(!toggle||!panel||!form||!input) return;
-  const sidebar=$("#aiStudioSidebar"), sidebarToggle=$("#aiSidebarToggle"), expand=$("#aiExpandSidebar"), theme=$("#aiThemeToggle"), newChat=$("#aiNewChat"), share=$("#aiSupportShare"), search=$("#aiHistorySearch"), modelBtn=$("#aiModelButton"), modelMenu=$("#aiModelMenu"), modelName=$("#aiCurrentModel");
-  loadAISupportHistory(); renderAISupportHistory();
-  const open=()=>{panel.classList.remove("hidden","closing");panel.classList.add("ai-opening");document.getElementById("aiSupport")?.classList.add("fullscreen-open");document.body.classList.add("ai-chat-open");document.body.style.overflow="hidden";panel.setAttribute("aria-hidden","false");setTimeout(()=>input.focus(),120);};
-  const shut=()=>{panel.classList.add("hidden");panel.classList.remove("ai-opening");document.getElementById("aiSupport")?.classList.remove("fullscreen-open");document.body.classList.remove("ai-chat-open");document.body.style.overflow="";panel.setAttribute("aria-hidden","true");};
-  window.__smartParkCloseAI=shut;
-  toggle.onclick=()=>panel.classList.contains("hidden")?open():shut();
-  close?.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();shut();});
-  focus?.addEventListener("click",()=>input.focus());
-  sidebarToggle?.addEventListener("click",()=>panel.classList.toggle("ai-collapsed"));
-  expand?.addEventListener("click",()=>panel.classList.remove("ai-collapsed"));
-  theme?.addEventListener("click",()=>document.documentElement.classList.toggle("dark"));
-  newChat?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.value="";input.focus();});
-  clear?.addEventListener("click",()=>{aiSupportHistory=[];saveAISupportHistory();renderAISupportHistory();input.focus();});
-  share?.addEventListener("click",()=>{if(aiSupportHistory.length){copyToClipboard(location.href);showToast("Đã sao chép liên kết chia sẻ!","success");}else showToast("Chưa có tin nhắn để chia sẻ","error")});
-  search?.addEventListener("input",()=>renderAIStudioHistory(search.value));
-  modelBtn?.addEventListener("click",e=>{e.stopPropagation();modelMenu?.classList.toggle("hidden")});
-  modelMenu?.querySelectorAll("button[data-ai-model]").forEach(b=>b.addEventListener("click",()=>{if(modelName)modelName.textContent=b.dataset.aiModel;modelMenu.classList.add("hidden")}));
-  document.addEventListener("click",()=>modelMenu?.classList.add("hidden"));
-  $$('[data-ai-q]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.aiQ||"";form.requestSubmit()}));
-  form.addEventListener("submit",async e=>{
-    e.preventDefault(); const q=input.value.trim(); if(!q||form.dataset.busy==="1")return;
-    form.dataset.busy="1"; addAISupportMessage(q,"user"); input.value=""; autoResizeAIInput(); setAISupportBusy(true); const typingEl=showAITyping(/https?:\/\/|hôm nay|mới nhất|thời tiết|tin tức|ai là|giá |tỷ giá|xếp hạng|hiện nay|hiện tại|latest|today|news|richest/i.test(q));
-    try{
-      const historyForServer=aiSupportHistory.filter(m=>m.role==="user"||m.role==="assistant").slice(0,-1).slice(-10);
-      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),60000); let d;
-      try{d=await api("/api/ai/support",{method:"POST",body:{question:q,history:historyForServer},signal:controller.signal});}finally{clearTimeout(timer)}
-      typingEl?.remove(); addAISupportMessage(d.answer||"Xin lỗi, tôi chưa có câu trả lời phù hợp.","bot",true,d.sources||[],{searched:!!d.web_search,fetched:!!d.web_fetched,remaining:d.web_search_remaining_today});
-    }catch(err){
-      typingEl?.remove(); const em=String(err.message||""); const msg=err.name==="AbortError"?"AI đang xử lý hơi lâu. Bạn thử lại sau ít giây nhé.":(em.includes("429")?"Bạn gửi hơi nhanh. Vui lòng chờ một chút rồi thử lại.":em||"Trợ lý AI đang gặp lỗi kết nối tạm thời. Bạn thử lại sau ít giây nhé."); addAISupportMessage(msg,"bot");
-    }finally{form.dataset.busy="0";setAISupportBusy(false);input.focus();renderAIStudioHistory();}
-  });
-  input.addEventListener("input",autoResizeAIInput);
-  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
-}
-function autoResizeAIInput(){const input=$("#aiSupportInput");if(!input)return;input.style.height="auto";input.style.height=Math.min(input.scrollHeight,130)+"px";}
-initAISupport();
-{
   const toggle=$("#aiSupportToggle"), panel=$("#aiSupportPanel"), close=$("#aiSupportClose"), clear=$("#aiSupportClear"), focus=$("#aiSupportFocus"), form=$("#aiSupportForm"), input=$("#aiSupportInput");
   if(!toggle||!panel||!form||!input) return;
   loadAISupportHistory(); renderAISupportHistory();
@@ -706,49 +651,7 @@ function vehicleIcon(type){
 }
 function emptyIcon(){return '<svg class="empty-svg" viewBox="0 0 64 64" aria-label="Chỗ trống"><rect x="14" y="14" width="36" height="36" rx="4" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="7 6"/></svg>'}
 
-async function boot(){
-  if(!token)return false;
-  try{
-    // Authentication and dashboard loading are intentionally separated.
-    // A dashboard/AI API error must never invalidate a valid login session.
-    me=await api("/api/me");
-    $("#loginView")?.classList.add("hidden");
-    $("#appView")?.classList.remove("hidden");
-    const isManager=me.role==="manager"||me.role==="admin",isGuest=me.role==="guest";
-    $("#userName").textContent=me.full_name;
-    $("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");
-    $("#avatar").textContent=(me.full_name||"K")[0];
-    $("#sidebarUserName").textContent=me.full_name;
-    $("#sidebarUserRole").textContent=isManager?"Quản trị viên":(isGuest?"Khách · Chỉ xem chỗ trống":"Nhân viên bãi xe");
-    $("#sidebarUser")?.classList.toggle("manager-profile",isManager);
-    $("#sidebarUser")?.classList.toggle("staff-profile",!isManager&&!isGuest);
-    $("#sidebarUser")?.classList.toggle("guest-profile",isGuest);
-    $$(".manager-only").forEach(x=>x.style.display=isManager?"flex":"none");
-    $$(".sidebar nav button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
-    $("#mobileBottomNav")?.classList.toggle("manager",isManager);
-    $("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});
-    maybeReturnToAdmin();
-
-    // Do not log the user out when a secondary API fails.
-    try{
-      if(isGuest) await renderGuestDashboard(); else await navigate("dashboard");
-    }catch(e){
-      console.error("SmartPark dashboard load error:",e);
-      toast(`Đã đăng nhập. Không tải được dữ liệu tổng quan: ${e.message||"Lỗi máy chủ"}`,"error");
-      $("#content").innerHTML=`<div class="panel"><div class="empty-state"><h3>Đăng nhập thành công</h3><p>Phiên làm việc đang hoạt động nhưng dữ liệu tổng quan chưa tải được.</p><button class="primary" id="retryDashboard">↻ Thử tải lại</button></div></div>`;
-      $("#retryDashboard")?.addEventListener("click",()=>navigate("dashboard").catch(err=>toast(err.message,"error")));
-    }
-    return true;
-  }catch(e){
-    console.error("SmartPark authentication error:",e);
-    clearAuth();
-    $("#loginView")?.classList.remove("hidden");
-    $("#appView")?.classList.add("hidden");
-    const err=$("#loginError");
-    if(err) err.textContent=`Không thể xác thực phiên đăng nhập: ${e.message||"Lỗi máy chủ"}`;
-    return false;
-  }
-}
+async function boot(){if(!token)return;try{me=await api("/api/me");$("#loginView").classList.add("hidden");$("#appView").classList.remove("hidden");const isManager=me.role==="manager",isGuest=me.role==="guest";$("#userName").textContent=me.full_name;$("#userRole").textContent=isManager?"Quản lý":(isGuest?"Khách xem bãi":"Nhân viên");$("#avatar").textContent=(me.full_name||"K")[0];$("#sidebarUserName").textContent=me.full_name;$("#sidebarUserRole").textContent=isManager?"Quản trị viên":(isGuest?"Khách · Chỉ xem chỗ trống":"Nhân viên bãi xe");$("#sidebarUser")?.classList.toggle("manager-profile",isManager);$("#sidebarUser")?.classList.toggle("staff-profile",!isManager&&!isGuest);$("#sidebarUser")?.classList.toggle("guest-profile",isGuest);$$('.manager-only').forEach(x=>x.style.display=isManager?"flex":"none");$$('.sidebar nav button').forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});$("#mobileBottomNav")?.classList.toggle("manager",isManager);$("#mobileBottomNav")?.querySelectorAll("button").forEach(x=>{if(isGuest)x.style.display=(x.dataset.page==="dashboard"||x.dataset.page==="slots")?"flex":"none"});if(isGuest){await renderGuestDashboard()}else{await navigate("dashboard")};maybeReturnToAdmin()}catch(e){clearAuth()}}
 
 function setBtnBusy(btn,busy,busyText){
   if(!btn) return;
@@ -809,30 +712,14 @@ forgotForm?.addEventListener("submit",async e=>{
 });
 
 $("#loginForm").onsubmit=async e=>{
-  e.preventDefault();
-  const err=$("#loginError"),btn=$("#loginSubmit");
-  err.textContent=""; err.className="error"; setBtnBusy(btn,true,"Đang đăng nhập…");
-  const username=$("#username").value.trim(), password=$("#password").value;
-  if(!username||!password){err.textContent="Vui lòng nhập đầy đủ tài khoản và mật khẩu.";setBtnBusy(btn,false);return;}
+  e.preventDefault();const err=$("#loginError"),btn=$("#loginSubmit");
+  err.textContent="";setBtnBusy(btn,true,"Đang đăng nhập…");
   try{
-    // Never attach an old/expired Bearer token to the login request.
-    const r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({username,password})});
-    const raw=await r.text(); let d={}; try{d=raw?JSON.parse(raw):{}}catch(_){d={detail:raw}};
-    if(!r.ok) throw new Error(d.detail||`Đăng nhập thất bại (${r.status})`);
-    if(!d.access_token) throw new Error("Máy chủ không trả về phiên đăng nhập");
-    token=d.access_token;
-    localStorage.setItem("parking_token",token);
-    localStorage.setItem("parking_last_seen",String(Date.now()));
-    const ok=await boot();
-    if(!ok) throw new Error("Không thể xác thực phiên đăng nhập");
-  }catch(e){
-    console.error("Login error:",e);
-    err.textContent=e.message||"Không thể đăng nhập. Vui lòng thử lại.";
-    err.className="error";
-    setBtnBusy(btn,false);
-  }
+    let d=await api("/api/auth/login",{method:"POST",body:{username:$("#username").value.trim(),password:$("#password").value}});
+    token=d.access_token;localStorage.setItem("parking_token",token);refreshLastSeen();await boot();
+    if(!token){err.textContent="Không thể tải thông tin tài khoản. Vui lòng thử lại.";setBtnBusy(btn,false);}
+  }catch(e){err.textContent=e.message;setBtnBusy(btn,false);}
 };
-
 $("#logout").onclick=()=>{clearAuth();location.reload()};
 $("#nav").onclick=e=>{let b=e.target.closest("button[data-page]");if(b)navigate(b.dataset.page)};
 
