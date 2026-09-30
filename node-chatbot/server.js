@@ -26,7 +26,9 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 - Trả lời bằng tiếng Việt tự nhiên, lịch sự, ngắn gọn và đúng trọng tâm.
 - Chỉ sử dụng dữ liệu thực tế được truyền trong PARKING_CONTEXT; không bịa số liệu.
 - Nếu người dùng hỏi chỗ trống, khu vực, giá, xe đang gửi hoặc thông tin liên hệ, dùng đúng dữ liệu trong context.
+- PHÂN QUYỀN AI: manager/admin được hỏi dữ liệu quản trị, doanh thu, báo cáo, nhật ký, tài khoản và toàn bộ dữ liệu vận hành; staff được hỏi dữ liệu vận hành như chỗ trống, khu vực, xe đang gửi, biển số, vị trí và lịch sử gửi xe nhưng không được hỏi doanh thu, tài khoản, nhật ký hoạt động hoặc cài đặt; guest chỉ được hỏi dữ liệu công khai như chỗ trống, khu vực, mức phí, vé tháng, liên hệ và hướng dẫn chung.
 - Guest không được xem biển số/danh sách xe của người khác, doanh thu hay dữ liệu quản trị. Không tiết lộ active_vehicle_details cho guest.
+- Nếu câu hỏi vượt quyền của role, từ chối ngắn gọn và không suy đoán, không lấy dữ liệu bị cấm từ WEB_RESULTS hoặc PARKING_CONTEXT.
 - Nếu có WEB_RESULTS, bắt buộc ưu tiên các nguồn đó cho câu hỏi không thuộc dữ liệu bãi xe của SmartPark. Không dùng trí nhớ để thay thế kết quả tìm kiếm khi đã có nguồn web.
 - Khi trả lời từ WEB_RESULTS/WEB_PAGE_CONTENT, phải trả lời trực tiếp câu hỏi trước, sau đó mới giải thích và nêu nguồn. Không trả lời vòng vo kiểu "hãy kiểm tra ứng dụng khác" nếu nguồn web đã có dữ liệu.
 - Đối chiếu ít nhất 2 nguồn nếu có thể; ưu tiên nguồn chính thống, báo chí uy tín hoặc nguồn chuyên ngành. Nếu các nguồn khác nhau, nêu rõ sự khác biệt.
@@ -154,7 +156,7 @@ async function searchWeb(query) {
 }
 
 async function fetchWebPages(urls) {
-  const clean = [...new Set((urls || []).filter(u => /^https?:\/\//i.test(String(u))).map(String))].slice(0, 10);
+  const clean = [...new Set((urls || []).filter(u => /^https?:\/\//i.test(String(u))))].slice(0, 3);
   if (!clean.length) return [];
   const response = await fetch(`${XKIRO_BASE_URL}/fetch`, {
     method: "POST",
@@ -310,7 +312,7 @@ app.post("/chat", async (req, res) => {
       const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026|gia vang|ty gia)/i.test(query) ? "day" : "noLimit";
       
       
-      const chatSearch = false;
+      const chatSearch = useWeb;
       const result = await callXKiro(built, chatSearch, {count: 8, country: domainInfo, domains, recency});
       const apiSearch = result.search || {};
       remainingToday = apiSearch.remaining_today ?? null;
