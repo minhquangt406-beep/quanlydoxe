@@ -1331,6 +1331,40 @@ def _clean_ai_history(history):
     return cleaned
 
 
+# Quyền hỏi AI được kiểm tra ở backend, không chỉ ẩn nút trên giao diện.
+# Như vậy người dùng không thể vượt quyền bằng cách gọi thẳng /api/ai/support.
+AI_MANAGER_ONLY_PATTERNS = [
+    r"\bdoanh thu\b", r"báo cáo doanh thu", r"lịch sử doanh thu", r"doanh thu theo",
+    r"nhật ký hoạt động", r"audit", r"tài khoản", r"người dùng", r"nhân viên",
+    r"phân quyền", r"đổi mật khẩu", r"xóa tài khoản", r"cài đặt doanh nghiệp",
+    r"reset doanh thu", r"đặt lại doanh thu", r"báo cáo quản trị", r"thống kê quản trị",
+]
+AI_STAFF_OR_MANAGER_PATTERNS = [
+    r"biển số", r"danh sách xe", r"xe đang gửi", r"xe đang đỗ", r"xe trong bãi",
+    r"xe nào đang", r"xe lâu nhất", r"đỗ lâu nhất", r"gửi lâu nhất",
+    r"lịch sử gửi xe", r"lịch sử xe", r"check[- ]?in", r"check[- ]?out",
+    r"xe vào", r"xe ra", r"vị trí của xe", r"xe ở vị trí",
+]
+
+def _ai_permission_message(role: str, question: str):
+    q = normalize_vietnamese_question(question)
+    if any(re.search(p, q, re.I) for p in AI_MANAGER_ONLY_PATTERNS):
+        if role not in {"manager", "admin"}:
+            return "Tính năng này chỉ dành cho tài khoản Quản lý. Bạn có thể hỏi mình về chỗ trống, khu vực, mức phí và các thông tin vận hành được cấp cho vai trò của bạn."
+    if any(re.search(p, q, re.I) for p in AI_STAFF_OR_MANAGER_PATTERNS):
+        if role == "guest":
+            return "Câu hỏi này cần quyền Nhân viên hoặc Quản lý vì có thể liên quan đến xe đang gửi, biển số hoặc lịch sử vận hành. Tài khoản khách chỉ được hỏi các thông tin công khai của bãi xe."
+    return None
+
+
+def _ai_role_scope(role: str):
+    if role in {"manager", "admin"}:
+        return "Quản lý: được hỏi dữ liệu quản trị, doanh thu, báo cáo, nhật ký, tài khoản và toàn bộ dữ liệu vận hành."
+    if role == "staff":
+        return "Nhân viên: được hỏi dữ liệu vận hành cần cho công việc như chỗ trống, khu vực, xe đang gửi, biển số, vị trí và lịch sử gửi xe; không được hỏi dữ liệu quản trị như doanh thu, tài khoản, nhật ký hoạt động hoặc cài đặt."
+    return "Khách: chỉ được hỏi dữ liệu công khai như chỗ trống, khu vực, mức phí, vé tháng, thông tin liên hệ và hướng dẫn chung; không được xem biển số, danh sách xe, lịch sử, doanh thu hay dữ liệu quản trị."
+
+
 def local_ai_support(db: Session, question: str, user: User):
     """Deterministic fallback. It answers common operational questions from live DB data."""
     q = normalize_vietnamese_question(question)
@@ -1672,9 +1706,24 @@ def _parking_ai_context(db: Session, user):
         "business": {"address": company.address if company else "", "phone": company.phone if company else ""},
         "role": getattr(user, "role", "guest"),
     }
-    if getattr(user, "role", "guest") != "guest":
+    role = getattr(user, "role", "guest")
+    if role in {"staff", "manager", "admin"}:
         rows = (db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id).join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None)).order_by(ParkingRecord.time_in.asc()).limit(100).all())
         ctx["active_vehicle_details"] = [{"license_plate": v.license_plate, "type": v.vehicle_type, "slot": slot.name, "time_in": r.time_in.strftime('%d/%m/%Y %H:%M')} for r,v,slot in rows]
+    if role in {"manager", "admin"}:
+        revenue, marker = current_revenue(db)
+        today = now_vn().date()
+        day_start = datetime.combine(today, datetime.min.time())
+        day_end = day_start + timedelta(days=1)
+        today_parking_revenue = db.query(func.coalesce(func.sum(ParkingRecord.fee), 0)).filter(ParkingRecord.time_out >= day_start, ParkingRecord.time_out < day_end, ParkingRecord.time_out.is_not(None)).scalar() or 0
+        audit_rows = db.query(AuditLog, User).outerjoin(User, AuditLog.user_id == User.id).order_by(AuditLog.id.desc()).limit(20).all()
+        ctx["management"] = {
+            "current_revenue": float(revenue),
+            "revenue_period": marker.period_label if marker else now_vn().strftime('%Y-%m'),
+            "today_parking_revenue": float(today_parking_revenue),
+            "user_count": db.query(User).count(),
+            "latest_activity": [{"username": u.username if u else "system", "action": a.action, "detail": a.detail, "created_at": a.created_at.strftime('%d/%m/%Y %H:%M')} for a,u in audit_rows],
+        }
     return ctx
 
 
@@ -1795,9 +1844,14 @@ def ai_support(data: AISupportQuestion, request: Request, db: Session = Depends(
     question=(data.question or "").strip()
     if not question: raise HTTPException(400,"Vui lòng nhập câu hỏi")
     if len(question)>500: raise HTTPException(400,"Câu hỏi tối đa 500 ký tự")
+    permission_message = _ai_permission_message(getattr(user, "role", "guest"), question)
+    if permission_message:
+        raise HTTPException(403, permission_message)
     if not ai_support_rate_ok(user.id): raise HTTPException(429,"Bạn gửi hơi nhanh. Vui lòng chờ khoảng một phút rồi thử lại.")
     history=_clean_ai_history(data.history)
     system=f"""Bạn là trợ lý hỗ trợ khách hàng của Parking AI Pro. Người đang chat có vai trò: {user.role}.
+
+PHẠM VI QUYỀN: {_ai_role_scope(getattr(user, "role", "guest"))}
 
 PHONG CÁCH:
 - Trả lời bằng tiếng Việt tự nhiên, lịch sự, thân thiện và ngắn gọn như một nhân viên CSKH chuyên nghiệp.
