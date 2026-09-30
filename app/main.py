@@ -1334,6 +1334,58 @@ def _clean_ai_history(history):
 def local_ai_support(db: Session, question: str, user: User):
     """Deterministic fallback. It answers common operational questions from live DB data."""
     q = normalize_vietnamese_question(question)
+
+    # HIGH PRIORITY INTENTS: resolve these before every generic live-status rule.
+    # This prevents words such as "hiện tại" / "đang" from accidentally
+    # routing a tariff question to the active-vehicle answer.
+    is_monthly_question = any(k in q for k in ["vé tháng", "ve thang", "monthly"])
+    is_monthly_free_question = is_monthly_question and any(k in q for k in [
+        "miễn phí", "mien phi", "không mất phí", "khong mat phi",
+        "có mất phí", "co mat phi", "có tính tiền", "co tinh tien",
+        "được miễn", "duoc mien", "free", "0 đồng", "0đ", "0 vnđ"
+    ])
+    is_price_question = (
+        any(k in q for k in [
+            "mức phí", "bảng giá", "giá gửi", "phí gửi", "tiền gửi",
+            "tính tiền", "bao nhiêu tiền", "hết bao nhiêu", "phí đỗ",
+            "giá đỗ", "giá gửi xe", "phí gửi xe"
+        ])
+        or ("phí" in q and any(k in q for k in ["gửi", "đỗ", "đậu", "bãi", "xe"]))
+        or ("giá" in q and any(k in q for k in ["gửi", "đỗ", "đậu", "bãi", "xe"]))
+    )
+
+    if is_monthly_question:
+        if is_monthly_free_question:
+            return (
+                "Có. Xe có vé tháng còn hiệu lực được miễn phí gửi xe trong thời gian vé có hiệu lực. "
+                "Khi xe ra bãi, phí gửi xe là 0 VNĐ và không cần chọn phương thức thanh toán. "
+                "Lưu ý: miễn phí gửi xe không có nghĩa bản thân vé tháng luôn miễn phí."
+            )
+        return (
+            "Bãi xe có hỗ trợ vé tháng. Xe có vé tháng còn hiệu lực sẽ không bị tính phí gửi xe khi ra bãi."
+        )
+
+    if is_price_question:
+        prices = db.query(Pricing).order_by(Pricing.id).all()
+        if not prices:
+            return "Hiện chưa có bảng giá gửi xe được cấu hình."
+        wanted = None
+        if "xe máy" in q or "xe may" in q:
+            wanted = "Xe máy"
+        elif "ô tô" in q or "xe hơi" in q or "o to" in q:
+            wanted = "Ô tô"
+        elif "xe đạp" in q or "xe dap" in q:
+            wanted = "Xe đạp"
+        if wanted:
+            row = next((x for x in prices if x.vehicle_type.lower() == wanted.lower()), None)
+            if row:
+                return f"Mức phí gửi {row.vehicle_type.lower()} hiện tại là {float(row.price_per_hour):,.0f} VNĐ/giờ."
+            return f"Hiện chưa có mức phí được cấu hình cho {wanted.lower()}."
+        order = {"Xe máy": 1, "Ô tô": 2, "Xe đạp": 3}
+        prices = sorted(prices, key=lambda x: (order.get(x.vehicle_type, 99), x.vehicle_type))
+        return "Bảng giá gửi xe hiện tại: " + "; ".join(
+            f"{x.vehicle_type} {float(x.price_per_hour):,.0f} VNĐ/giờ" for x in prices
+        ) + "."
     total = db.query(ParkingSlot).count()
     occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
     empty = max(total - occupied, 0)
@@ -1342,13 +1394,22 @@ def local_ai_support(db: Session, question: str, user: User):
     oldest = (db.query(ParkingRecord, Vehicle, ParkingSlot).join(Vehicle, ParkingRecord.vehicle_id == Vehicle.id)
               .join(ParkingSlot, ParkingRecord.slot_id == ParkingSlot.id).filter(ParkingRecord.time_out.is_(None))
               .order_by(ParkingRecord.time_in.asc()).first())
+    # Area questions must also understand short follow-ups such as
+    # "Khu B thì sao?", "Còn khu B?" or simply "Khu B". These are
+    # unambiguous requests for the live status of that area, even when
+    # the words "chỗ/trống/vị trí" are omitted.
     m = re.search(r"(?:khu|khu vực)\s*([a-z])", q)
-    if m and any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ"]):
-        area = db.query(Area).filter(func.lower(Area.name).contains(m.group(1))).first()
+    area_followup = any(k in q for k in ["thì sao", "thi sao", "thế nào", "the nao", "ra sao", "còn khu", "còn không"])
+    if m and (any(k in q for k in ["chỗ", "trống", "vị trí", "đỗ", "đậu"]) or area_followup or q.strip() in {f"khu {m.group(1)}", f"khu vực {m.group(1)}"}):
+        area_letter = m.group(1).lower()
+        area = db.query(Area).filter(func.lower(Area.name) == f"khu {area_letter}").first()
+        if not area:
+            area = db.query(Area).filter(func.lower(Area.name).contains(area_letter)).first()
         if area:
             slots = db.query(ParkingSlot).filter(ParkingSlot.area_id == area.id).all()
             free = sum(1 for slot in slots if slot.status != "occupied")
             return f"{area.name} hiện còn {free}/{len(slots)} vị trí trống."
+        return f"Mình chưa tìm thấy dữ liệu của Khu {area_letter.upper()}."
     if any(k in q for k in ["đông", "vắng", "giờ này", "hôm nay", "đang đông"]):
         if not total:
             return "Hiện chưa có dữ liệu vị trí đỗ để đánh giá mức độ đông của bãi."
@@ -1757,10 +1818,25 @@ QUY TẮC HIỂN THỊ:
 - Không nói rằng bạn đang kiểm tra "tool" hay "database"; chỉ trình bày kết quả cho khách.
 - Khi chưa chắc chắn, ưu tiên nói thật thay vì suy đoán."""
     messages=[{"role":"system","content":system}]+history+[{"role":"user","content":question}]
-    # For live operational questions, answer from the database first. This prevents
-    # an LLM from inventing or misunderstanding simple Vietnamese chat shorthand.
+    # For live operational questions, answer from the database first.
+    # IMPORTANT: resolve specific intents before broad words such as "hiện tại"
+    # or "đang". A question like "Mức phí gửi xe hiện tại là bao nhiêu?"
+    # must return the tariff table, not the number of vehicles in the lot.
+    normalized_question = normalize_vietnamese_question(question)
+    monthly_question = any(k in normalized_question for k in ["vé tháng", "ve thang", "monthly"])
+    price_question = (
+        any(k in normalized_question for k in ["mức phí", "bảng giá", "giá gửi", "phí gửi", "tiền gửi", "tính tiền", "bao nhiêu tiền"])
+        or ("phí" in normalized_question and any(k in normalized_question for k in ["gửi", "đỗ", "đậu", "bãi"]))
+        or ("giá" in normalized_question and any(k in normalized_question for k in ["gửi", "đỗ", "đậu", "bãi"]))
+    )
+    parking_context = any(k in normalized_question for k in [
+        "bãi xe", "bãi đỗ", "bãi đậu", "gửi xe", "đỗ xe", "đậu xe",
+        "giá gửi", "phí gửi", "tiền gửi", "mức phí", "bảng giá"
+    ])
     intent = detect_parking_intent(question)
-    if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalize_vietnamese_question(question)):
+    if monthly_question or (price_question and parking_context):
+        return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
+    if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalized_question):
         return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
     if NODE_AI_URL:
         try:
