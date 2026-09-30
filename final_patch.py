@@ -1,6 +1,6 @@
 from pathlib import Path
 p=Path('/mnt/data/work/app/main.py'); s=p.read_text()
-# audit user creation/deletion
+
 s=s.replace('''    db.add(u); db.commit(); db.refresh(u)\n    return {"message": "Đã tạo tài khoản", "id": u.id}''','''    db.add(u); db.flush(); audit(db, user, "CREATE_USER", f"Tạo tài khoản {u.username} ({u.role})"); db.commit(); db.refresh(u)\n    return {"message": "Đã tạo tài khoản", "id": u.id}''')
 s=s.replace('''    db.delete(target); db.commit()\n    return {"message": "Đã xóa tài khoản"}''','''    audit(db, user, "DELETE_USER", f"Xóa tài khoản {target.username}")\n    db.delete(target); db.commit()\n    return {"message": "Đã xóa tài khoản"}''')
 s=s.replace('''    db.commit()\n    return {"message": "Đã lưu thông tin doanh nghiệp"}''','''    audit(db, user, "UPDATE_COMPANY", "Cập nhật thông tin doanh nghiệp")\n    db.commit()\n    return {"message": "Đã lưu thông tin doanh nghiệp"}''')
@@ -12,11 +12,11 @@ p.write_text(s)
 
 p=Path('/mnt/data/work/app/static/app.js'); s=p.read_text()
 s=s.replace('function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"}', 'function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"} function duration(s){if(!s)return "—"; const ms=Math.max(0,Date.now()-new Date(s).getTime()), m=Math.floor(ms/60000), h=Math.floor(m/60), mm=m%60; return h?`${h} giờ ${mm} phút`:`${mm} phút`}')
-# Add activity panel to dashboard by changing ending active panel fragment
+
 old='''<div class="panel active-panel"><div class="panel-head"><h3>Xe đang trong bãi</h3><span class="muted">${a.length} xe</span></div>${a.length?a.slice(0,10).map(x=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><b>${x.license_plate}</b><span class="muted">${x.slot} · ${dt(x.time_in)}</span></div>`).join(""):`<div class="empty-state">Chưa có xe đang gửi</div>`}</div>`;wireMapInteractions()},'''
 new='''<div class="panel active-panel"><div class="panel-head"><h3>Xe đang trong bãi</h3><span class="muted">${a.length} xe</span></div>${a.length?a.slice(0,10).map(x=>`<div class="active-row" data-time-in="${x.time_in}" style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><div><b>${x.license_plate}</b><div class="muted">${x.slot} · ${x.vehicle_type}</div></div><span class="muted">${dt(x.time_in)}<br><b class="duration" data-time="${x.time_in}">${duration(x.time_in)}</b></span></div>`).join(""):`<div class="empty-state">Chưa có xe đang gửi</div>`}</div><div class="panel"><div class="panel-head"><div><h3>Nhật ký hoạt động</h3><span class="muted">8 thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div><div class="activity-list">${log.map(x=>`<div class="activity-item"><div><b>${x.action}</b><div class="muted">${x.detail}</div></div><span class="muted">${dt(x.created_at)} · ${x.username}</span></div>`).join("")||'<div class="empty-state">Chưa có nhật ký</div>'}</div></div>`;document.getElementById("openActivity")?.addEventListener("click",()=>navigate("activity"));window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);wireMapInteractions()},'''
 if old not in s: print('dashboard fragment not found')
 s=s.replace(old,new)
-# Improve vehicle delete confirmation text
+
 s=s.replace('Toàn bộ lịch sử của xe này cũng sẽ bị xóa.', 'Xe đã có lịch sử sẽ được hệ thống bảo vệ và không cho xóa để tránh mất dữ liệu.')
 p.write_text(s)

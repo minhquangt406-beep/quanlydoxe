@@ -11,9 +11,9 @@ cleanup() {
 }
 trap cleanup TERM INT EXIT
 
-# Fail fast with a useful log if the Node service cannot start.
 
-# Wait briefly for Node to bind its internal port, then fail with its log if it exits.
+
+
 for i in 1 2 3 4 5; do
   if ! kill -0 "$NODE_PID" 2>/dev/null; then
     cat "$NODE_LOG" >&2 || true

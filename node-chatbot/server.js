@@ -68,9 +68,9 @@ function buildPrompt(body, webResults = [], fetchedPages = []) {
 
 function isParkingDataQuestion(question) {
   const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  // Only questions that clearly ask for SmartPark's own live/database data
-  // should stay local. Generic words such as "gia", "bao nhieu", "hien tai"
-  // are deliberately NOT enough on their own.
+  
+  
+  
   const parkingContext = [
     "bai xe", "bai do", "bai dau", "gui xe", "do xe", "dau xe",
     "cho trong", "vi tri do", "vi tri trong", "khu a", "khu b",
@@ -86,10 +86,10 @@ function isParkingDataQuestion(question) {
 
 function needsWebSearch(question) {
   const q = String(question || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  // Policy for this chatbot: if a substantive question is NOT about
-  // SmartPark's own parking/database data, search the live web.
-  // Current/fresh parking-adjacent questions also search when they need
-  // external information.
+  
+  
+  
+  
   const meta = /^(xin chao|chao|hello|hi|alo|cam on|ok|oke|ban la ai|ban la gi|ban co the lam gi|gioi thieu ban|help)$/i.test(q.trim());
   if (meta) return false;
   if (!isParkingDataQuestion(question)) return true;
@@ -120,8 +120,8 @@ async function searchWeb(query) {
     max_results: 8,
     search_recency_filter: /thoi tiet|weather|tin tuc|tin moi|latest|today|hien tai|moi nhat|2026|gia vang|ty gia/.test(n) ? "day" : "noLimit"
   };
-  // Do not bias global questions toward Vietnam. For Vietnam-specific topics,
-  // the country hint improves local results substantially.
+  
+  
   if (/viet nam|vietn am|vietnam|ha noi|ho chi minh|tphcm|thai nguyen|hn|hcm/.test(n)) body.country = "VN";
   if (/giau nhat|nguoi giau|richest|ty phu/.test(n)) {
     if (/viet nam|vietnam/.test(n)) {
@@ -262,10 +262,10 @@ app.post("/chat", async (req, res) => {
   const rankingFetchRequested = /(ai\s+(l[aà]u|dang)?\s*gi[aà]u|ai\s*gi[aà]u|người\s+gi[aà]u|nguoi\s+giau|gi[aà]u\s+nh[aấ]t|giau\s+nhat|richest|ty\s*ph[uú]|t[oố]p\s*\d+\s+ng[uư][oờ]i\s+gi[aà]u|x[eế]p\s+h[aà]ng)/i.test(nq);
   const fetchRequested = WEB_FETCH_ENABLED && (explicitUrls.length > 0 || rankingFetchRequested || /(đọc|doc|nội dung|noi dung|chi tiết|chi tiet|phân tích trang|phan tich trang|trang web|link này|link nay|nguồn này|nguon nay)/i.test(nq));
 
-  // Use one explicit search for every non-parking question so we can inspect
-  // the actual search results and fetch the most relevant pages. This gives
-  // much better answers for weather, prices, news and rankings than relying
-  // on a model-only search summary.
+  
+  
+  
+  
   if (useWeb && XKIRO_API_KEY && !explicitUrls.length) {
     try {
       webResults = await searchWeb(query);
@@ -276,9 +276,9 @@ app.post("/chat", async (req, res) => {
     }
   }
 
-  // Read the most relevant pages when the question asks for details, or when
-  // an explicit URL was supplied. Keep the default at 2 pages to conserve the
-  // free xKiro fetch allowance.
+  
+  
+  
   if (WEB_FETCH_ENABLED && XKIRO_API_KEY && (fetchRequested || (useWeb && WEB_FETCH_TOP > 0))) {
     const urls = explicitUrls.length ? explicitUrls : webResults.slice(0, WEB_FETCH_TOP).map(x => x.url);
     if (urls.length) {
@@ -308,8 +308,8 @@ app.post("/chat", async (req, res) => {
             : ["forbes.com", "bloomberg.com", "reuters.com"])
         : undefined;
       const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026|gia vang|ty gia)/i.test(query) ? "day" : "noLimit";
-      // We already performed the standalone search above. Do not trigger a
-      // second search inside chat/completions; this preserves the free quota.
+      
+      
       const chatSearch = false;
       const result = await callXKiro(built, chatSearch, {count: 8, country: domainInfo, domains, recency});
       const apiSearch = result.search || {};

@@ -2,8 +2,8 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-# Render's Python image may ship an older Debian Node.js package.
-# Install Node.js 22 explicitly because the current OpenAI Node SDK requires Node.js 22+.
+
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && mkdir -p /etc/apt/keyrings \
