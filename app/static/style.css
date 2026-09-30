@@ -4435,3 +4435,46 @@ body.dark-mode .guest-entry-note{background:rgba(59,130,246,.08)!important;borde
 .dark-mode .login-card .link-btn{color:#82a5ff!important}
 .dark-mode .login-card .demo{color:#91a0b5!important}
 .dark-mode .login-card .error{color:#ff8b9a!important}
+body.dark-mode .login-card .field-wrap input,
+body.dark-mode .login-card .field-wrap input:focus,
+body.dark-mode .login-card .field-wrap input:active,
+body.dark-mode .login-card .field-wrap input:hover{background:#162337!important;color:#f5f8ff!important;-webkit-text-fill-color:#f5f8ff!important;border-color:#34465f!important}
+body.dark-mode .login-card .field-wrap:focus-within input,
+body.dark-mode .login-card .field-wrap:focus-within input:focus{background:#19283e!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;border-color:#818cf8!important;box-shadow:0 0 0 4px rgba(99,102,241,.16)!important}
+body.dark-mode .login-card .field-wrap input::placeholder{color:#9aa9bd!important;-webkit-text-fill-color:#9aa9bd!important;opacity:1!important}
+body.dark-mode .login-card .field-wrap input:-webkit-autofill,
+body.dark-mode .login-card .field-wrap input:-webkit-autofill:hover,
+body.dark-mode .login-card .field-wrap input:-webkit-autofill:focus{background:#162337!important;color:#f5f8ff!important;-webkit-text-fill-color:#f5f8ff!important;-webkit-box-shadow:0 0 0 1000px #162337 inset!important;box-shadow:0 0 0 1000px #162337 inset!important}
+
+.login-card .field-wrap input,
+.login-card .field-wrap input:focus,
+.login-card .field-wrap input:active,
+.login-card .field-wrap input:hover{
+  background:#162337!important;
+  color:#f5f8ff!important;
+  -webkit-text-fill-color:#f5f8ff!important;
+  border-color:#34465f!important;
+}
+.login-card .field-wrap:focus-within input,
+.login-card .field-wrap:focus-within input:focus{
+  background:#19283e!important;
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+  border-color:#818cf8!important;
+  box-shadow:0 0 0 4px rgba(99,102,241,.16)!important;
+}
+.login-card .field-wrap input::placeholder{
+  color:#9aa9bd!important;
+  -webkit-text-fill-color:#9aa9bd!important;
+  opacity:1!important;
+}
+.login-card .field-icon{color:#91a2bb!important}
+.login-card .pass-toggle{color:#aebbd0!important;background:transparent!important}
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus{
+  -webkit-text-fill-color:#f5f8ff!important;
+  caret-color:#fff!important;
+  -webkit-box-shadow:0 0 0 1000px #162337 inset!important;
+  box-shadow:0 0 0 1000px #162337 inset!important;
+}
