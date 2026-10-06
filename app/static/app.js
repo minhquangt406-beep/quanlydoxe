@@ -753,9 +753,16 @@ dashboard:async()=>{
    <div>
      <div class="eyebrow">PARKING OPERATIONS</div>
      <h1>Tổng quan</h1>
-     <span class="muted">Theo dõi nhanh tình trạng bãi, lưu lượng xe và doanh thu.</span>
+     <span class="muted">Trung tâm điều hành · dữ liệu cập nhật theo thời gian thực.</span>
    </div>
    <div class="overview-live"><i></i><b>LIVE</b><span id="dashUpdated">Đang đồng bộ...</span></div>
+ </div>
+
+ <div class="overview-quick-actions">
+   <button class="quick-action primary-action" data-quick-page="parking"><span>＋</span><div><b>Cho xe vào</b><small>Ghi nhận lượt mới</small></div><i>→</i></button>
+   <button class="quick-action" data-quick-page="slots"><span>▦</span><div><b>Xem sơ đồ bãi</b><small>Kiểm tra chỗ trống</small></div><i>→</i></button>
+   <button class="quick-action" data-quick-page="reports"><span>₫</span><div><b>Doanh thu</b><small>Xem báo cáo</small></div><i>→</i></button>
+   <button class="quick-action" data-quick-page="monthly"><span>▣</span><div><b>Vé tháng</b><small>Quản lý đăng ký</small></div><i>→</i></button>
  </div>
 
  <div class="overview-kpis">
@@ -814,6 +821,18 @@ dashboard:async()=>{
    <div class="simple-area-list" id="areaEmptySummary"></div>
  </section>
 
+ <section class="overview-panel live-map-preview-panel">
+   <div class="overview-panel-head">
+     <div><h3>Sơ đồ bãi xe trực tiếp</h3><span>Nhấn vào “Xem sơ đồ bãi” để quản lý từng vị trí</span></div>
+     <button class="btn map-open-btn" id="openSlotsFromMap">Mở sơ đồ đầy đủ →</button>
+   </div>
+   <div class="mini-parking-map" id="miniParkingMap">${(()=>{
+     const groups=[...new Map(s.map(x=>[x.area_id,{name:x.area_name,slots:[]}])).values()];
+     s.forEach(x=>groups.find(g=>g.name===x.area_name)?.slots.push(x));
+     return groups.map(g=>`<div class="mini-zone"><div class="mini-zone-head"><b>${escapeHtml(g.name||'Khu')}</b><span>${g.slots.filter(x=>x.status==='empty').length} trống</span></div><div class="mini-slots">${g.slots.slice(0,18).map(x=>`<button class="mini-slot ${x.status}" title="${escapeHtml(x.name||'')} · ${x.status==='occupied'?escapeHtml(displayPlate(x.license_plate,x.vehicle_type)):'Trống'}"><span>${escapeHtml(x.name||'')}</span>${x.status==='occupied'?`<small>${escapeHtml(displayPlate(x.license_plate,x.vehicle_type))}</small>`:''}</button>`).join('')}</div></div>`).join('') || '<div class="empty-state">Chưa có khu vực.</div>';
+   })()}</div>
+ </section>
+
  <div class="overview-bottom-grid">
    <section class="overview-panel">
      <div class="overview-panel-head"><div><h3>Xe đang trong bãi</h3><span>${s.filter(x=>x.status==='occupied').length} xe</span></div></div>
@@ -850,13 +869,17 @@ dashboard:async()=>{
  set('chartTodayRevenue',money(ts.revenue[6]||0));
  set('chartTotal',money(ts.revenue.reduce((a,b)=>a+b,0)));
  $('#openActivity')?.addEventListener('click',()=>navigate('activity'));
+ $('#openSlotsFromMap')?.addEventListener('click',()=>navigate('slots'));
+ $$('.quick-action[data-quick-page]').forEach(btn=>btn.addEventListener('click',()=>navigate(btn.dataset.quickPage)));
  window.clearInterval(window.__dashboardRealtime);
  window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);
  window.clearInterval(window.__durationTimer);
  window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);
 },
-parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");$("#content").innerHTML=`
-<div class="grid2"><div class="panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Chọn khu trước, sau đó chọn vị trí</span></div><span class="pill green">A / B</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option><option>Xe đạp</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
+parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");const emptySlots=slots.filter(x=>x.status==="empty").length;const occupiedSlots=slots.length-emptySlots;$("#content").innerHTML=`
+<div class="operation-head"><div><div class="eyebrow">VEHICLE OPERATIONS</div><h1>Xe vào / Xe ra</h1><span class="muted">Tiếp nhận xe, chọn vị trí và xử lý thanh toán trong cùng một màn hình.</span></div><div class="operation-live"><i></i><span>Hệ thống đang hoạt động</span></div></div>
+<div class="operation-kpis"><div><span>Đang gửi</span><b>${active.length}</b></div><div><span>Chỗ trống</span><b>${emptySlots}</b></div><div><span>Đang sử dụng</span><b>${occupiedSlots}</b></div><div><span>Tỷ lệ lấp đầy</span><b>${slots.length?Math.round(occupiedSlots/slots.length*100):0}%</b></div></div>
+<div class="grid2"><div class="panel checkin-panel"><div class="panel-head"><div><h3>Cho xe vào</h3><span class="muted">Nhập biển số · hệ thống tự nhận diện loại xe</span></div><span class="pill green">SẴN SÀNG</span></div><div class="form-grid"><label>Biển số<input id="plate" placeholder="29A-123.45"></label><label>Loại xe<select id="vtype"><option>Xe máy</option><option>Ô tô</option><option>Xe đạp</option></select></label><label>Khu vực<select id="areaFilter"><option value="all">Tất cả khu</option>${[...new Map(slots.map(x=>[x.area_id,x.area_name]))].map(([id,name])=>`<option value="${id}">${name}</option>`).join("")}</select></label><label>Vị trí<select id="slot">${slots.filter(x=>x.status==="empty").map(x=>`<option value="${x.id}" data-area="${x.area_id}">${x.area_name} · ${x.name}</option>`).join("")}</select></label></div><button class="primary" id="checkin" style="margin-top:14px">+ Cho xe vào</button><div id="parkingMsg"></div></div>
 <div class="panel"><div class="panel-head"><h3>Xe đang gửi</h3><span class="muted">${active.length} xe</span></div><div class="table-wrap"><table class="table"><thead><tr><th>Mã</th><th>Biển số</th><th>Vị trí</th><th>Thời gian</th><th></th></tr></thead><tbody>${active.map(x=>`<tr><td>#${x.id}</td><td><b>${displayPlate(x.license_plate, x.vehicle_type)}</b></td><td>${x.slot}</td><td>${dt(x.time_in)}</td><td><button class="btn checkout" data-id="${x.id}">Tính phí & xe ra</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty-state">Không có xe</td></tr>`}</tbody></table></div></div></div>`;
 bindVehicleTypeDetection("#plate","#vtype");$("#checkin").onclick=async()=>{try{let d=await api("/api/checkin",{method:"POST",body:{license_plate:$("#plate").value,vehicle_type:$("#vtype").value,slot_id:+$("#slot").value}});$("#parkingMsg").innerHTML=`<div class="notice">✓ ${d.message} · Mã lượt <b>#${d.record_id}</b> · ${d.slot}</div>`;await pages.parking()}catch(e){$("#parkingMsg").innerHTML=`<div class="error">${e.message}</div>`}};
 $("#areaFilter").onchange=()=>{const area=$("#areaFilter").value; $$("#slot option").forEach(o=>o.hidden=area!=="all" && o.dataset.area!==area); const first=$$("#slot option").find(o=>!o.hidden); if(first) $("#slot").value=first.value;};
