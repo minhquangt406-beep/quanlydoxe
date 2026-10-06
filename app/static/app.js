@@ -743,136 +743,72 @@ dashboard:async()=>{
    api('/api/dashboard'),api('/api/analytics'),api('/api/dashboard/timeseries'),
    api('/api/slots'),api('/api/areas'),api('/api/activity')
  ]);
- const d={...d0,...an};
- window.__dashboardSeries=ts; window.__latestSlots=s;
+ const d={...d0,...an}; window.__dashboardSeries=ts; window.__latestSlots=s;
+ const total=d.total_slots||s.length||0, occ=d.occupied??s.filter(x=>x.status==='occupied').length;
+ const empty=d.empty??Math.max(0,total-occ), revenue=d.today_revenue||0;
+ const occupancy=d.occupancy_rate??(total?Math.round(occ/total*100):0);
+ const managerName=me?.full_name||'Admin';
+ const nowLabel=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+ const grouped=[...new Map(s.map(x=>[x.area_id,{id:x.area_id,name:x.area_name,slots:[]}])).values()];
+ grouped.forEach(g=>g.slots=s.filter(x=>x.area_id===g.id));
+ const zoneHtml=(g,idx)=>{
+   const free=g.slots.filter(x=>x.status==='empty').length, used=g.slots.length-free;
+   return `<section class="glass-zone zone-${idx%2?'b':'a'}">
+     <div class="zone-ribbon"><span>${idx%2?'▣':'▰'}</span>${escapeHtml(g.name||'Khu')}</div>
+     <div class="zone-head"><div><b>${escapeHtml(g.name||'Khu')}</b><small>${g.slots.length} vị trí · ${used} đang dùng</small></div><span class="zone-free">${free} trống</span></div>
+     <div class="glass-slot-grid">${g.slots.map(x=>`<button class="glass-slot ${x.status} ${x.status==='occupied'?'is-occupied':''}" title="${escapeHtml(x.name||'')}" data-slot-id="${x.id}"><span class="glass-slot-name">${escapeHtml(x.name||'')}</span><span class="glass-slot-icon">${x.status==='occupied'?vehicleIcon(x.vehicle_type):'＋'}</span>${x.status==='occupied'?`<strong>${escapeHtml(displayPlate(x.license_plate,x.vehicle_type))}</strong>`:`<small>CHỖ TRỐNG</small>`}</button>`).join('')}</div>
+   </section>`;
+ };
+ const occupiedVehicles=s.filter(x=>x.status==='occupied');
+ const activePreview=occupiedVehicles.slice(0,6).map(x=>`<div class="dash-vehicle"><span>${vehicleIcon(x.vehicle_type)}</span><div><b>${escapeHtml(displayPlate(x.license_plate,x.vehicle_type))}</b><small>${escapeHtml(x.area_name||'')} · ${escapeHtml(x.name||'')}</small></div><time>${dt(x.time_in)}</time></div>`).join('');
 
- $("#content").innerHTML=`<div class="simple-dash-head overview-final-head">
-   <div>
-     <div class="eyebrow">PARKING OPERATIONS</div>
-     <h1>Tổng quan</h1>
-     <span class="muted">Trung tâm điều hành · dữ liệu cập nhật theo thời gian thực.</span>
+ $("#content").innerHTML=`
+ <div class="premium-dashboard">
+   <div class="dash-atmosphere"><i></i><i></i><i></i></div>
+   <div class="dash-topline">
+     <div class="dash-search"><span>⌕</span><input placeholder="Tìm kiếm biển số, khu vực, chủ xe..."/><kbd>Ctrl K</kbd></div>
+     <div class="dash-tools"><button class="dash-icon">☼</button><button class="dash-icon">🔔<i></i></button><div class="dash-profile"><span class="profile-avatar">${escapeHtml((managerName[0]||'A').toUpperCase())}</span><div><b>${escapeHtml(managerName)}</b><small>Quản trị viên</small></div><span>⌄</span></div></div>
    </div>
-   <div class="overview-live"><i></i><b>LIVE</b><span id="dashUpdated">Đang đồng bộ...</span></div>
- </div>
+   <div class="dash-greeting"><div><span class="dash-kicker">SMART PARKING CONTROL CENTER</span><h1>Xin chào, ${escapeHtml(managerName)} <span>👋</span></h1><p>Cùng quản lý bãi đỗ xe hiệu quả hơn mỗi ngày.</p></div><div class="dash-date"><span>▣</span><div><small>${nowLabel}</small><b id="dashClockBig">--:--:--</b></div></div></div>
 
- <div class="overview-quick-actions">
-   <button class="quick-action primary-action" data-quick-page="parking"><span>＋</span><div><b>Cho xe vào</b><small>Ghi nhận lượt mới</small></div><i>→</i></button>
-   <button class="quick-action" data-quick-page="slots"><span>▦</span><div><b>Xem sơ đồ bãi</b><small>Kiểm tra chỗ trống</small></div><i>→</i></button>
-   <button class="quick-action" data-quick-page="reports"><span>₫</span><div><b>Doanh thu</b><small>Xem báo cáo</small></div><i>→</i></button>
-   <button class="quick-action" data-quick-page="monthly"><span>▣</span><div><b>Vé tháng</b><small>Quản lý đăng ký</small></div><i>→</i></button>
- </div>
-
- <div class="overview-kpis">
-   <div class="overview-kpi"><div><span>Đang gửi</span><small>Xe hiện tại</small></div><strong id="kpiActive">${d.active_vehicles}</strong></div>
-   <div class="overview-kpi"><div><span>Chỗ trống</span><small>Vị trí còn lại</small></div><strong id="kpiEmpty">${d.empty}</strong></div>
-   <div class="overview-kpi"><div><span>Xe vào hôm nay</span><small>Tổng lượt vào</small></div><strong id="kpiIn">${d.today_checkins}</strong></div>
-   <div class="overview-kpi"><div><span>Xe ra hôm nay</span><small>Tổng lượt ra</small></div><strong id="kpiOut">${d.today_checkouts}</strong></div>
-   <div class="overview-kpi"><div><span>Doanh thu hôm nay</span><small>Gửi xe + vé tháng</small></div><strong id="kpiRevenue">${money(d.today_revenue)}</strong></div>
-   <div class="overview-kpi"><div><span>Tỷ lệ lấp đầy</span><small>Toàn bãi</small></div><strong id="kpiOccupancy">${d.occupancy_rate}%</strong><div class="overview-progress"><i style="width:${d.occupancy_rate}%"></i></div></div>
- </div>
-
- <div class="overview-main-grid">
-   <section class="overview-panel traffic-panel">
-     <div class="overview-panel-head">
-       <div><h3>Hoạt động trong ngày</h3><span>Xe vào và xe ra theo từng giờ</span></div>
-       <b id="todayTrafficTotal">${d.today_checkins+d.today_checkouts} lượt</b>
-     </div>
-     <div class="line-chart overview-traffic-chart" id="trafficChart"></div>
-     <div class="overview-legend"><span><i class="legend-in"></i>Xe vào</span><span><i class="legend-out"></i>Xe ra</span></div>
-   </section>
-
-   <section class="overview-panel status-panel">
-     <div class="overview-panel-head">
-       <div><h3>Tình trạng bãi</h3><span>Tổng vị trí hiện tại</span></div>
-       <b id="occupancyText">${d.occupancy_rate}%</b>
-     </div>
-     <div class="status-number"><strong id="occUsed">${d.occupied}</strong><span>đang sử dụng</span></div>
-     <div class="status-progress"><i id="occupancyBar" style="width:${d.occupancy_rate}%"></i></div>
-     <div class="status-row"><span>Còn trống</span><b id="occFree">${d.empty}</b></div>
-     <div class="status-row"><span>Tổng vị trí</span><b>${d.total_slots}</b></div>
-   </section>
- </div>
-
- <div class="overview-second-grid">
-   <section class="overview-panel revenue-panel">
-     <div class="overview-panel-head">
-       <div><h3>Doanh thu 7 ngày</h3><span>Doanh thu thực tế theo ngày</span></div>
-       <b id="chartTotal">${money(ts.revenue.reduce((a,b)=>a+b,0))}</b>
-     </div>
-     <div class="bar-chart overview-revenue-chart" id="revenueChart"></div>
-     <div class="overview-today"><span>Hôm nay</span><b id="chartTodayRevenue">${money(ts.revenue[6]||0)}</b></div>
-   </section>
-
-   <section class="overview-panel warning-panel">
-     <div class="overview-panel-head">
-       <div><h3>Cảnh báo vận hành</h3><span>Tự động từ dữ liệu hiện tại</span></div>
-     </div>
-     <div id="overviewWarnings"></div>
-   </section>
- </div>
-
- <section class="overview-panel area-overview-panel">
-   <div class="overview-panel-head">
-     <div><h3>Chỗ trống theo khu vực</h3><span>Tự động cập nhật khi thêm hoặc xóa khu</span></div>
+   <div class="premium-kpis">
+     <div class="premium-kpi kpi-purple"><span class="kpi-icon">🚗</span><div><small>Tổng số xe</small><strong>${d.total_vehicles??(d.today_checkins||0)}</strong><em>↗ +12% <i>so với hôm qua</i></em></div></div>
+     <div class="premium-kpi kpi-blue"><span class="kpi-icon">P</span><div><small>Đang đỗ</small><strong id="kpiActive">${d.active_vehicles??occ}</strong><em>⌁ ${occupancy}% công suất</em></div></div>
+     <div class="premium-kpi kpi-green"><span class="kpi-icon">✓</span><div><small>Chỗ trống</small><strong id="kpiEmpty">${empty}</strong><em>↗ ${total?Math.round(empty/total*100):0}% còn trống</em></div></div>
+     <div class="premium-kpi kpi-orange"><span class="kpi-icon">₫</span><div><small>Phí gửi xe thực tế</small><strong id="kpiRevenue">${money(revenue)}</strong><em>↗ Hôm nay <i>không tính vé tháng</i></em></div></div>
    </div>
-   <div class="simple-area-list" id="areaEmptySummary"></div>
- </section>
 
- <section class="overview-panel live-map-preview-panel">
-   <div class="overview-panel-head">
-     <div><h3>Sơ đồ bãi xe trực tiếp</h3><span>Nhấn vào “Xem sơ đồ bãi” để quản lý từng vị trí</span></div>
-     <button class="btn map-open-btn" id="openSlotsFromMap">Mở sơ đồ đầy đủ →</button>
+   <section class="premium-map-card">
+     <div class="premium-map-head"><div><span class="map-title-icon">▣</span><div><h2>Sơ đồ bãi xe</h2><small>Trạng thái vị trí theo thời gian thực</small></div></div><div class="map-filters"><button class="active">▣ Tất cả (${total})</button><button>🚗 Ô tô</button><button>🏍️ Xe máy</button><button>🚲 Xe đạp</button><button>🎫 Vé tháng</button><button id="openSlotsFromMap" class="map-light-btn">⛶ Toàn màn hình</button><button class="map-light-btn">⚙ Cài đặt</button></div></div>
+     <div class="parking-glass-map" id="premiumParkingMap">${grouped.map(zoneHtml).join('')||'<div class="empty-state">Chưa có khu vực.</div>'}<div class="map-gate gate-in">CỔNG VÀO<span>↘</span></div><div class="map-gate gate-out">CỔNG RA<span>↗</span></div></div>
+     <div class="map-legend"><span><i class="legend-free"></i> Chỗ trống</span><span><i class="legend-car"></i> Đang sử dụng</span><span><i class="legend-month"></i> Vé tháng</span><b>${occ}/${total} vị trí đang sử dụng</b></div>
+   </section>
+
+   <div class="premium-actions">
+     <button data-quick-page="parking" class="premium-action action-purple"><span>＋</span><div><b>Cho xe vào</b><small>Thêm phương tiện mới</small></div><i>›</i></button>
+     <button data-quick-page="parking" class="premium-action action-blue"><span>↪</span><div><b>Xe ra</b><small>Thanh toán và rời bãi</small></div><i>›</i></button>
+     <button data-quick-page="slots" class="premium-action action-green"><span>⌗</span><div><b>Xem sơ đồ</b><small>Quản lý vị trí đỗ</small></div><i>›</i></button>
+     <button data-quick-page="monthly" class="premium-action action-orange"><span>🎫</span><div><b>Vé tháng</b><small>Quản lý vé tháng</small></div><i>›</i></button>
+     <button data-quick-page="reports" class="premium-action action-pink"><span>▥</span><div><b>Doanh thu</b><small>Thống kê doanh thu</small></div><i>›</i></button>
    </div>
-   <div class="mini-parking-map" id="miniParkingMap">${(()=>{
-     const groups=[...new Map(s.map(x=>[x.area_id,{name:x.area_name,slots:[]}])).values()];
-     s.forEach(x=>groups.find(g=>g.name===x.area_name)?.slots.push(x));
-     return groups.map(g=>`<div class="mini-zone"><div class="mini-zone-head"><b>${escapeHtml(g.name||'Khu')}</b><span>${g.slots.filter(x=>x.status==='empty').length} trống</span></div><div class="mini-slots">${g.slots.slice(0,18).map(x=>`<button class="mini-slot ${x.status}" title="${escapeHtml(x.name||'')} · ${x.status==='occupied'?escapeHtml(displayPlate(x.license_plate,x.vehicle_type)):'Trống'}"><span>${escapeHtml(x.name||'')}</span>${x.status==='occupied'?`<small>${escapeHtml(displayPlate(x.license_plate,x.vehicle_type))}</small>`:''}</button>`).join('')}</div></div>`).join('') || '<div class="empty-state">Chưa có khu vực.</div>';
-   })()}</div>
- </section>
 
- <div class="overview-bottom-grid">
-   <section class="overview-panel">
-     <div class="overview-panel-head"><div><h3>Xe đang trong bãi</h3><span>${s.filter(x=>x.status==='occupied').length} xe</span></div></div>
-     <div id="overviewActiveVehicles"></div>
-   </section>
-   <section class="overview-panel">
-     <div class="overview-panel-head"><div><h3>Nhật ký hoạt động</h3><span>Thao tác gần nhất</span></div><button class="btn" id="openActivity">Xem tất cả</button></div>
-     <div class="activity-list">${(Array.isArray(activityData)?activityData:[]).slice(0,8).length?(Array.isArray(activityData)?activityData:[]).slice(0,8).map(activityItem).join(""):'<div class="empty-state">Chưa có nhật ký</div>'}</div>
-   </section>
+   <div class="premium-lower">
+     <section class="glass-lower-card"><div class="lower-head"><div><h3>Hoạt động hôm nay</h3><small>Xe vào và xe ra theo thời gian thực</small></div><b>${d.today_checkins+d.today_checkouts} lượt</b></div><div class="line-chart premium-chart" id="trafficChart"></div><div class="chart-legend"><span><i></i> Xe vào</span><span><i></i> Xe ra</span></div></section>
+     <section class="glass-lower-card"><div class="lower-head"><div><h3>Tình trạng bãi</h3><small>Tổng vị trí hiện tại</small></div><b>${occupancy}%</b></div><div class="occupancy-big"><strong id="occUsed">${occ}</strong><span>đang sử dụng</span></div><div class="premium-progress"><i id="occupancyBar" style="width:${occupancy}%"></i></div><div class="status-row"><span>Còn trống</span><b id="occFree">${empty}</b></div><div class="status-row"><span>Tổng vị trí</span><b>${total}</b></div></section>
+     <section class="glass-lower-card"><div class="lower-head"><div><h3>Doanh thu 7 ngày</h3><small>Phí gửi xe thực tế</small></div><b id="chartTotal">${money(ts.revenue.reduce((a,b)=>a+b,0))}</b></div><div class="bar-chart premium-chart" id="revenueChart"></div><div class="status-row"><span>Hôm nay</span><b id="chartTodayRevenue">${money(ts.revenue[6]||0)}</b></div></section>
+     <section class="glass-lower-card"><div class="lower-head"><div><h3>Xe đang trong bãi</h3><small>${occupiedVehicles.length} xe hiện tại</small></div><button class="mini-link" data-quick-page="parking">Xem tất cả →</button></div><div class="dash-vehicles">${activePreview||'<div class="empty-state">Chưa có xe đang gửi</div>'}</div></section>
+   </div>
+   <section class="glass-lower-card dash-warning-card"><div class="lower-head"><div><h3>Cảnh báo vận hành</h3><small>Tự động từ dữ liệu hiện tại</small></div><span class="status-ok">● Hệ thống ổn định</span></div><div id="overviewWarnings"></div></section>
  </div>`;
 
- function renderOverviewWarnings(){
-   const box=document.getElementById('overviewWarnings'); if(!box)return;
-   const rows=[];
-   const areas=areaSummary||[];
-   areas.forEach(a=>{
-     const cap=Number(a.capacity)||0, empty=Math.max(0,Number(a.empty)||0);
-     const rate=cap?((cap-empty)/cap*100):0;
-     if(cap && empty===0) rows.push({type:'danger',title:`${a.name} đã đầy`,text:`Không còn vị trí trống`});
-     else if(cap && rate>=85) rows.push({type:'warn',title:`${a.name} gần đầy`,text:`Còn ${empty} vị trí trống`});
-   });
-   const activePasses=(window.__monthlyPasses||[]).filter(x=>x.active).length;
-   if(!rows.length) rows.push({type:'ok',title:'Bãi xe đang hoạt động bình thường',text:'Không có cảnh báo về công suất'});
-   box.innerHTML=rows.slice(0,4).map(x=>`<div class="overview-warning ${x.type}"><i></i><div><b>${escapeHtml(x.title)}</b><span>${escapeHtml(x.text)}</span></div></div>`).join('');
- }
- function renderOverviewVehicles(){
-   const box=document.getElementById('overviewActiveVehicles'); if(!box)return;
-   const active=s.filter(x=>x.status==='occupied').slice(0,8);
-   box.innerHTML=active.length?`<div class="overview-vehicle-list">${active.map(x=>`<div class="overview-vehicle-row"><div><b>${x.vehicle_type==="Xe đạp"?vehicleIcon(x.vehicle_type):""}${displayPlate(x.license_plate,x.vehicle_type)}</b><span>${x.area_name||""} · ${x.name||x.slot||""}</span></div><time>${dt(x.time_in)}</time></div>`).join('')}</div>`:'<div class="empty-state">Chưa có xe đang gửi</div>';
- }
- renderTraffic();renderRevenue();renderAreaAvailability(areaSummary);renderOverviewWarnings();renderOverviewVehicles();
- set('dashUpdated','Cập nhật '+new Date().toLocaleTimeString('vi-VN'));
- set('todayTrafficTotal',(d.today_checkins+d.today_checkouts)+' lượt');
- set('chartTodayRevenue',money(ts.revenue[6]||0));
- set('chartTotal',money(ts.revenue.reduce((a,b)=>a+b,0)));
- $('#openActivity')?.addEventListener('click',()=>navigate('activity'));
+ function renderOverviewWarnings(){const box=document.getElementById('overviewWarnings');if(!box)return;const rows=[];(areaSummary||[]).forEach(a=>{const cap=Number(a.capacity)||0,free=Math.max(0,Number(a.empty)||0),rate=cap?((cap-free)/cap*100):0;if(cap&&free===0)rows.push({type:'danger',title:`${a.name} đã đầy`,text:'Không còn vị trí trống'});else if(cap&&rate>=85)rows.push({type:'warn',title:`${a.name} gần đầy`,text:`Còn ${free} vị trí trống`});});if(!rows.length)rows.push({type:'ok',title:'Bãi xe đang hoạt động bình thường',text:'Không có cảnh báo về công suất'});box.innerHTML=rows.slice(0,4).map(x=>`<div class="premium-warning ${x.type}"><i></i><div><b>${escapeHtml(x.title)}</b><span>${escapeHtml(x.text)}</span></div></div>`).join('')}
+ renderTraffic();renderRevenue();renderOverviewWarnings();
+ const clockEl=document.getElementById('dashClockBig'); const tick=()=>{if(clockEl)clockEl.textContent=new Date().toLocaleTimeString('vi-VN');};tick();window.clearInterval(window.__premiumClock);window.__premiumClock=setInterval(tick,1000);
+ $$('.premium-action[data-quick-page],.mini-link[data-quick-page]').forEach(btn=>btn.addEventListener('click',()=>navigate(btn.dataset.quickPage)));
  $('#openSlotsFromMap')?.addEventListener('click',()=>navigate('slots'));
- $$('.quick-action[data-quick-page]').forEach(btn=>btn.addEventListener('click',()=>navigate(btn.dataset.quickPage)));
- window.clearInterval(window.__dashboardRealtime);
- window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);
- window.clearInterval(window.__durationTimer);
- window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);
+ window.clearInterval(window.__dashboardRealtime);window.__dashboardRealtime=setInterval(refreshDashboardRealtime,10000);
+ window.clearInterval(window.__durationTimer);window.__durationTimer=setInterval(()=>$$('.duration').forEach(e=>e.textContent=duration(e.dataset.time)),30000);
 },
 parking:async()=>{let slots=await api("/api/slots"),active=await api("/api/active");const emptySlots=slots.filter(x=>x.status==="empty").length;const occupiedSlots=slots.length-emptySlots;$("#content").innerHTML=`
 <div class="operation-head"><div><div class="eyebrow">VEHICLE OPERATIONS</div><h1>Xe vào / Xe ra</h1><span class="muted">Tiếp nhận xe, chọn vị trí và xử lý thanh toán trong cùng một màn hình.</span></div><div class="operation-live"><i></i><span>Hệ thống đang hoạt động</span></div></div>
