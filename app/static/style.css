@@ -4983,3 +4983,6 @@ body.dark-mode .premium-dashboard:before{background:radial-gradient(500px 330px 
 
 .topbar-page-title-spacer{width:1px;height:1px;overflow:hidden;position:absolute;opacity:0;pointer-events:none}
 
+
+/* V14: remove duplicate dashboard toolbar; global topbar is the only header */
+.dash-topline{display:none!important}

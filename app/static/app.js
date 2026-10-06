@@ -766,10 +766,6 @@ dashboard:async()=>{
  $("#content").innerHTML=`
  <div class="premium-dashboard">
    <div class="dash-atmosphere"><i></i><i></i><i></i></div>
-   <div class="dash-topline">
-     <div class="dash-search"><span>⌕</span><input placeholder="Tìm kiếm biển số, khu vực, chủ xe..."/><kbd>Ctrl K</kbd></div>
-     <div class="dash-tools"><button class="dash-icon">☼</button><button class="dash-icon">🔔<i></i></button><div class="dash-profile"><span class="profile-avatar">${escapeHtml((managerName[0]||'A').toUpperCase())}</span><div><b>${escapeHtml(managerName)}</b><small>Quản trị viên</small></div><span>⌄</span></div></div>
-   </div>
    <div class="dash-greeting"><div><span class="dash-kicker">SMART PARKING CONTROL CENTER</span><h1>Xin chào, ${escapeHtml(managerName)} <span>👋</span></h1><p>Cùng quản lý bãi đỗ xe hiệu quả hơn mỗi ngày.</p></div><div class="dash-date"><span>▣</span><div><small>${nowLabel}</small><b id="dashClockBig">--:--:--</b></div></div></div>
 
    <div class="premium-kpis">
