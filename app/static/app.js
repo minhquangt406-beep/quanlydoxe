@@ -703,31 +703,29 @@ function initSidebarToggle(){
   btn.dataset.bound='1';
   const isMobile=()=>window.innerWidth<=760;
   const sync=()=>{
-    const collapsed=sidebar.classList.contains('sidebar-collapsed');
     const open=sidebar.classList.contains('mobile-open');
-    document.body.classList.toggle('sidebar-collapsed', collapsed && !isMobile());
-    btn.setAttribute('aria-expanded', String(isMobile()?open:!collapsed));
-    btn.setAttribute('aria-label', isMobile() ? (open?'Đóng thanh bên':'Mở thanh bên') : (collapsed?'Mở rộng thanh bên':'Thu gọn thanh bên'));
-    btn.title=isMobile() ? (open?'Đóng thanh bên':'Mở thanh bên') : (collapsed?'Mở rộng thanh bên':'Thu gọn thanh bên');
-    btn.textContent=isMobile() ? (open?'×':'☰') : (collapsed?'☰':'‹');
+    sidebar.classList.remove('sidebar-collapsed');
+    document.body.classList.remove('sidebar-collapsed');
+    btn.setAttribute('aria-expanded',String(isMobile()?open:true));
+    btn.setAttribute('aria-label',isMobile()?(open?'Đóng menu':'Mở menu'):'Menu điều hướng');
+    btn.title=isMobile()?(open?'Đóng menu':'Mở menu'):'Menu điều hướng';
+    btn.textContent=isMobile()?(open?'×':'☰'):'☰';
   };
-  try{ if(localStorage.getItem('parking_sidebar_collapsed')==='1' && !isMobile()) sidebar.classList.add('sidebar-collapsed'); }catch(_){ }
+  try{localStorage.removeItem('parking_sidebar_collapsed')}catch(_){}
+  sidebar.classList.remove('sidebar-collapsed');
   btn.addEventListener('click',(e)=>{
     e.preventDefault(); e.stopPropagation();
     if(isMobile()){
       const open=sidebar.classList.toggle('mobile-open');
       document.body.classList.toggle('sidebar-open',open);
       document.body.classList.toggle('mobile-nav-open',open);
-    }else{
-      const collapsed=sidebar.classList.toggle('sidebar-collapsed');
-      try{localStorage.setItem('parking_sidebar_collapsed',collapsed?'1':'0')}catch(_){ }
     }
     sync();
   });
   window.addEventListener('resize',()=>{
     if(!isMobile()){
-      sidebar.classList.remove('mobile-open');
-      document.body.classList.remove('sidebar-open','mobile-nav-open');
+      sidebar.classList.remove('mobile-open','sidebar-collapsed');
+      document.body.classList.remove('sidebar-open','mobile-nav-open','sidebar-collapsed');
     }
     sync();
   });

@@ -70,18 +70,28 @@
   <aside class="sidebar">
     <div class="logo"><span>P</span><div><b>Quản lý bãi đỗ xe</b><small>PRO CONTROL</small></div></div>
     <nav id="nav">
-      <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
-      <button data-page="parking">▣ <span>Xe vào / Xe ra</span></button>
-      <button data-page="slots">◈ <span>Vị trí đỗ</span></button>
-      <button data-page="history">◷ <span>Lịch sử</span></button>
-      <button data-page="vehicles">🚗 <span>Phương tiện</span></button>
-      <button data-page="pricing" class="manager-only">₫ <span>Bảng giá</span></button>
-      <button data-page="areas" class="manager-only">▦ <span>Khu vực</span></button>
-      <button data-page="ai" class="manager-only">✦ <span>AI phân tích</span></button><button data-page="monthly" class="manager-only">▣ <span>Vé tháng</span></button><button data-page="ai-center" class="manager-only">◉ <span>AI Center</span></button>
-      <button data-page="reports" class="manager-only">▥ <span>Báo cáo doanh thu</span></button>
-      <button data-page="users" class="manager-only">♙ <span>Tài khoản</span></button>
-      <button data-page="activity" class="manager-only">⌁ <span>Nhật ký hoạt động</span></button>
-      <button data-page="settings" class="manager-only">⚙ <span>Cài đặt doanh nghiệp</span></button>
+      <div class="nav-section"><div class="nav-section-title">VẬN HÀNH</div>
+        <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
+        <button data-page="parking">▣ <span>Xe vào / Xe ra</span></button>
+        <button data-page="slots">◈ <span>Vị trí đỗ</span></button>
+        <button data-page="history">◷ <span>Lịch sử</span></button>
+        <button data-page="vehicles">🚗 <span>Phương tiện</span></button>
+      </div>
+      <div class="nav-section manager-only"><div class="nav-section-title">QUẢN LÝ</div>
+        <button data-page="pricing">₫ <span>Bảng giá</span></button>
+        <button data-page="areas">▦ <span>Khu vực</span></button>
+        <button data-page="monthly">▣ <span>Vé tháng</span></button>
+        <button data-page="reports">▥ <span>Báo cáo doanh thu</span></button>
+      </div>
+      <div class="nav-section manager-only"><div class="nav-section-title">THÔNG MINH</div>
+        <button data-page="ai">✦ <span>AI phân tích</span></button>
+        <button data-page="ai-center">◉ <span>AI Center</span></button>
+      </div>
+      <div class="nav-section manager-only"><div class="nav-section-title">HỆ THỐNG</div>
+        <button data-page="users">♙ <span>Tài khoản</span></button>
+        <button data-page="activity">⌁ <span>Nhật ký hoạt động</span></button>
+        <button data-page="settings">⚙ <span>Cài đặt doanh nghiệp</span></button>
+      </div>
     </nav>
     <div class="sidebar-bottom">
       <div class="storage" id="sidebarUser"><i></i><span><b id="sidebarUserName">Quản lý hệ thống</b><br><small id="sidebarUserRole">Quản trị viên</small></span></div>
