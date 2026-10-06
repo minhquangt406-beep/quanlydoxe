@@ -4850,3 +4850,117 @@ html,body{overflow-x:hidden}
   .area-list{grid-template-columns:1fr!important}
 }
 .dark-mode .sidebar{background:linear-gradient(180deg,#070d1c,#0d172c 60%,#080e1d)!important}
+
+
+/* ================= TASKBAR V7 — COLORFUL MODERN CONTROL NAV ================= */
+:root{
+  --nav-width:258px;
+  --nav-bg:#ffffff;
+  --nav-text:#344054;
+  --nav-muted:#8290a8;
+  --nav-purple:#635bff;
+  --nav-purple2:#8b5cf6;
+  --nav-blue:#3b82f6;
+  --nav-cyan:#06b6d4;
+  --nav-pink:#ec4899;
+  --nav-orange:#f97316;
+  --nav-green:#10b981;
+}
+.sidebar{
+  width:var(--nav-width)!important;
+  color:var(--nav-text)!important;
+  background:
+    radial-gradient(circle at 15% 8%,rgba(99,91,255,.18),transparent 23%),
+    radial-gradient(circle at 95% 42%,rgba(236,72,153,.11),transparent 25%),
+    linear-gradient(180deg,#ffffff 0%,#f8f9ff 55%,#f4f7ff 100%)!important;
+  border-right:1px solid #e6e9f5!important;
+  box-shadow:14px 0 38px rgba(69,56,160,.10)!important;
+  padding:17px 12px 14px!important;
+}
+.sidebar:after{background:linear-gradient(135deg,#7c3aed,#ec4899)!important;opacity:.08!important;filter:blur(80px)!important}
+.logo{padding:4px 8px 20px!important;border-bottom:1px solid #eceffd;margin-bottom:8px}
+.logo>span{background:linear-gradient(135deg,#5b55ef 0%,#7c4dff 52%,#ec4899 100%)!important;box-shadow:0 12px 28px rgba(99,91,255,.26)!important}
+.logo b{color:#1f2740!important;font-size:14px!important}
+.logo small{color:#7c88a3!important}
+.nav-section{margin-bottom:8px!important}
+.nav-section-title{color:#98a2b3!important;font-size:8px!important;padding:9px 11px 5px!important}
+.nav-section:nth-child(1) .nav-section-title{color:#635bff!important}
+.nav-section:nth-child(2) .nav-section-title{color:#0ea5e9!important}
+.nav-section:nth-child(3) .nav-section-title{color:#d946ef!important}
+.nav-section:nth-child(4) .nav-section-title{color:#f97316!important}
+.sidebar nav button{
+  color:#596780!important;
+  background:transparent!important;
+  border:1px solid transparent!important;
+  font-weight:760!important;
+  position:relative!important;
+  overflow:hidden!important;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease,color .18s ease!important;
+}
+.sidebar nav button:hover{
+  color:#28324a!important;
+  background:linear-gradient(90deg,#f1f2ff,#faf8ff)!important;
+  border-color:#e6e4ff!important;
+  transform:translateX(2px)!important;
+}
+.sidebar nav button.active{
+  color:#fff!important;
+  background:linear-gradient(135deg,#5b55ef 0%,#704eea 55%,#9b5de5 100%)!important;
+  border-color:transparent!important;
+  box-shadow:0 10px 24px rgba(99,91,255,.25),inset 0 1px 0 rgba(255,255,255,.24)!important;
+  transform:translateX(0)!important;
+}
+.sidebar nav button.active:before{left:-12px!important;width:4px!important;height:24px!important;background:#a78bfa!important;box-shadow:0 0 14px rgba(139,92,246,.65)!important}
+.sidebar nav button.active:after{right:11px!important;background:#fff!important;box-shadow:0 0 10px rgba(255,255,255,.85)!important}
+.sidebar nav button:nth-child(2) .dummy{}
+.sidebar nav button::first-letter{font-weight:900!important}
+/* colored icon/text accents for inactive navigation */
+.nav-section:nth-child(1) button:not(.active)::first-letter{color:#6366f1!important}
+.nav-section:nth-child(2) button:not(.active)::first-letter{color:#0891b2!important}
+.nav-section:nth-child(3) button:not(.active)::first-letter{color:#c026d3!important}
+.nav-section:nth-child(4) button:not(.active)::first-letter{color:#ea580c!important}
+.storage{
+  background:linear-gradient(135deg,#ffffff,#f1f4ff)!important;
+  border:1px solid #e2e7f5!important;
+  box-shadow:0 8px 20px rgba(61,72,130,.08)!important;
+  color:#344054!important;
+}
+.storage i{box-shadow:0 0 0 5px rgba(16,185,129,.10)!important}
+.storage b{color:#27324b!important}
+.storage small{color:#8a96aa!important}
+.logout{
+  border:1px solid #dfe4f1!important;
+  background:#fff!important;
+  color:#64748b!important;
+  box-shadow:0 5px 14px rgba(61,72,130,.05)!important;
+}
+.logout:hover{background:#fff1f2!important;border-color:#fecdd3!important;color:#e11d48!important}
+.main{background:transparent!important}
+.topbar{background:rgba(246,248,255,.86)!important}
+.topbar h2{color:#202942!important}
+/* add a little more visual color to the workspace without making it noisy */
+.card:nth-child(1){border-top:3px solid #6366f1}
+.card:nth-child(2){border-top:3px solid #06b6d4}
+.card:nth-child(3){border-top:3px solid #10b981}
+.card:nth-child(4){border-top:3px solid #f59e0b}
+.card:nth-child(5){border-top:3px solid #ec4899}
+.area-panel-large:nth-child(1){box-shadow:0 16px 42px rgba(99,91,255,.08)!important}
+.area-panel-large:nth-child(2){box-shadow:0 16px 42px rgba(16,185,129,.08)!important}
+@media(max-width:1100px) and (min-width:761px){:root{--nav-width:232px}}
+@media(max-width:760px){
+  .sidebar{background:linear-gradient(180deg,#ffffff,#f7f8ff 60%,#f4f7ff)!important}
+  .sidebar nav button.active{box-shadow:0 9px 22px rgba(99,91,255,.22)!important}
+}
+.dark-mode .sidebar{
+  background:radial-gradient(circle at 15% 8%,rgba(99,91,255,.18),transparent 23%),linear-gradient(180deg,#111936,#0d152b 60%,#0b1224)!important;
+  border-right-color:#202c4a!important;
+}
+.dark-mode .logo{border-bottom-color:#263354!important}
+.dark-mode .logo b{color:#f5f7ff!important}.dark-mode .logo small{color:#8f9bb8!important}
+.dark-mode .nav-section-title{color:#7f8ba7!important}
+.dark-mode .sidebar nav button{color:#aeb9d3!important}
+.dark-mode .sidebar nav button:hover{color:#fff!important;background:rgba(99,91,255,.10)!important;border-color:rgba(129,140,248,.12)!important}
+.dark-mode .storage{background:rgba(255,255,255,.045)!important;border-color:rgba(255,255,255,.07)!important;color:#dbe3f5!important}
+.dark-mode .storage b{color:#dbe3f5!important}.dark-mode .storage small{color:#7f8ba7!important}
+.dark-mode .logout{background:transparent!important;border-color:#263454!important;color:#b9c2da!important;box-shadow:none!important}
+
