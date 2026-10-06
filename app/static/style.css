@@ -4799,3 +4799,62 @@ body.dark-mode .quick-action,body.dark-mode .overview-kpi,body.dark-mode .operat
   .mobile-bottom-nav button small{font-size:7.5px!important}
   .main{padding-bottom:94px!important}
 }
+
+/* ================= TASKBAR V4 =================
+   Compact command-rail on desktop + modern drawer on mobile.
+   Keeps existing navigation hooks and page behaviour intact. */
+:root{--rail:78px;--taskbar-bg:#0a1022;--taskbar-accent:#6d5dfc}
+@media(min-width:761px){
+  .app{display:flex;min-height:100vh}
+  .sidebar{
+    width:var(--rail)!important;left:0;right:auto;top:0;bottom:0;
+    padding:18px 10px!important;border-right:1px solid rgba(255,255,255,.07);
+    border-radius:0 24px 24px 0;overflow:visible!important;
+    transition:width .24s ease,box-shadow .24s ease;
+  }
+  .sidebar:hover,.sidebar.sidebar-expanded{width:252px!important;box-shadow:24px 0 55px rgba(2,6,23,.22);overflow:auto!important}
+  .logo{height:54px;padding:0 10px 22px!important;gap:11px;white-space:nowrap;overflow:hidden}
+  .logo>span{flex:0 0 44px;width:44px;height:44px;border-radius:14px;font-size:18px}
+  .logo>div{opacity:0;transform:translateX(-8px);transition:.2s}
+  .sidebar:hover .logo>div,.sidebar.sidebar-expanded .logo>div{opacity:1;transform:none}
+  .sidebar nav{gap:7px!important}
+  .sidebar nav:before{content:'ĐIỀU HƯỚNG';display:block;color:#566483;font-size:8px;font-weight:900;letter-spacing:.16em;padding:4px 11px 7px;white-space:nowrap;opacity:0;transition:.2s}
+  .sidebar:hover nav:before,.sidebar.sidebar-expanded nav:before{opacity:1}
+  .sidebar nav button{width:100%;height:46px;padding:0 12px!important;gap:12px;border-radius:14px!important;white-space:nowrap;overflow:hidden}
+  .sidebar nav button:first-letter{font-size:18px}
+  .sidebar nav button span{opacity:0;transform:translateX(-7px);transition:.18s;overflow:hidden;text-overflow:ellipsis}
+  .sidebar:hover nav button span,.sidebar.sidebar-expanded nav button span{opacity:1;transform:none}
+  .sidebar nav button.active{background:linear-gradient(135deg,#5b55ed,#764fe8)!important;box-shadow:0 10px 25px rgba(99,91,236,.25),inset 0 1px rgba(255,255,255,.12)!important}
+  .sidebar nav button.active:before{left:-10px!important;width:3px!important;background:#a78bfa!important}
+  .sidebar-bottom{padding-top:14px}
+  .storage{height:52px;padding:8px 10px!important;white-space:nowrap;overflow:hidden}
+  .storage span,.logout{opacity:0;transition:.18s}
+  .sidebar:hover .storage span,.sidebar.sidebar-expanded .storage span,.sidebar:hover .logout,.sidebar.sidebar-expanded .logout{opacity:1}
+  .logout{height:42px;white-space:nowrap;overflow:hidden}
+  .main{margin-left:var(--rail)!important;width:calc(100% - var(--rail))!important;transition:margin-left .24s ease}
+  .sidebar:hover~.main,.sidebar.sidebar-expanded~.main{margin-left:var(--rail)!important}
+  .sidebar-toggle{display:none!important}
+}
+
+@media(max-width:760px){
+  .sidebar{
+    width:min(88vw,340px)!important;
+    border-radius:0 26px 26px 0!important;
+    padding:18px 14px calc(18px + env(safe-area-inset-bottom))!important;
+    box-shadow:24px 0 70px rgba(2,6,23,.32)!important;
+    background:linear-gradient(180deg,#090f20 0%,#0f1931 58%,#0a1124 100%)!important;
+  }
+  .sidebar:before{content:'';position:absolute;left:16px;right:16px;top:72px;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.14),transparent);pointer-events:none}
+  .logo{padding:0 7px 24px!important}
+  .logo>span{width:46px;height:46px;border-radius:15px}
+  .sidebar nav{gap:5px!important;padding-top:7px}
+  .sidebar nav:before{content:'MENU HỆ THỐNG';display:block;padding:3px 10px 8px;color:#617091;font-size:8px;font-weight:900;letter-spacing:.16em}
+  .sidebar nav button{min-height:45px!important;padding:9px 12px!important;border-radius:13px!important}
+  .sidebar nav button.active{background:linear-gradient(135deg,#5953ed,#754ce7)!important;box-shadow:0 9px 24px rgba(99,91,236,.22)!important}
+  .sidebar-bottom{padding-top:10px}
+  .storage{border-radius:15px!important;background:rgba(255,255,255,.055)!important}
+  .logout{border-radius:13px!important}
+  body.sidebar-open:after{content:'';position:fixed;inset:0;background:rgba(3,7,18,.52);backdrop-filter:blur(2px);z-index:9}
+  .sidebar{z-index:20!important}
+  .mobile-bottom-nav{z-index:90!important}
+}
