@@ -4737,3 +4737,65 @@ body{background:radial-gradient(circle at 85% -10%,rgba(79,70,229,.10),transpare
 /* dark mode V2 */
 body.dark-mode{--q-bg:#08111f;--q-surface:#101b2c;--q-ink:#edf3ff;--q-muted:#91a0b7;--q-line:#263750}
 body.dark-mode .quick-action,body.dark-mode .overview-kpi,body.dark-mode .operation-kpis>div{background:#101b2c;border-color:#263750;color:#edf3ff}.dark-mode .quick-action>span{background:#18263b;color:#aebbd0}.dark-mode .quick-action.primary-action{background:linear-gradient(135deg,#5146e5,#6d5dfc);border-color:#5146e5}.dark-mode .quick-action.primary-action>span{background:rgba(255,255,255,.13);color:#fff}.dark-mode .mini-zone{background:#0e1a2b;border-color:#293c57}.dark-mode .mini-slot{background:#0d2a21;border-color:#285d4d;color:#72e0b5}.dark-mode .mini-slot.occupied{background:#2a171c;border-color:#713f47;color:#ff9da8}.dark-mode .operation-live{background:#0d2a21;border-color:#285d4d;color:#72e0b5}
+
+/* ===== NAVIGATION / TASKBAR REDESIGN V2 ===== */
+:root{--nav-width:248px;--nav-bg:#0a1020;--nav-border:rgba(255,255,255,.08);--nav-muted:#8f9bb5;--nav-active:#ffffff;--nav-accent:#6366f1}
+.sidebar{width:var(--nav-width);padding:18px 12px 14px;background:linear-gradient(180deg,#0a1020 0%,#0d1529 55%,#0a1020 100%);border-right:1px solid var(--nav-border);box-shadow:18px 0 45px rgba(2,6,23,.10)}
+.logo{padding:4px 8px 22px;margin-bottom:5px;gap:10px}
+.logo>span{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 8px 22px rgba(99,102,241,.25)}
+.logo b{font-size:13px}.logo small{font-size:7px;color:#73809b}
+.sidebar nav{gap:3px}
+.sidebar nav button{min-height:44px;padding:9px 11px;border-radius:12px;color:#93a0ba;font-size:12px;gap:11px;overflow:hidden}
+.sidebar nav button span{position:relative;z-index:2}
+.sidebar nav button::first-letter{font-size:15px}
+.sidebar nav button:hover{color:#fff;background:rgba(255,255,255,.055)}
+.sidebar nav button.active{color:#fff;background:linear-gradient(90deg,rgba(99,102,241,.22),rgba(139,92,246,.10));box-shadow:inset 0 0 0 1px rgba(129,140,248,.10)}
+.sidebar nav button.active:before{left:-12px;width:3px;height:22px;background:#818cf8}
+.sidebar nav button.active:after{content:"";position:absolute;right:9px;top:50%;width:5px;height:5px;border-radius:50%;background:#a5b4fc;transform:translateY(-50%);box-shadow:0 0 12px rgba(165,180,252,.75)}
+.sidebar-bottom{padding-top:12px;border-top:1px solid rgba(255,255,255,.06);margin-top:12px}
+.storage{padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.055)}
+.storage b{font-size:10px;color:#dbe3f5}.storage small{font-size:8px}
+.logout{height:38px;margin-top:8px;padding:8px;border-radius:10px;font-size:11px}
+.main{margin-left:var(--nav-width);width:calc(100% - var(--nav-width))}
+
+/* collapsed desktop taskbar = compact icon rail */
+@media(min-width:761px){
+  .sidebar.sidebar-collapsed{width:76px;padding-left:10px;padding-right:10px}
+  body.sidebar-collapsed .main{margin-left:76px;width:calc(100% - 76px)}
+  .sidebar.sidebar-collapsed .logo{justify-content:center;padding-left:0;padding-right:0}
+  .sidebar.sidebar-collapsed .logo>div,.sidebar.sidebar-collapsed nav span,.sidebar.sidebar-collapsed .sidebar-bottom span{display:none}
+  .sidebar.sidebar-collapsed .logo>span{width:42px;height:42px}
+  .sidebar.sidebar-collapsed nav button{justify-content:center;padding:10px 8px;font-size:18px}
+  .sidebar.sidebar-collapsed nav button.active:before{left:-10px}
+  .sidebar.sidebar-collapsed nav button.active:after{display:none}
+  .sidebar.sidebar-collapsed .storage{justify-content:center;padding:10px}
+  .sidebar.sidebar-collapsed .logout{font-size:0}
+  .sidebar.sidebar-collapsed .logout::before{content:'↪';font-size:18px}
+}
+
+/* mobile: floating glass taskbar, with primary action in the middle */
+@media(max-width:760px){
+  .mobile-bottom-nav{left:10px!important;right:10px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;min-height:70px!important;padding:6px!important;gap:3px!important;border-radius:22px!important;background:rgba(255,255,255,.90)!important;border:1px solid rgba(148,163,184,.24)!important;box-shadow:0 18px 45px rgba(15,23,42,.20),0 4px 12px rgba(15,23,42,.07)!important;backdrop-filter:blur(22px) saturate(170%)!important;-webkit-backdrop-filter:blur(22px) saturate(170%)!important}
+  .mobile-bottom-nav.manager{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  .mobile-bottom-nav button{min-height:56px!important;border-radius:16px!important;color:#64748b!important;font-size:19px!important;gap:3px!important;position:relative}
+  .mobile-bottom-nav button small{font-size:8.5px!important;font-weight:800!important}
+  .mobile-bottom-nav button.active{color:#4f46e5!important;background:linear-gradient(145deg,#eef0ff,#f6f0ff)!important;box-shadow:inset 0 0 0 1px rgba(99,102,241,.10),0 5px 14px rgba(99,102,241,.08)!important}
+  .mobile-bottom-nav button[data-page="parking"]{color:#475569}
+  .mobile-bottom-nav button[data-page="parking"]::before{content:"";position:absolute;top:-12px;width:38px;height:3px;border-radius:99px;background:transparent}
+  .mobile-bottom-nav button[data-page="parking"].active::before{background:#6366f1;box-shadow:0 0 10px rgba(99,102,241,.45)}
+  .mobile-bottom-nav button:active{transform:translateY(1px) scale(.96)!important}
+  .main{padding-bottom:102px!important}
+  .mobile-menu{width:42px!important;height:42px!important;border-radius:13px!important;background:rgba(255,255,255,.92)!important;color:#475569!important;border:1px solid rgba(148,163,184,.20)!important;box-shadow:0 8px 25px rgba(15,23,42,.13)!important;font-size:18px!important}
+  .topbar{padding-left:58px!important}
+}
+.dark-mode .mobile-bottom-nav{background:rgba(10,16,32,.88)!important;border-color:rgba(148,163,184,.16)!important}
+.dark-mode .mobile-bottom-nav button{color:#94a3b8!important}
+.dark-mode .mobile-bottom-nav button.active{color:#a5b4fc!important;background:linear-gradient(145deg,rgba(99,102,241,.22),rgba(139,92,246,.14))!important}
+.dark-mode .mobile-menu{background:rgba(15,23,42,.92)!important;color:#cbd5e1!important}
+
+@media(max-width:380px){
+  .mobile-bottom-nav{left:6px!important;right:6px!important;min-height:66px!important;border-radius:19px!important}
+  .mobile-bottom-nav button{min-height:52px!important;font-size:17px!important}
+  .mobile-bottom-nav button small{font-size:7.5px!important}
+  .main{padding-bottom:94px!important}
+}
