@@ -778,13 +778,6 @@ dashboard:async()=>{
      <div class="premium-kpi kpi-green"><span class="kpi-icon">✓</span><div><small>Chỗ trống</small><strong id="kpiEmpty">${empty}</strong><em>↗ ${total?Math.round(empty/total*100):0}% còn trống</em></div></div>
      <div class="premium-kpi kpi-orange"><span class="kpi-icon">₫</span><div><small>Phí gửi xe thực tế</small><strong id="kpiRevenue">${money(revenue)}</strong><em>↗ Hôm nay <i>không tính vé tháng</i></em></div></div>
    </div>
-
-   <section class="premium-map-card">
-     <div class="premium-map-head"><div><span class="map-title-icon">▣</span><div><h2>Sơ đồ bãi xe</h2><small>Trạng thái vị trí theo thời gian thực</small></div></div><div class="map-filters"><button class="active">▣ Tất cả (${total})</button><button>🚗 Ô tô</button><button>🏍️ Xe máy</button><button>🚲 Xe đạp</button><button>🎫 Vé tháng</button><button id="openSlotsFromMap" class="map-light-btn">⛶ Toàn màn hình</button><button class="map-light-btn">⚙ Cài đặt</button></div></div>
-     <div class="parking-glass-map" id="premiumParkingMap">${grouped.map(zoneHtml).join('')||'<div class="empty-state">Chưa có khu vực.</div>'}<div class="map-gate gate-in">CỔNG VÀO<span>↘</span></div><div class="map-gate gate-out">CỔNG RA<span>↗</span></div></div>
-     <div class="map-legend"><span><i class="legend-free"></i> Chỗ trống</span><span><i class="legend-car"></i> Đang sử dụng</span><span><i class="legend-month"></i> Vé tháng</span><b>${occ}/${total} vị trí đang sử dụng</b></div>
-   </section>
-
    <div class="premium-actions">
      <button data-quick-page="parking" class="premium-action action-purple"><span>＋</span><div><b>Cho xe vào</b><small>Thêm phương tiện mới</small></div><i>›</i></button>
      <button data-quick-page="parking" class="premium-action action-blue"><span>↪</span><div><b>Xe ra</b><small>Thanh toán và rời bãi</small></div><i>›</i></button>
