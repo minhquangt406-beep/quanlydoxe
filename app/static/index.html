@@ -14,10 +14,6 @@ body.qdx-dark{background:#11182d!important;color:#edf2ff!important}
 body.qdx-dark .qdx-popover{background:rgba(24,33,58,.96);color:#edf2ff;border-color:rgba(255,255,255,.1)}
 body.qdx-dark .qdx-popover button:hover{background:rgba(255,255,255,.08)}
 body.qdx-dark input{color:#edf2ff}
-
-/* V10: remove redundant page title strip */
-.page-header,.page-title,.content-header,.section-header,.view-header,.page-heading{display:none!important}
-
 </style>
 <!doctype html>
 <html lang="vi">
@@ -122,7 +118,7 @@ body.qdx-dark input{color:#edf2ff}
 
   <main class="main">
     <header class="topbar">
-      <div></div>
+      <div><div class="eyebrow">PARKING OPERATIONS</div><h2 id="pageTitle">Tổng quan</h2></div>
       <div class="topbar-actions"><button id="sidebarToggle" class="icon-btn sidebar-toggle" title="Ẩn / hiện thanh menu" aria-label="Thu gọn thanh bên" aria-expanded="true">☰</button><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
     </header>
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
