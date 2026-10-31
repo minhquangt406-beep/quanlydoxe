@@ -29,7 +29,10 @@ if DATABASE_URL.startswith("sqlite:///./") and not os.path.isabs(DATABASE_URL.re
     db_path.parent.mkdir(parents=True, exist_ok=True)
     DATABASE_URL = f"sqlite:///{db_path}"
 
+# Production must provide a stable, unpredictable signing key.
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+if os.getenv("RENDER") and SECRET_KEY == "dev-secret-change-me":
+    raise RuntimeError("SECRET_KEY must be configured in Render environment variables")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
@@ -78,10 +81,17 @@ Base = declarative_base()
 security = HTTPBearer(auto_error=False)
 
 app = FastAPI(title="Parking AI Pro", version="1.0.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
-)
+# Same-origin browser clients do not require CORS. Configure explicit trusted origins
+# only when a separate frontend domain needs cross-origin API access.
+CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
+if CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
 class User(Base):
     __tablename__ = "users"
@@ -241,7 +251,7 @@ def hash_password(password: str, salt: Optional[str] = None):
 def verify_password(password: str, stored: str):
     try:
         salt, digest = stored.split("$", 1)
-        return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000).hex() == digest
+        return secrets.compare_digest(hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000).hex(), digest)
     except Exception:
         return False
 
@@ -371,12 +381,19 @@ def infer_vehicle_type(plate: str) -> Optional[str]:
 def seed():
     db = SessionLocal()
     try:
-        if not db.query(User).filter(User.username == "guest").first():
-            db.add(User(username="guest", password_hash=hash_password("guest12345"), role="guest", full_name="Khách xem bãi"))
-        if not db.query(User).filter(User.username == "admin").first():
-            db.add(User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"))
-        if not db.query(User).filter(User.username == "staff").first():
-            db.add(User(username="staff", password_hash=hash_password("staff123"), role="staff", full_name="Nhân viên bãi xe"))
+        # Never provision publicly known credentials. Existing accounts remain unchanged.
+        # Set unique BOOTSTRAP_*_PASSWORD variables only for first-time provisioning.
+        for username, role, full_name, env_name in (
+            ("admin", "manager", "Quản lý hệ thống", "BOOTSTRAP_ADMIN_PASSWORD"),
+            ("staff", "staff", "Nhân viên bãi xe", "BOOTSTRAP_STAFF_PASSWORD"),
+            ("guest", "guest", "Khách xem bãi", "BOOTSTRAP_GUEST_PASSWORD"),
+        ):
+            initial_password = os.getenv(env_name, "")
+            if not db.query(User).filter(User.username == username).first() and initial_password:
+                if len(initial_password) < 12:
+                    raise RuntimeError(f"{env_name} must contain at least 12 characters")
+                db.add(User(username=username, password_hash=hash_password(initial_password),
+                            role=role, full_name=full_name))
         db.flush()
         if db.query(Area).count() == 0:
             a1, a2 = Area(name="Khu A", capacity=12), Area(name="Khu B", capacity=8)
@@ -1057,11 +1074,24 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(non_guest_user)
     return [{"id": v.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type}
             for v in db.query(Vehicle).order_by(Vehicle.id.desc()).all()]
 
+def lock_parking_operation(db: Session):
+    """Serialize parking entry/exit transactions on PostgreSQL.
+
+    A transaction-scoped advisory lock prevents two workers from reading the
+    same empty slot before either commits. SQLite test databases keep their
+    existing behavior; PostgreSQL is the production concurrency target.
+    """
+    if db.get_bind().dialect.name == "postgresql":
+        from sqlalchemy import text
+        db.execute(text("SELECT pg_advisory_xact_lock(728461903)"))
+
+
 @app.post("/api/checkin")
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
     
     if user.role == "guest":
         raise HTTPException(403, "Tài khoản khách chỉ được xem tình trạng chỗ trống")
+    lock_parking_operation(db)
     is_guest = False
     requested_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy"
     raw_plate = str(data.license_plate or "").strip()
@@ -1177,6 +1207,7 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
 
 @app.post("/api/checkout")
 def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
+    lock_parking_operation(db)
     record = db.get(ParkingRecord, data.record_id)
     if not record or record.time_out is not None:
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
@@ -1190,6 +1221,9 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
         fee = 0
         method = "Miễn phí"
     elif method == "Miễn phí":
+        # Complimentary checkout requires manager approval; staff cannot waive fees.
+        if user.role != "manager":
+            raise HTTPException(403, "Chỉ quản lý được miễn phí lượt gửi xe")
         fee = 0
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)

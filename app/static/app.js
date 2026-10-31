@@ -732,7 +732,7 @@ function initSidebarToggle(){
   sync();
 }
 
-async function navigate(page){if(me?.role==="guest" && page!=="dashboard"){toast("Tài khoản khách chỉ được xem tình trạng chỗ trống","error");return;}$$(["[data-page]"]).forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel"><b>Lỗi:</b> ${e.message}</div>`}}
+async function navigate(page){if(me?.role==="guest" && page!=="dashboard"){toast("Tài khoản khách chỉ được xem tình trạng chỗ trống","error");return;}$$(["[data-page]"]).forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel" role="alert"><b>Không tải được dữ liệu:</b> ${escapeHtml(e.message||"Lỗi không xác định")}</div>`}}
 async function renderSlots(){let s=await api("/api/slots");return s.map(x=>`<div class="slot ${x.status}">${x.name}<br><small>${x.status==="empty"?"TRỐNG":"ĐANG DÙNG"}</small></div>`).join("")}
 async function downloadBackup(){const r=await fetch('/api/backup',{headers:{Authorization:'Bearer '+token}});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Không thể sao lưu');}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='parking-backup-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.db';a.click();URL.revokeObjectURL(url)}
 async function openReceipt(id){const r=await fetch('/api/receipt/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Không thể tạo biên lai');}const blob=await r.blob();const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000)}
@@ -769,7 +769,7 @@ dashboard:async()=>{
    <div class="dash-greeting"><div><span class="dash-kicker">SMART PARKING CONTROL CENTER</span><h1>Xin chào, ${escapeHtml(managerName)} <span>👋</span></h1><p>Cùng quản lý bãi đỗ xe hiệu quả hơn mỗi ngày.</p></div><div class="dash-date"><span>▣</span><div><small>${nowLabel}</small><b id="dashClockBig">--:--:--</b></div></div></div>
 
    <div class="premium-kpis">
-     <div class="premium-kpi kpi-purple"><span class="kpi-icon">🚗</span><div><small>Tổng số xe</small><strong>${d.total_vehicles??(d.today_checkins||0)}</strong><em>↗ +12% <i>so với hôm qua</i></em></div></div>
+     <div class="premium-kpi kpi-purple"><span class="kpi-icon">🚗</span><div><small>Tổng số xe</small><strong>${d.total_vehicles??(d.today_checkins||0)}</strong><em>◉ Dữ liệu hệ thống</em></div></div>
      <div class="premium-kpi kpi-blue"><span class="kpi-icon">P</span><div><small>Đang đỗ</small><strong id="kpiActive">${d.active_vehicles??occ}</strong><em>⌁ ${occupancy}% công suất</em></div></div>
      <div class="premium-kpi kpi-green"><span class="kpi-icon">✓</span><div><small>Chỗ trống</small><strong id="kpiEmpty">${empty}</strong><em>↗ ${total?Math.round(empty/total*100):0}% còn trống</em></div></div>
      <div class="premium-kpi kpi-orange"><span class="kpi-icon">₫</span><div><small>Phí gửi xe thực tế</small><strong id="kpiRevenue">${money(revenue)}</strong><em>↗ Hôm nay <i>không tính vé tháng</i></em></div></div>
