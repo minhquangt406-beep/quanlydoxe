@@ -69,7 +69,7 @@ function normalizeNaturalQuestion(input) {
 async function api(path,opt={}){opt.headers={...(opt.headers||{}),...(token?{Authorization:"Bearer "+token}:{})};if(opt.body&&typeof opt.body!=="string"){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(opt.body)}const r=await fetch(path,opt);const raw=await r.text();let data={};try{data=raw?JSON.parse(raw):{}}catch(_){data={detail:raw}}if(!r.ok)throw new Error(data.detail||`Lỗi API ${r.status}: ${path}`);return data}
 let aiSupportHistory=[];
 function loadAISupportHistory(){
-  try{const raw=sessionStorage.getItem("parking_ai_support_history");const parsed=raw?JSON.parse(raw):[];aiSupportHistory=Array.isArray(parsed)?parsed.slice(-10):[];}catch(_){aiSupportHistory=[];}
+  try{const raw=sessionStorage.getItem("parking_ai_support_history");const parsed=raw?JSON.parse(raw):[];aiSupportHistory=Array.isArray(parsed)?parsed.filter(m=>m && ["user","assistant"].includes(m.role) && typeof m.content==="string").slice(-10):[];}catch(_){aiSupportHistory=[];}
 }
 function saveAISupportHistory(){try{sessionStorage.setItem("parking_ai_support_history",JSON.stringify(aiSupportHistory.slice(-10)));}catch(_){} }
 function aiTime(){return new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
@@ -151,7 +151,8 @@ initAISupport();
 function money(n){return Number(n||0).toLocaleString("vi-VN")+" ₫"} function dt(s){return s?new Date(s).toLocaleString("vi-VN"):"—"} function duration(s){if(!s)return "—"; const ms=Math.max(0,Date.now()-new Date(s).getTime()), m=Math.floor(ms/60000), h=Math.floor(m/60), mm=m%60; return h?`${h} giờ ${mm} phút`:`${mm} phút`}
 function toast(msg,type="success"){const el=$("#toast");if(!el)return;el.textContent=msg;el.className="toast show "+type;clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.className="toast",2600)}
 function activityMeta(action){const a=String(action||"").toUpperCase();if(a==="CHECKIN")return {cls:"checkin",icon:"↓",label:"CHECK IN"};if(a==="CHECKOUT")return {cls:"checkout",icon:"↑",label:"CHECK OUT"};if(a==="LOGIN")return {cls:"login",icon:"↪",label:"LOGIN"};return {cls:"other",icon:"•",label:String(action||"KHÁC")};}
-function activityItem(x){const m=activityMeta(x.action);return `<div class="activity-item activity-${m.cls}"><div class="activity-main"><span class="activity-badge ${m.cls}"><span>${m.icon}</span>${m.label}</span><div class="activity-detail">${x.detail}</div></div><span class="activity-meta">${dt(x.created_at)} · ${x.username}</span></div>`}
+function escapeActivity(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function activityItem(x){const m=activityMeta(x.action);return `<div class="activity-item activity-${m.cls}"><div class="activity-main"><span class="activity-badge ${m.cls}"><span>${m.icon}</span>${escapeActivity(m.label)}</span><div class="activity-detail">${escapeActivity(x.detail)}</div></div><span class="activity-meta">${escapeActivity(dt(x.created_at))} · ${escapeActivity(x.username)}</span></div>`}
 const vehicleTypes=["Xe máy","Ô tô","Xe đạp"];
 
 
@@ -732,7 +733,7 @@ function initSidebarToggle(){
   sync();
 }
 
-async function navigate(page){if(me?.role==="guest" && page!=="dashboard"){toast("Tài khoản khách chỉ được xem tình trạng chỗ trống","error");return;}$$(["[data-page]"]).forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel" role="alert"><b>Không tải được dữ liệu:</b> ${escapeHtml(e.message||"Lỗi không xác định")}</div>`}}
+async function navigate(page){if(me?.role==="guest" && page!=="dashboard"){toast("Tài khoản khách chỉ được xem tình trạng chỗ trống","error");return;}$$(["[data-page]"]).forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#pageTitle").textContent=titles[page];try{await pages[page]();if(page==="dashboard"||page==="slots")wireMapInteractions()}catch(e){$("#content").innerHTML=`<div class="panel"><b>Lỗi:</b> ${e.message}</div>`}}
 async function renderSlots(){let s=await api("/api/slots");return s.map(x=>`<div class="slot ${x.status}">${x.name}<br><small>${x.status==="empty"?"TRỐNG":"ĐANG DÙNG"}</small></div>`).join("")}
 async function downloadBackup(){const r=await fetch('/api/backup',{headers:{Authorization:'Bearer '+token}});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Không thể sao lưu');}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='parking-backup-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.db';a.click();URL.revokeObjectURL(url)}
 async function openReceipt(id){const r=await fetch('/api/receipt/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Không thể tạo biên lai');}const blob=await r.blob();const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000)}
@@ -769,7 +770,7 @@ dashboard:async()=>{
    <div class="dash-greeting"><div><span class="dash-kicker">SMART PARKING CONTROL CENTER</span><h1>Xin chào, ${escapeHtml(managerName)} <span>👋</span></h1><p>Cùng quản lý bãi đỗ xe hiệu quả hơn mỗi ngày.</p></div><div class="dash-date"><span>▣</span><div><small>${nowLabel}</small><b id="dashClockBig">--:--:--</b></div></div></div>
 
    <div class="premium-kpis">
-     <div class="premium-kpi kpi-purple"><span class="kpi-icon">🚗</span><div><small>Tổng số xe</small><strong>${d.total_vehicles??(d.today_checkins||0)}</strong><em>◉ Dữ liệu hệ thống</em></div></div>
+     <div class="premium-kpi kpi-purple"><span class="kpi-icon">🚗</span><div><small>Tổng số xe</small><strong>${d.total_vehicles??(d.today_checkins||0)}</strong><em>↗ +12% <i>so với hôm qua</i></em></div></div>
      <div class="premium-kpi kpi-blue"><span class="kpi-icon">P</span><div><small>Đang đỗ</small><strong id="kpiActive">${d.active_vehicles??occ}</strong><em>⌁ ${occupancy}% công suất</em></div></div>
      <div class="premium-kpi kpi-green"><span class="kpi-icon">✓</span><div><small>Chỗ trống</small><strong id="kpiEmpty">${empty}</strong><em>↗ ${total?Math.round(empty/total*100):0}% còn trống</em></div></div>
      <div class="premium-kpi kpi-orange"><span class="kpi-icon">₫</span><div><small>Phí gửi xe thực tế</small><strong id="kpiRevenue">${money(revenue)}</strong><em>↗ Hôm nay <i>không tính vé tháng</i></em></div></div>

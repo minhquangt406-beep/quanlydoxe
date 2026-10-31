@@ -2,18 +2,13 @@
 
 This project is a single Docker Web Service named `quanlydoxe`.
 
-## Khởi động và triển khai
+## Why this version fixes the failed deploy
 
-Docker cài gói chatbot trong image Node.js 22 chính thức rồi sao chép runtime
-vào image Python. Không cần thêm kho apt hoặc khóa GPG của NodeSource.
-`package-lock.json` và `npm ci` cố định phiên bản dependency.
+The previous image installed Node.js from the base Debian repository. The current Google Gemini Node SDK requires a supported modern Node.js runtime, so this Dockerfile installs Node.js 22 explicitly before installing the chatbot dependencies.
 
-- FastAPI lắng nghe `$PORT` (mặc định 8000).
-- Chatbot dùng `NODE_INTERNAL_PORT` (mặc định 3100); FastAPI và kiểm tra sẵn sàng dùng cùng cổng.
-- `start.sh` tự chuyển về thư mục dự án và dừng cả hai tiến trình khi nhận SIGTERM.
-- Dùng Docker runtime cho service này; Python runtime đơn lẻ không cài chatbot.
-- Giữ `DATABASE_URL` và `SECRET_KEY` hiện tại. Khi tạo cơ sở dữ liệu mới,
-  đặt `BOOTSTRAP_ADMIN_PASSWORD` riêng ít nhất 12 ký tự để tạo tài khoản admin.
+The container runs:
+- FastAPI on Render's `$PORT` (default 8000 locally)
+- Node.js chatbot internally on `127.0.0.1:3100`
 
 ## Environment variables on the existing `quanlydoxe` service
 
@@ -21,7 +16,7 @@ Required for Google Gemini chatbot:
 
 ```text
 GEMINI_API_KEY=your_key
-GEMINI_MODEL=your_supported_model
+Gemini_MODEL=gpt-5.6-luna
 WEB_SEARCH_ENABLED=true
 WEB_SEARCH_CONTEXT_SIZE=medium
 NODE_AI_SINGLE_SERVICE=true
@@ -55,10 +50,3 @@ Expected:
 ```
 
 The internal Node service is not exposed publicly; FastAPI calls it through `127.0.0.1:3100`.
-
-## Kiểm tra bản sửa ngày 31/10/2026
-
-8 kiểm thử API/nghiệp vụ đạt trên SQLite tạm: đăng nhập, phân quyền, xe vào/ra,
-chặn gửi trùng, vé tháng và tính phí. Khởi động tích hợp với cổng tùy chỉnh
-đã kiểm tra frontend, API, chatbot và dừng cả hai tiến trình bằng SIGTERM.
-Image Docker cần được build trên Render; môi trường kiểm tra không có Docker.

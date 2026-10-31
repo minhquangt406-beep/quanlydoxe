@@ -4,6 +4,7 @@ const app = express();
 app.use(express.json({ limit: "64kb" }));
 
 const PORT = Number(process.env.NODE_INTERNAL_PORT || 3100);
+const MAX_CONTEXT_BYTES = 28000;
 const XKIRO_API_KEY = (process.env.XKIRO_API_KEY || "").trim();
 const XKIRO_MODEL = process.env.XKIRO_MODEL || "deepseek/deepseek-v4-pro:free";
 const XKIRO_BASE_URL = (process.env.XKIRO_BASE_URL || "https://api.xkiro.com/v1").replace(/\/$/, "");
@@ -42,6 +43,10 @@ const SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của hệ thống q
 function buildPrompt(body, webResults = [], fetchedPages = []) {
   const role = body.role || "guest";
   const context = { ...(body.context || {}), role };
+  if (JSON.stringify(context).length > MAX_CONTEXT_BYTES) {
+    delete context.active_vehicle_details;
+    if (context.management) delete context.management.latest_activity;
+  }
   if (role === "guest") delete context.active_vehicle_details;
 
   const history = Array.isArray(body.history)
@@ -106,9 +111,9 @@ function searchQuery(question) {
   else if (/thoi tiet|weather/.test(n)) extra = ` weather today forecast ${WEB_SEARCH_DEFAULT_LOCATION}`;
   else if (/gia vang|gold price/.test(n)) extra = " gold price today Vietnam";
   else if (/ty gia|ti gia|usd|dollar/.test(n)) extra = " exchange rate today Vietnam";
-  else if (/tin tuc|tin moi|latest|news/.test(n)) extra = " latest news 2026";
+  else if (/tin tuc|tin moi|latest|news/.test(n)) extra = " latest news";
   else if (/xep hang|ranking|top\\s*\\d+/.test(n)) extra = " current ranking 2026";
-  else if (/nam nay|hien tai|moi nhat|today|latest/.test(n)) extra = " current 2026";
+  else if (/nam nay|hien tai|moi nhat|today|latest/.test(n)) extra = " current";
   return (q + extra).slice(0, 450);
 }
 
@@ -249,6 +254,8 @@ app.get("/status", async (req, res) => {
 
 app.post("/chat", async (req, res) => {
   const question = String(req.body?.question || "").trim();
+  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) return res.status(400).json({error:"Dữ liệu không hợp lệ"});
+  if (!["guest", "staff", "manager", "admin"].includes(req.body.role)) return res.status(400).json({error:"Vai trò không hợp lệ"});
   if (!question) return res.status(400).json({ error: "Vui lòng nhập câu hỏi" });
   if (question.length > 500) return res.status(400).json({ error: "Câu hỏi tối đa 500 ký tự" });
 
@@ -309,7 +316,7 @@ app.post("/chat", async (req, res) => {
             ? ["forbes.com", "forbes.com.vn", "vnexpress.net", "cafef.vn", "tuoitre.vn", "reuters.com"]
             : ["forbes.com", "bloomberg.com", "reuters.com"])
         : undefined;
-      const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|2026|gia vang|ty gia)/i.test(query) ? "day" : "noLimit";
+      const recency = /(hom nay|hien tai|moi nhat|tin tuc|latest|today|thoi tiet|weather|gia vang|ty gia)/i.test(query) ? "day" : "noLimit";
       
       
       const chatSearch = useWeb;

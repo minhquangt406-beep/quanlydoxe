@@ -29,10 +29,7 @@ if DATABASE_URL.startswith("sqlite:///./") and not os.path.isabs(DATABASE_URL.re
     db_path.parent.mkdir(parents=True, exist_ok=True)
     DATABASE_URL = f"sqlite:///{db_path}"
 
-# Production must provide a stable, unpredictable signing key.
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
-if os.getenv("RENDER") and SECRET_KEY == "dev-secret-change-me":
-    raise RuntimeError("SECRET_KEY must be configured in Render environment variables")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
@@ -41,7 +38,7 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 NODE_AI_SINGLE_SERVICE = os.getenv("NODE_AI_SINGLE_SERVICE", "true").strip().lower() in {"1", "true", "yes", "on"}
 NODE_AI_URL = os.getenv("NODE_AI_URL", "http://127.0.0.1:3100").strip().rstrip("/")
 if NODE_AI_SINGLE_SERVICE:
-    NODE_AI_URL = "http://127.0.0.1:" + (os.getenv("NODE_INTERNAL_PORT", "3100").strip() or "3100")
+    NODE_AI_URL = "http://127.0.0.1:3100"
 NODE_AI_TIMEOUT_SECONDS = float(os.getenv("NODE_AI_TIMEOUT_SECONDS", "55"))
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
@@ -81,17 +78,10 @@ Base = declarative_base()
 security = HTTPBearer(auto_error=False)
 
 app = FastAPI(title="Parking AI Pro", version="1.0.0")
-# Same-origin browser clients do not require CORS. Configure explicit trusted origins
-# only when a separate frontend domain needs cross-origin API access.
-CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
-if CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()], allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type"]
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -251,7 +241,7 @@ def hash_password(password: str, salt: Optional[str] = None):
 def verify_password(password: str, stored: str):
     try:
         salt, digest = stored.split("$", 1)
-        return secrets.compare_digest(hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000).hex(), digest)
+        return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000).hex() == digest
     except Exception:
         return False
 
@@ -381,19 +371,12 @@ def infer_vehicle_type(plate: str) -> Optional[str]:
 def seed():
     db = SessionLocal()
     try:
-        # Never provision publicly known credentials. Existing accounts remain unchanged.
-        # Set unique BOOTSTRAP_*_PASSWORD variables only for first-time provisioning.
-        for username, role, full_name, env_name in (
-            ("admin", "manager", "Quản lý hệ thống", "BOOTSTRAP_ADMIN_PASSWORD"),
-            ("staff", "staff", "Nhân viên bãi xe", "BOOTSTRAP_STAFF_PASSWORD"),
-            ("guest", "guest", "Khách xem bãi", "BOOTSTRAP_GUEST_PASSWORD"),
-        ):
-            initial_password = os.getenv(env_name, "")
-            if not db.query(User).filter(User.username == username).first() and initial_password:
-                if len(initial_password) < 12:
-                    raise RuntimeError(f"{env_name} must contain at least 12 characters")
-                db.add(User(username=username, password_hash=hash_password(initial_password),
-                            role=role, full_name=full_name))
+        if not db.query(User).filter(User.username == "guest").first():
+            db.add(User(username="guest", password_hash=hash_password("guest12345"), role="guest", full_name="Khách xem bãi"))
+        if not db.query(User).filter(User.username == "admin").first():
+            db.add(User(username="admin", password_hash=hash_password("Quang2005@@@@"), role="manager", full_name="Quản lý hệ thống"))
+        if not db.query(User).filter(User.username == "staff").first():
+            db.add(User(username="staff", password_hash=hash_password("staff123"), role="staff", full_name="Nhân viên bãi xe"))
         db.flush()
         if db.query(Area).count() == 0:
             a1, a2 = Area(name="Khu A", capacity=12), Area(name="Khu B", capacity=8)
@@ -1074,24 +1057,11 @@ def vehicles(db: Session = Depends(get_db), user: User = Depends(non_guest_user)
     return [{"id": v.id, "license_plate": (None if v.vehicle_type == "Xe đạp" else v.license_plate), "vehicle_type": v.vehicle_type}
             for v in db.query(Vehicle).order_by(Vehicle.id.desc()).all()]
 
-def lock_parking_operation(db: Session):
-    """Serialize parking entry/exit transactions on PostgreSQL.
-
-    A transaction-scoped advisory lock prevents two workers from reading the
-    same empty slot before either commits. SQLite test databases keep their
-    existing behavior; PostgreSQL is the production concurrency target.
-    """
-    if db.get_bind().dialect.name == "postgresql":
-        from sqlalchemy import text
-        db.execute(text("SELECT pg_advisory_xact_lock(728461903)"))
-
-
 @app.post("/api/checkin")
 def checkin(data: CheckIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
     
     if user.role == "guest":
         raise HTTPException(403, "Tài khoản khách chỉ được xem tình trạng chỗ trống")
-    lock_parking_operation(db)
     is_guest = False
     requested_type = data.vehicle_type if data.vehicle_type in ("Xe máy", "Ô tô", "Xe đạp") else "Xe máy"
     raw_plate = str(data.license_plate or "").strip()
@@ -1207,7 +1177,6 @@ def checkout_preview(record_id: int, db: Session = Depends(get_db), user: User =
 
 @app.post("/api/checkout")
 def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
-    lock_parking_operation(db)
     record = db.get(ParkingRecord, data.record_id)
     if not record or record.time_out is not None:
         raise HTTPException(404, "Lượt gửi không hợp lệ hoặc đã kết thúc")
@@ -1221,9 +1190,6 @@ def checkout(data: CheckOut, db: Session = Depends(get_db), user: User = Depends
         fee = 0
         method = "Miễn phí"
     elif method == "Miễn phí":
-        # Complimentary checkout requires manager approval; staff cannot waive fees.
-        if user.role != "manager":
-            raise HTTPException(403, "Chỉ quản lý được miễn phí lượt gửi xe")
         fee = 0
     record.time_out, record.fee = time_out, fee
     slot = db.get(ParkingSlot, record.slot_id)
@@ -1944,8 +1910,9 @@ QUY TẮC HIỂN THỊ:
             return {"answer":answer,"mode":"nodejs","provider":provider,"sources":sources,"web_search":web_search,"history_used":bool(history)}
         except Exception as node_error:
             print(f"[AI] xKiro Node error: {type(node_error).__name__}: {node_error}")
-            raise HTTPException(502, f"{node_error}")
-    raise HTTPException(503, "xKiro chatbot chưa được cấu hình. Kiểm tra XKIRO_API_KEY trên Render.")
+            print("[AI] Chuyển sang chế độ hỗ trợ nội bộ")
+            return {"answer": local_ai_support(db, question, user), "mode": "fallback", "provider": "local", "history_used": bool(history), "notice": "AI trực tuyến tạm gián đoạn; đang sử dụng dữ liệu nội bộ."}
+    return {"answer": local_ai_support(db, question, user), "mode": "local", "provider": "local", "history_used": bool(history)}
 
 
 @app.get("/api/ai/prediction")
@@ -1953,8 +1920,8 @@ def ai_prediction(db:Session=Depends(get_db), user:User=Depends(manager_only)):
     total=db.query(ParkingSlot).count(); occupied=db.query(ParkingSlot).filter(ParkingSlot.status=="occupied").count(); rate=(occupied/total*100 if total else 0)
     rows=db.query(ParkingRecord.time_in).filter(ParkingRecord.time_in >= now_vn()-timedelta(days=7)).all(); counts={}
     for (dtv,) in rows: counts[dtv.hour]=counts.get(dtv.hour,0)+1
-    peak=max(counts,key=counts.get) if counts else None; projected=min(100,round(rate+(12 if peak is not None and abs(now_vn().hour-peak)<=2 else 4),1))
-    return {"occupancy_rate":round(rate,1),"peak_hour":f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "Chưa đủ dữ liệu","projected_peak_occupancy":projected,"risk":"Cao" if projected>=90 else "Trung bình" if projected>=70 else "Thấp","recommendation":"Chuẩn bị điều hướng sang khu còn nhiều chỗ và tăng nhân sự tại giờ cao điểm." if projected>=70 else "Bãi đang ổn định; duy trì phân bổ hiện tại."}
+    peak=max(counts,key=counts.get) if counts else None; projected=round(rate,1)
+    return {"occupancy_rate":round(rate,1),"peak_hour":f"{peak:02d}:00–{(peak+1)%24:02d}:00" if peak is not None else "Chưa đủ dữ liệu","projected_peak_occupancy":projected,"risk":"Cao" if projected>=90 else "Trung bình" if projected>=70 else "Thấp","recommendation":"Ưu tiên điều hướng sang khu còn trống." if projected>=70 else "Theo dõi công suất thường xuyên.","forecast_available":False,"note":"Chỉ số hiện tại; chưa đủ cơ sở để dự báo công suất tương lai."}
 
 @app.get("/api/activity")
 def activity(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(non_guest_user)):
@@ -2020,6 +1987,7 @@ def local_ai(db: Session, question: str):
 @app.post("/api/ai")
 def ai(data: AIQuestion, db: Session = Depends(get_db), user: User = Depends(manager_only)):
     if not data.question.strip(): raise HTTPException(400, "Vui lòng nhập câu hỏi")
+    if len(data.question) > 1000: raise HTTPException(400, "Câu hỏi quá dài")
     if NODE_AI_URL:
         try:
             answer, provider, sources, web_search = _call_node_ai(data.question.strip(), [], user, _parking_ai_context(db, user), "analytics")

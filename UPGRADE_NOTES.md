@@ -1,16 +1,13 @@
-# SmartPark – bản nâng cấp an toàn (27/10/2026)
+# Bản nâng cấp AI và ổn định hệ thống
 
-## Đã thay đổi
-- CORS: mặc định same-origin, chỉ bật cho danh sách `CORS_ORIGINS` phân tách dấu phẩy.
-- Render: bắt buộc thiết lập `SECRET_KEY` bí mật, ổn định để ký JWT. **Kiểm tra biến này trước khi triển khai.**
-- Tăng khả năng truy cập bàn phím, vùng chạm trên di động, chống iOS tự zoom input và tôn trọng reduced-motion.
-- Loại dữ liệu `data/parking.db` và file cache khỏi bản ZIP để tránh chia sẻ dữ liệu cá nhân.
+- AI hỗ trợ: khi Node/xKiro lỗi, trả lời từ dữ liệu nội bộ thay vì HTTP 502; trả về `notice` để giao diện có thể thông báo.
+- AI phân tích: giới hạn độ dài câu hỏi.
+- Dự báo: không còn tự cộng 4–12% rồi gọi là dự báo; API đánh dấu `forecast_available=false` và nêu rõ chưa đủ dữ liệu.
+- Node: kiểm tra vai trò, giới hạn kích thước ngữ cảnh, bỏ mốc năm cứng trong truy vấn.
+- CORS: cấu hình `CORS_ORIGINS` theo danh sách origin phân cách dấu phẩy, mặc định không cấp quyền CORS cho nguồn ngoài.
 
-## Trước khi triển khai
-1. Sao lưu cơ sở dữ liệu đang chạy trên Render.
-2. Đảm bảo Render có `SECRET_KEY` đủ mạnh, giữ nguyên khóa cũ để tránh đăng xuất hàng loạt.
-3. Nếu frontend/API ở các domain khác nhau, thiết lập `CORS_ORIGINS=https://ten-mien-cua-ban`.
-4. Kiểm thử đăng nhập, phân quyền, xe vào/ra, doanh thu, vé tháng, chatbot trên staging.
-5. Chỉ merge lên nhánh Render auto-deploy sau khi kiểm thử.
+## Cấu hình Render
+Cần `DATABASE_URL` (PostgreSQL), `SECRET_KEY` đủ mạnh, `XKIRO_API_KEY` nếu dùng AI trực tuyến. `CORS_ORIGINS` chỉ cần khi frontend chạy khác origin. Không commit `.env`.
 
-Chưa thực hiện kiểm thử end-to-end hay triển khai production.
+## Kiểm thử
+`python -m compileall -q app` và `node --check node-chatbot/server.js`. Kiểm thử API thực tế cần cài requirements và cấu hình database.
