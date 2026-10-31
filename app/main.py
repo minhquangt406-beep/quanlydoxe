@@ -1564,6 +1564,11 @@ AI_TOOLS = [
 
 
 def _ai_tool_result(db: Session, name: str, args: dict, user: User):
+    # Enforce authorization at the data boundary, not only in the prompt.
+    if name in {"get_active_vehicles", "get_longest_parked_vehicle"} and user.role == "guest":
+        return {"error": "Không có quyền xem thông tin xe đang gửi."}
+    if name not in {"get_parking_status", "get_area_status", "get_longest_parked_vehicle", "get_active_vehicles", "get_pricing", "get_business_info"}:
+        return {"error": "Công cụ không được hỗ trợ."}
     if name == "get_parking_status":
         total = db.query(ParkingSlot).count(); occupied = db.query(ParkingSlot).filter(ParkingSlot.status == "occupied").count()
         return {"total_slots": total, "occupied_slots": occupied, "free_slots": max(total-occupied,0), "active_vehicles": db.query(ParkingRecord).filter(ParkingRecord.time_out.is_(None)).count()}
@@ -1804,8 +1809,8 @@ def ai_support_status():
     result = {
         "xkiro_configured": bool(XKIRO_API_KEY),
         "xkiro_model": XKIRO_MODEL,
-        "xkiro_base_url": XKIRO_BASE_URL,
-        "node_url": NODE_AI_URL,
+        "xkiro_base_url": "configured" if XKIRO_BASE_URL else "",
+        "node_configured": bool(NODE_AI_URL),
         "web_search_provider": "xKiro",
         "web_search_enabled": True,
         "ready": False,
@@ -1904,6 +1909,11 @@ QUY TẮC HIỂN THỊ:
         return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
     if intent in {"occupancy", "price", "contact", "active"} or re.search(r"\b(khu\s*[ab])\b", normalized_question):
         return {"answer": local_ai_support(db, question, user), "mode": "live-data", "provider": "local", "history_used": bool(history)}
+    # Follow-up questions such as "còn khu B?" retain the previous topic.
+    if history and re.search(r"\b(khu\s*[a-z])\b", normalized_question) and not any(k in normalized_question for k in ["trống", "chỗ", "vị trí", "đông"]):
+        previous = normalize_vietnamese_question(history[-1]["content"])
+        if any(k in previous for k in ["trống", "chỗ", "vị trí", "đông"]):
+            return {"answer": local_ai_support(db, question + " còn bao nhiêu chỗ trống", user), "mode": "live-data", "provider": "local", "history_used": True}
     if NODE_AI_URL:
         try:
             answer, provider, sources, web_search = _call_node_ai(question, history, user, _parking_ai_context(db, user), "support")
