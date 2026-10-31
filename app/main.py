@@ -41,7 +41,7 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 NODE_AI_SINGLE_SERVICE = os.getenv("NODE_AI_SINGLE_SERVICE", "true").strip().lower() in {"1", "true", "yes", "on"}
 NODE_AI_URL = os.getenv("NODE_AI_URL", "http://127.0.0.1:3100").strip().rstrip("/")
 if NODE_AI_SINGLE_SERVICE:
-    NODE_AI_URL = "http://127.0.0.1:3100"
+    NODE_AI_URL = "http://127.0.0.1:" + (os.getenv("NODE_INTERNAL_PORT", "3100").strip() or "3100")
 NODE_AI_TIMEOUT_SECONDS = float(os.getenv("NODE_AI_TIMEOUT_SECONDS", "55"))
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
