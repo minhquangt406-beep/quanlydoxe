@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SmartPark · Đăng nhập hệ thống</title>
+<title>SmartPark Premium · Quản lý bãi đỗ xe</title>
 <link rel="stylesheet" href="/static/style.css?v=v50-premium-glass-20261006">
 <style>
 /* Premium glass header interactions */
@@ -24,6 +24,7 @@ body.qdx-dark .qdx-popover button:hover{background:rgba(255,255,255,.08)}
 body.qdx-dark input{color:#edf2ff}
 </style>
 <link rel="stylesheet" href="/static/refresh-v7.css?v=7">
+<link rel="stylesheet" href="/static/premium-v8.css?v=8">
 </head>
 <body>
 <div id="loginView" class="login-page">
@@ -45,7 +46,7 @@ body.qdx-dark input{color:#edf2ff}
       <div class="visual-car car-one">🚗</div><div class="visual-car car-two">🚙</div>
     </div>
     <div class="showcase-stats">
-      <div><b>24/7</b><span>Hỗ trợ vận hành</span></div><div><b>AI</b><span>Phân tích thông minh</span></div><div><b>100%</b><span>Dữ liệu an toàn</span></div>
+      <div><b>24/7</b><span>Hỗ trợ vận hành</span></div><div><b>AI</b><span>Phân tích thông minh</span></div><div><b>24/7</b><span>Giám sát hệ thống</span></div>
     </div>
   </section>
   <div class="login-card">
@@ -87,7 +88,7 @@ body.qdx-dark input{color:#edf2ff}
 
 <div id="appView" class="app hidden">
   <aside class="sidebar">
-    <div class="logo"><span>P</span><div><b>Quản lý bãi đỗ xe</b><small>PRO CONTROL</small></div></div>
+    <div class="logo"><span>P</span><div><b>Quản lý bãi đỗ xe</b><small>PREMIUM CONTROL</small></div></div>
     <nav id="nav">
       <div class="nav-section"><div class="nav-section-title">VẬN HÀNH</div>
         <button data-page="dashboard" class="active">⌂ <span>Tổng quan</span></button>
@@ -120,7 +121,7 @@ body.qdx-dark input{color:#edf2ff}
 
   <main class="main">
     <header class="topbar"><div class="topbar-page-title-spacer"><span id="pageTitle" aria-hidden="true"></span></div>
-      <div class="topbar-actions"><button id="sidebarToggle" class="icon-btn sidebar-toggle" title="Ẩn / hiện thanh menu" aria-label="Thu gọn thanh bên" aria-expanded="true">☰</button><button id="themeToggle" class="icon-btn theme-btn" title="Đổi giao diện">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
+      <div class="topbar-actions"><button id="sidebarToggle" class="icon-btn sidebar-toggle" title="Ẩn / hiện thanh menu" aria-label="Thu gọn thanh bên" aria-expanded="true">☰</button><button id="themeToggle" class="icon-btn theme-btn" title="Chuyển giao diện sáng / tối" aria-label="Chuyển giao diện sáng hoặc tối">☾</button><div class="live-line"><i></i> LIVE <span class="dot-sep">•</span><span id="clock">--:--:--</span></div><button id="refreshBtn" class="icon-btn" title="Làm mới">↻</button><button id="focusBtn" class="icon-btn" title="Tập trung nội dung" aria-pressed="false">⌗</button><div class="userbox"><div class="avatar" id="avatar">A</div><div><b id="userName">Quản lý</b><small id="userRole">Manager</small></div></div></div>
     </header>
     <section id="content"></section><div id="toast" class="toast"></div><div id="slotModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><div id="modalBody"></div></div></div>
   <button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><nav class="mobile-bottom-nav" id="mobileBottomNav"><button data-page="dashboard">⌂<small>Tổng quan</small></button><button data-page="parking">🚗<small>Xe</small></button><button data-page="slots">▣<small>Bãi</small></button><button data-page="history">◷<small>Lịch sử</small></button><button data-page="users" class="manager-only">♙<small>Tài khoản</small></button></nav></main>
@@ -140,7 +141,7 @@ body.qdx-dark input{color:#edf2ff}
         <div class="ai-welcome-card">
           <div class="ai-welcome-icon">✦</div>
           <div><strong>Xin chào! Tôi là SmartPark AI</strong><p>Tôi có thể giúp bạn tra cứu chỗ trống, khu vực, mức phí, vé tháng và hướng dẫn sử dụng.</p></div>
-          <div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu live</span></div>
+          <div class="ai-welcome-chips"><span>⚡ Phản hồi nhanh</span><span>🔒 An toàn</span><span>◉ Dữ liệu hệ thống</span></div>
         </div>
       </div>
       <div class="ai-support-suggestions-wrap"><div class="ai-suggest-label">Gợi ý nhanh</div><div class="ai-support-suggestions"><button data-ai-q="Hiện còn bao nhiêu chỗ trống?">🚗 Chỗ trống</button><button data-ai-q="Khu A còn bao nhiêu chỗ?">🏢 Khu A</button><button data-ai-q="Mức phí gửi xe hiện tại là bao nhiêu?">💵 Mức phí</button><button data-ai-q="Vé tháng có được miễn phí không?">🎫 Vé tháng</button><button data-ai-q="Tình hình bãi xe hiện tại?">📊 Tình hình bãi xe</button></div></div>
@@ -154,72 +155,7 @@ body.qdx-dark input{color:#edf2ff}
 <script src="/static/app.js?v=v50-premium-glass-20261006"></script>
 
 
-<script id="qdx-header-interactions">
-(function(){
-  const $ = (s,r=document)=>r.querySelector(s);
-  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 
-  // Find the top header area heuristically.
-  const header = $('header') || $('.topbar') || $('.top-bar') || $('.header') || document.body;
-
-  // Search input: make Ctrl/Cmd+K work globally.
-  const search = $('input[type="search"]', header) || $('input[placeholder*="Tìm"]', header) || $('input[placeholder*="tìm"]', header);
-  if(search){
-    window.addEventListener('keydown', e=>{
-      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
-        e.preventDefault(); search.focus(); search.select();
-      }
-      if(e.key==='Escape') search.blur();
-    });
-    search.addEventListener('keydown', e=>{
-      if(e.key==='Enter' && search.value.trim()){
-        // Keep existing search handlers; if none exist, dispatch an input/change pair.
-        search.dispatchEvent(new Event('change',{bubbles:true}));
-      }
-    });
-  }
-
-  // Turn likely theme button into a real toggle.
-  const buttons = $$('button,[role="button"],a', header);
-  const themeBtn = buttons.find(x => /☼|☀|dark|light|theme|giao diện|chế độ/i.test((x.innerText||x.getAttribute('aria-label')||'')));
-  if(themeBtn){
-    themeBtn.classList.add('qdx-header-control');
-    themeBtn.addEventListener('click', e=>{
-      e.stopPropagation();
-      document.body.classList.toggle('qdx-dark');
-      localStorage.setItem('qdx-theme', document.body.classList.contains('qdx-dark')?'dark':'light');
-    });
-  }
-  if(localStorage.getItem('qdx-theme')==='dark') document.body.classList.add('qdx-dark');
-
-  // Generic popover helper for notification/profile controls.
-  function addPopover(btn, html){
-    if(!btn || btn.dataset.qdxBound) return;
-    btn.dataset.qdxBound='1';
-    btn.classList.add('qdx-header-control');
-    const pop=document.createElement('div');
-    pop.className='qdx-popover';
-    pop.innerHTML=html;
-    btn.style.position='relative';
-    btn.appendChild(pop);
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      $$('.qdx-popover.open').forEach(p=>{if(p!==pop)p.classList.remove('open')});
-      pop.classList.toggle('open');
-    });
-  }
-
-  const notifBtn = buttons.find(x => /🔔|notification|thông báo/i.test((x.innerText||x.getAttribute('aria-label')||'')));
-  if(notifBtn) addPopover(notifBtn,'<b>Thông báo</b><div style="margin-top:8px;opacity:.72;font-size:12px">Không có thông báo mới.</div>');
-
-  const profileBtn = buttons.find(x => /quản lý hệ thống|admin|quản trị viên|profile|tài khoản/i.test((x.innerText||x.getAttribute('aria-label')||'')));
-  if(profileBtn) addPopover(profileBtn,'<button type="button">👤 Hồ sơ tài khoản</button><button type="button">⚙ Cài đặt</button>');
-
-  document.addEventListener('click',()=>{
-    $$('.qdx-popover.open').forEach(p=>p.classList.remove('open'));
-  });
-})();
-</script>
 
 
 
